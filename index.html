@@ -2,17 +2,58 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <title>메인 페이지</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>회원가입</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
+        .signup-container { width: 300px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:disabled { background-color: #ccc; }
+    </style>
 </head>
 <body>
-    <h1>안녕하세요! 여기는 메인 페이지입니다.</h1>
-    
-    <a href="input.html">
-        <button type="button">입력 페이지로 이동 (Link)</button>
-    </a>
 
-    <button type="button" onclick="location.href='input.html'">
-        입력 페이지로 이동 (JS)
-    </button>
+<div class="signup-container">
+    <h2>회원가입</h2>
+    <form id="signup-form">
+        <input type="text" name="userId" placeholder="아이디" required>
+        <input type="password" name="userPw" placeholder="패스워드" required>
+        <input type="text" name="userName" placeholder="이름" required>
+        <button type="submit" id="submit-btn">가입하기</button>
+    </form>
+</div>
+
+<script>
+    // 배포한 구글 웹 앱 URL을 여기에 넣으세요
+    const scriptURL = 'https://script.google.com/macros/s/AKfycbx22AdySAaNT_l6hkGZNKQuNHEDwk7ZFyH5hyBd7hjBj_0V6NP-ITIG9t7RXocna51cKA/exec';
+    const form = document.getElementById('signup-form');
+    const btn = document.getElementById('submit-btn');
+
+    form.addEventListener('submit', e => {
+        e.preventDefault();
+        btn.disabled = true;
+        btn.innerText = '저장 중...';
+
+        // 데이터를 Google Apps Script로 전송
+        fetch(scriptURL, { 
+            method: 'POST', 
+            body: new FormData(form) 
+        })
+        .then(response => {
+            alert('회원가입 정보가 스프레드시트에 저장되었습니다!');
+            form.reset();
+        })
+        .catch(error => {
+            console.error('Error!', error.message);
+            alert('오류가 발생했습니다.');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerText = '가입하기';
+        });
+    });
+</script>
+
 </body>
 </html>
