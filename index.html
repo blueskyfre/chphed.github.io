@@ -1,59 +1,497 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>회원가입</title>
-    <style>
-        body { font-family: sans-serif; display: flex; justify-content: center; padding-top: 50px; }
-        .signup-container { width: 300px; padding: 20px; border: 1px solid #ccc; border-radius: 8px; }
-        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
-        button { width: 100%; padding: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
-        button:disabled { background-color: #ccc; }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>회원가입</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0f14;
+      --surface: #15181f;
+      --surface2: #1c2029;
+      --border: #2a2f3d;
+      --accent: #5b8dee;
+      --accent-glow: rgba(91, 141, 238, 0.25);
+      --accent-hover: #7aaaff;
+      --text: #e8ecf4;
+      --muted: #7a8299;
+      --error: #f06a6a;
+      --success: #5cc99b;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* 배경 효과 */
+    body::before {
+      content: '';
+      position: fixed;
+      top: -30%;
+      left: -20%;
+      width: 700px;
+      height: 700px;
+      background: radial-gradient(circle, rgba(91,141,238,0.12) 0%, transparent 70%);
+      pointer-events: none;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      bottom: -20%;
+      right: -10%;
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle, rgba(92,201,155,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    /* 떠다니는 파티클 */
+    .particles {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .particle {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      background: var(--accent);
+      border-radius: 50%;
+      opacity: 0;
+      animation: float-up linear infinite;
+    }
+    @keyframes float-up {
+      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
+      10%  { opacity: 0.6; }
+      90%  { opacity: 0.2; }
+      100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
+    }
+
+    /* 카드 */
+    .card {
+      position: relative;
+      z-index: 10;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 48px 44px;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(91,141,238,0.08) inset;
+      animation: card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes card-in {
+      from { opacity: 0; transform: translateY(32px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* 상단 로고 */
+    .logo-area {
+      text-align: center;
+      margin-bottom: 36px;
+    }
+    .logo-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 56px;
+      height: 56px;
+      background: linear-gradient(135deg, var(--accent), #9b6dff);
+      border-radius: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px var(--accent-glow);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 8px 24px var(--accent-glow); }
+      50%       { box-shadow: 0 8px 36px rgba(91,141,238,0.45); }
+    }
+    .logo-icon svg { width: 28px; height: 28px; fill: #fff; }
+    .logo-area h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.7rem;
+      letter-spacing: -0.02em;
+      color: var(--text);
+    }
+    .logo-area p {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 4px;
+      font-weight: 300;
+      letter-spacing: 0.04em;
+    }
+
+    /* 폼 */
+    .form-group {
+      margin-bottom: 18px;
+      animation: field-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    .form-group:nth-child(1) { animation-delay: 0.1s; }
+    .form-group:nth-child(2) { animation-delay: 0.18s; }
+    .form-group:nth-child(3) { animation-delay: 0.26s; }
+    @keyframes field-in {
+      from { opacity: 0; transform: translateX(-12px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: var(--muted);
+      margin-bottom: 7px;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .input-wrap {
+      position: relative;
+    }
+    .input-wrap svg {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 16px;
+      height: 16px;
+      stroke: var(--muted);
+      fill: none;
+      stroke-width: 1.8;
+      transition: stroke 0.2s;
+      pointer-events: none;
+    }
+
+    input[type="text"],
+    input[type="password"] {
+      width: 100%;
+      padding: 12px 14px 12px 40px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.93rem;
+      outline: none;
+      transition: border-color 0.25s, box-shadow 0.25s;
+    }
+    input:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    input:focus + svg,
+    .input-wrap:focus-within svg { stroke: var(--accent); }
+    input::placeholder { color: #404559; }
+
+    /* 비밀번호 보기 */
+    .toggle-pw {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      transition: color 0.2s;
+    }
+    .toggle-pw:hover { color: var(--accent); }
+    .toggle-pw svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
+
+    /* 에러/성공 메시지 */
+    .msg {
+      font-size: 0.8rem;
+      margin-top: 5px;
+      padding: 0 2px;
+      display: none;
+      animation: msg-in 0.2s ease;
+    }
+    @keyframes msg-in {
+      from { opacity: 0; transform: translateY(-4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .msg.error { color: var(--error); display: block; }
+    .msg.success { color: var(--success); display: block; }
+
+    /* 제출 버튼 */
+    .btn-submit {
+      width: 100%;
+      margin-top: 8px;
+      padding: 13px;
+      background: linear-gradient(135deg, var(--accent) 0%, #7b52f5 100%);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+      transition: opacity 0.2s, transform 0.15s, box-shadow 0.25s;
+      box-shadow: 0 4px 20px rgba(91,141,238,0.35);
+      position: relative;
+      overflow: hidden;
+      animation: field-in 0.5s 0.34s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    .btn-submit::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .btn-submit:hover::after { opacity: 1; }
+    .btn-submit:hover { box-shadow: 0 6px 28px rgba(91,141,238,0.5); transform: translateY(-1px); }
+    .btn-submit:active { transform: translateY(0) scale(0.98); }
+    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* 로딩 스피너 */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* 전체 결과 메시지 */
+    #result {
+      margin-top: 16px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.87rem;
+      text-align: center;
+      display: none;
+      animation: msg-in 0.25s ease;
+    }
+    #result.success {
+      background: rgba(92, 201, 155, 0.12);
+      border: 1px solid rgba(92, 201, 155, 0.3);
+      color: var(--success);
+      display: block;
+    }
+    #result.error {
+      background: rgba(240, 106, 106, 0.1);
+      border: 1px solid rgba(240, 106, 106, 0.25);
+      color: var(--error);
+      display: block;
+    }
+
+    /* 구분선 */
+    .divider {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+      margin-top: 20px;
+      letter-spacing: 0.04em;
+      animation: field-in 0.5s 0.42s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 36px 24px; margin: 20px; }
+    }
+  </style>
 </head>
 <body>
 
-<div class="signup-container">
-    <h2>회원가입</h2>
-    <form id="signup-form">
-        <input type="text" name="userId" placeholder="아이디" required>
-        <input type="password" name="userPw" placeholder="패스워드" required>
-        <input type="text" name="userName" placeholder="이름" required>
-        <button type="submit" id="submit-btn">가입하기</button>
+  <!-- 파티클 -->
+  <div class="particles" id="particles"></div>
+
+  <div class="card">
+    <div class="logo-area">
+      <div class="logo-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+      </div>
+      <h1>Create Account</h1>
+      <p>새로운 계정을 만들어보세요</p>
+    </div>
+
+    <form id="signupForm" novalidate>
+      <div class="form-group">
+        <label for="userId">아이디</label>
+        <div class="input-wrap">
+          <input type="text" id="userId" placeholder="사용할 아이디를 입력하세요" autocomplete="username" />
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+          </svg>
+        </div>
+        <div class="msg" id="idMsg"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="password">패스워드</label>
+        <div class="input-wrap">
+          <input type="password" id="password" placeholder="비밀번호를 입력하세요" autocomplete="new-password" />
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+          <button type="button" class="toggle-pw" id="togglePw" aria-label="비밀번호 보기">
+            <svg id="eyeIcon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="msg" id="pwMsg"></div>
+      </div>
+
+      <div class="form-group">
+        <label for="userName">이름</label>
+        <div class="input-wrap">
+          <input type="text" id="userName" placeholder="실명을 입력하세요" autocomplete="name" />
+          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="msg" id="nameMsg"></div>
+      </div>
+
+      <button type="submit" class="btn-submit" id="submitBtn">회원가입</button>
+      <div id="result"></div>
     </form>
-</div>
 
-<script>
-    // 배포한 구글 웹 앱 URL을 여기에 넣으세요
-    const scriptURL = 'https://script.google.com/macros/s/AKfycbygkfyNmsJfiaUi_VkoGhnSXUGXGtXqLExy360QsuPIHmjFSWMse1FPc_D_3CxY_Kxh7w/exec';
-    const form = document.getElementById('signup-form');
-    const btn = document.getElementById('submit-btn');
+    <div class="divider">이미 계정이 있으신가요? &nbsp;<a href="#" style="color:var(--accent);text-decoration:none;">로그인</a></div>
+  </div>
 
-    form.addEventListener('submit', e => {
-        e.preventDefault();
-        btn.disabled = true;
-        btn.innerText = '저장 중...';
+  <script>
+    // ⚠️ 배포 후 Google Apps Script 웹앱 URL로 교체하세요
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHjgrp9oHfMUW3LySaYu3dhOifeQ-ZPlaoquhb5t3_L6eXU1L93jGcblySSwtDAHv-Xw/exec';
 
-        // 데이터를 Google Apps Script로 전송
-        fetch(scriptURL, { 
-            method: 'POST', 
-            body: new FormData(form) 
-        })
-        .then(response => {
-            alert('회원가입 정보가 스프레드시트에 저장되었습니다!');
-            form.reset();
-        })
-        .catch(error => {
-            console.error('Error!', error.message);
-            alert('오류가 발생했습니다.');
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerText = '가입하기';
-        });
+    /* 파티클 생성 */
+    const container = document.getElementById('particles');
+    for (let i = 0; i < 18; i++) {
+      const p = document.createElement('div');
+      p.className = 'particle';
+      p.style.left = Math.random() * 100 + '%';
+      p.style.animationDuration = (6 + Math.random() * 10) + 's';
+      p.style.animationDelay = (Math.random() * 10) + 's';
+      p.style.width = p.style.height = (Math.random() > 0.5 ? 2 : 3) + 'px';
+      p.style.opacity = 0.4 + Math.random() * 0.3;
+      container.appendChild(p);
+    }
+
+    /* 비밀번호 토글 */
+    const togglePw = document.getElementById('togglePw');
+    const pwInput  = document.getElementById('password');
+    const eyeIcon  = document.getElementById('eyeIcon');
+
+    togglePw.addEventListener('click', () => {
+      const isHidden = pwInput.type === 'password';
+      pwInput.type = isHidden ? 'text' : 'password';
+      eyeIcon.innerHTML = isHidden
+        ? `<path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
+        : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
     });
-</script>
 
+    /* 유효성 검사 */
+    function showMsg(id, text, type) {
+      const el = document.getElementById(id);
+      el.textContent = text;
+      el.className = 'msg ' + (text ? type : '');
+    }
+
+    function validate() {
+      let ok = true;
+      const id   = document.getElementById('userId').value.trim();
+      const pw   = document.getElementById('password').value;
+      const name = document.getElementById('userName').value.trim();
+
+      if (!id) {
+        showMsg('idMsg', '아이디를 입력해주세요.', 'error'); ok = false;
+      } else if (id.length < 4) {
+        showMsg('idMsg', '아이디는 4자 이상이어야 합니다.', 'error'); ok = false;
+      } else {
+        showMsg('idMsg', '', '');
+      }
+
+      if (!pw) {
+        showMsg('pwMsg', '비밀번호를 입력해주세요.', 'error'); ok = false;
+      } else if (pw.length < 6) {
+        showMsg('pwMsg', '비밀번호는 6자 이상이어야 합니다.', 'error'); ok = false;
+      } else {
+        showMsg('pwMsg', '', '');
+      }
+
+      if (!name) {
+        showMsg('nameMsg', '이름을 입력해주세요.', 'error'); ok = false;
+      } else {
+        showMsg('nameMsg', '', '');
+      }
+
+      return ok;
+    }
+
+    /* 폼 제출 */
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (!validate()) return;
+
+      const btn    = document.getElementById('submitBtn');
+      const result = document.getElementById('result');
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>처리 중...';
+      result.className = '';
+      result.style.display = 'none';
+
+      const payload = {
+        id:       document.getElementById('userId').value.trim(),
+        password: document.getElementById('password').value,
+        name:     document.getElementById('userName').value.trim()
+      };
+
+      try {
+        const res  = await fetch(GAS_URL, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (data.success) {
+          result.textContent = '✓ ' + data.message;
+          result.className = 'success';
+          document.getElementById('signupForm').reset();
+          ['idMsg','pwMsg','nameMsg'].forEach(id => showMsg(id,'',''));
+        } else {
+          result.textContent = '✕ ' + data.message;
+          result.className = 'error';
+        }
+      } catch (err) {
+        result.textContent = '✕ 서버 연결에 실패했습니다. GAS URL을 확인해주세요.';
+        result.className = 'error';
+      } finally {
+        result.style.display = 'block';
+        btn.disabled = false;
+        btn.innerHTML = '회원가입';
+      }
+    });
+
+    /* 실시간 검사 초기화 */
+    ['userId','password','userName'].forEach(id => {
+      document.getElementById(id).addEventListener('input', () => {
+        const msgId = id === 'userId' ? 'idMsg' : id === 'password' ? 'pwMsg' : 'nameMsg';
+        showMsg(msgId, '', '');
+      });
+    });
+  </script>
 </body>
 </html>
