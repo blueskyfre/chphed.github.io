@@ -1,497 +1,669 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>회원가입111</title>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Serif+Display&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>로그인</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ============================================================
+       ★★★ 설정: 배포 웹 앱 주소 (CSS 아님, JS에서 사용) ★★★
+       ============================================================ */
 
-    :root {
-      --bg: #0d0f14;
-      --surface: #15181f;
-      --surface2: #1c2029;
-      --border: #2a2f3d;
-      --accent: #5b8dee;
-      --accent-glow: rgba(91, 141, 238, 0.25);
-      --accent-hover: #7aaaff;
-      --text: #e8ecf4;
-      --muted: #7a8299;
-      --error: #f06a6a;
-      --success: #5cc99b;
-    }
+    /* ============================================================
+       ★★★ 전역 스타일 ★★★
+       ============================================================ */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Noto Sans KR', sans-serif;
-      background: var(--bg);
-      color: var(--text);
+      font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
-      align-items: center;
       justify-content: center;
-      overflow: hidden;
-      position: relative;
+      align-items: center;
+      padding: 20px;
     }
 
-    /* 배경 효과 */
-    body::before {
-      content: '';
-      position: fixed;
-      top: -30%;
-      left: -20%;
-      width: 700px;
-      height: 700px;
-      background: radial-gradient(circle, rgba(91,141,238,0.12) 0%, transparent 70%);
-      pointer-events: none;
-    }
-    body::after {
-      content: '';
-      position: fixed;
-      bottom: -20%;
-      right: -10%;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(92,201,155,0.08) 0%, transparent 70%);
-      pointer-events: none;
-    }
-
-    /* 떠다니는 파티클 */
-    .particles {
-      position: fixed;
-      inset: 0;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .particle {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: var(--accent);
-      border-radius: 50%;
-      opacity: 0;
-      animation: float-up linear infinite;
-    }
-    @keyframes float-up {
-      0%   { transform: translateY(100vh) scale(0); opacity: 0; }
-      10%  { opacity: 0.6; }
-      90%  { opacity: 0.2; }
-      100% { transform: translateY(-10vh) scale(1.5); opacity: 0; }
-    }
-
-    /* 카드 */
-    .card {
-      position: relative;
-      z-index: 10;
-      background: var(--surface);
-      border: 1px solid var(--border);
+    .container {
+      background: #fff;
       border-radius: 20px;
-      padding: 48px 44px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+      padding: 40px 35px;
       width: 100%;
       max-width: 420px;
-      box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(91,141,238,0.08) inset;
-      animation: card-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-    @keyframes card-in {
-      from { opacity: 0; transform: translateY(32px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
+      animation: fadeIn 0.6s ease;
     }
 
-    /* 상단 로고 */
-    .logo-area {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-    .logo-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 56px;
-      height: 56px;
-      background: linear-gradient(135deg, var(--accent), #9b6dff);
-      border-radius: 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 24px var(--accent-glow);
-      animation: pulse-glow 3s ease-in-out infinite;
-    }
-    @keyframes pulse-glow {
-      0%, 100% { box-shadow: 0 8px 24px var(--accent-glow); }
-      50%       { box-shadow: 0 8px 36px rgba(91,141,238,0.45); }
-    }
-    .logo-icon svg { width: 28px; height: 28px; fill: #fff; }
-    .logo-area h1 {
-      font-family: 'DM Serif Display', serif;
-      font-size: 1.7rem;
-      letter-spacing: -0.02em;
-      color: var(--text);
-    }
-    .logo-area p {
-      font-size: 0.82rem;
-      color: var(--muted);
-      margin-top: 4px;
-      font-weight: 300;
-      letter-spacing: 0.04em;
-    }
-
-    /* 폼 */
-    .form-group {
-      margin-bottom: 18px;
-      animation: field-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
-    }
-    .form-group:nth-child(1) { animation-delay: 0.1s; }
-    .form-group:nth-child(2) { animation-delay: 0.18s; }
-    .form-group:nth-child(3) { animation-delay: 0.26s; }
-    @keyframes field-in {
-      from { opacity: 0; transform: translateX(-12px); }
-      to   { opacity: 1; transform: translateX(0); }
-    }
-
-    label {
-      display: block;
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: var(--muted);
-      margin-bottom: 7px;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-    }
-
-    .input-wrap {
-      position: relative;
-    }
-    .input-wrap svg {
-      position: absolute;
-      left: 14px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 16px;
-      height: 16px;
-      stroke: var(--muted);
-      fill: none;
-      stroke-width: 1.8;
-      transition: stroke 0.2s;
-      pointer-events: none;
-    }
-
-    input[type="text"],
-    input[type="password"] {
-      width: 100%;
-      padding: 12px 14px 12px 40px;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      color: var(--text);
-      font-family: 'Noto Sans KR', sans-serif;
-      font-size: 0.93rem;
-      outline: none;
-      transition: border-color 0.25s, box-shadow 0.25s;
-    }
-    input:focus {
-      border-color: var(--accent);
-      box-shadow: 0 0 0 3px var(--accent-glow);
-    }
-    input:focus + svg,
-    .input-wrap:focus-within svg { stroke: var(--accent); }
-    input::placeholder { color: #404559; }
-
-    /* 비밀번호 보기 */
-    .toggle-pw {
-      position: absolute;
-      right: 12px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 2px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      transition: color 0.2s;
-    }
-    .toggle-pw:hover { color: var(--accent); }
-    .toggle-pw svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; }
-
-    /* 에러/성공 메시지 */
-    .msg {
-      font-size: 0.8rem;
-      margin-top: 5px;
-      padding: 0 2px;
-      display: none;
-      animation: msg-in 0.2s ease;
-    }
-    @keyframes msg-in {
-      from { opacity: 0; transform: translateY(-4px); }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(20px); }
       to   { opacity: 1; transform: translateY(0); }
     }
-    .msg.error { color: var(--error); display: block; }
-    .msg.success { color: var(--success); display: block; }
 
-    /* 제출 버튼 */
-    .btn-submit {
-      width: 100%;
-      margin-top: 8px;
-      padding: 13px;
-      background: linear-gradient(135deg, var(--accent) 0%, #7b52f5 100%);
+    /* ===== 제목 ===== */
+    .title-area { text-align: center; margin-bottom: 30px; }
+    .main-title {
+      font-size: 26px; font-weight: 800;
+      color: #333; margin-bottom: 6px;
+    }
+    .sub-title {
+      font-size: 14px; color: #888; font-weight: 400;
+    }
+
+    /* ===== 폼 공통 ===== */
+    .form-group { margin-bottom: 16px; }
+    .form-group label {
+      display: block; font-size: 13px;
+      font-weight: 600; color: #555; margin-bottom: 5px;
+    }
+    .form-group input {
+      width: 100%; padding: 12px 14px;
+      border: 2px solid #e0e0e0; border-radius: 10px;
+      font-size: 14px; transition: border-color 0.3s;
+      outline: none;
+    }
+    .form-group input:focus { border-color: #667eea; }
+
+    /* ===== 버튼 ===== */
+    .btn {
+      width: 100%; padding: 13px;
+      border: none; border-radius: 10px;
+      font-size: 15px; font-weight: 700;
+      cursor: pointer; transition: all 0.3s;
+      margin-top: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea, #764ba2);
       color: #fff;
-      border: none;
-      border-radius: 10px;
-      font-family: 'Noto Sans KR', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 500;
-      cursor: pointer;
-      letter-spacing: 0.04em;
-      transition: opacity 0.2s, transform 0.15s, box-shadow 0.25s;
-      box-shadow: 0 4px 20px rgba(91,141,238,0.35);
-      position: relative;
-      overflow: hidden;
-      animation: field-in 0.5s 0.34s cubic-bezier(0.22,1,0.36,1) both;
     }
-    .btn-submit::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(135deg, rgba(255,255,255,0.12), transparent);
-      opacity: 0;
-      transition: opacity 0.2s;
+    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary {
+      background: #f0f0f0; color: #555;
     }
-    .btn-submit:hover::after { opacity: 1; }
-    .btn-submit:hover { box-shadow: 0 6px 28px rgba(91,141,238,0.5); transform: translateY(-1px); }
-    .btn-submit:active { transform: translateY(0) scale(0.98); }
-    .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .btn-secondary:hover { background: #e0e0e0; }
 
-    /* 로딩 스피너 */
+    .btn-row {
+      display: flex; gap: 10px; margin-top: 10px;
+    }
+    .btn-row .btn { flex: 1; }
+
+    /* ===== 메시지 ===== */
+    .message {
+      text-align: center; padding: 10px; border-radius: 8px;
+      margin-bottom: 14px; font-size: 13px; display: none;
+    }
+    .message.error   { background: #fce4ec; color: #c62828; display: block; }
+    .message.success { background: #e8f5e9; color: #2e7d32; display: block; }
+    .message.info    { background: #e3f2fd; color: #1565c0; display: block; }
+
+    /* ===== 마감 안내 ===== */
+    .deadline-notice {
+      text-align: center; padding: 30px 20px;
+    }
+    .deadline-notice .icon { font-size: 48px; margin-bottom: 15px; }
+    .deadline-notice h2 { color: #c62828; margin-bottom: 10px; }
+    .deadline-notice p  { color: #666; font-size: 14px; }
+
+    /* ===== 로딩 오버레이 ===== */
+    .loading-overlay {
+      display: none;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center;
+      z-index: 9999;
+    }
+    .loading-overlay.active { display: flex; }
     .spinner {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
+      width: 50px; height: 50px;
+      border: 5px solid #fff3;
+      border-top: 5px solid #fff;
       border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
+      animation: spin 0.8s linear infinite;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* 전체 결과 메시지 */
-    #result {
-      margin-top: 16px;
-      padding: 12px 16px;
-      border-radius: 10px;
-      font-size: 0.87rem;
-      text-align: center;
+    /* ===== 퍼센트 로딩바 ===== */
+    .progress-bar-container {
+      display: none; margin: 16px 0;
+    }
+    .progress-bar-container.active { display: block; }
+    .progress-bar-bg {
+      width: 100%; height: 22px;
+      background: #e0e0e0; border-radius: 11px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%; width: 0%;
+      background: linear-gradient(90deg, #667eea, #764ba2);
+      border-radius: 11px;
+      transition: width 0.4s ease;
+      display: flex; align-items: center;
+      justify-content: center;
+      color: #fff; font-size: 11px; font-weight: 700;
+      min-width: 30px;
+    }
+    .progress-message {
+      text-align: center; font-size: 12px;
+      color: #888; margin-top: 4px;
+    }
+
+    /* ===== 모달 (공지사항) ===== */
+    .modal-overlay {
       display: none;
-      animation: msg-in 0.25s ease;
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center; align-items: center;
+      z-index: 10000;
     }
-    #result.success {
-      background: rgba(92, 201, 155, 0.12);
-      border: 1px solid rgba(92, 201, 155, 0.3);
-      color: var(--success);
-      display: block;
+    .modal-overlay.active { display: flex; }
+    .modal-box {
+      background: #fff; border-radius: 16px;
+      padding: 30px 25px; width: 90%; max-width: 400px;
+      max-height: 80vh; overflow-y: auto;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+      animation: fadeIn 0.3s ease;
     }
-    #result.error {
-      background: rgba(240, 106, 106, 0.1);
-      border: 1px solid rgba(240, 106, 106, 0.25);
-      color: var(--error);
-      display: block;
+    .modal-box h3 {
+      font-size: 18px; color: #333;
+      margin-bottom: 15px; text-align: center;
+    }
+    .modal-box .notice-content {
+      font-size: 14px; color: #555;
+      line-height: 1.8; white-space: pre-wrap;
+      background: #f9f9f9; padding: 15px;
+      border-radius: 10px; margin-bottom: 20px;
+    }
+    .modal-box .btn-close-modal {
+      width: 100%; padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 700; cursor: pointer;
     }
 
-    /* 구분선 */
-    .divider {
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.75rem;
-      margin-top: 20px;
-      letter-spacing: 0.04em;
-      animation: field-in 0.5s 0.42s cubic-bezier(0.22,1,0.36,1) both;
-    }
-
-    @media (max-width: 480px) {
-      .card { padding: 36px 24px; margin: 20px; }
-    }
+    /* ===== 화면 전환 ===== */
+    .screen { display: none; }
+    .screen.active { display: block; }
   </style>
 </head>
 <body>
 
-  <!-- 파티클 -->
-  <div class="particles" id="particles"></div>
+<!-- ============================================================
+     ★ 로딩 오버레이
+     ============================================================ -->
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+</div>
 
-  <div class="card">
-    <div class="logo-area">
-      <div class="logo-icon">
-        <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-      </div>
-      <h1>Create Account</h1>
-      <p>새로운 계정을 만들어보세요</p>
-    </div>
+<!-- ============================================================
+     ★ 공지사항 모달
+     ============================================================ -->
+<div class="modal-overlay" id="noticeModal">
+  <div class="modal-box">
+    <h3>📢 공지사항</h3>
+    <div class="notice-content" id="noticeContent"></div>
+    <button class="btn-close-modal" id="btnCloseNotice">확인</button>
+  </div>
+</div>
 
-    <form id="signupForm" novalidate>
-      <div class="form-group">
-        <label for="userId">아이디</label>
-        <div class="input-wrap">
-          <input type="text" id="userId" placeholder="사용할 아이디를 입력하세요" autocomplete="username" />
-          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
-          </svg>
-        </div>
-        <div class="msg" id="idMsg"></div>
-      </div>
+<!-- ============================================================
+     ★ 메인 컨테이너
+     ============================================================ -->
+<div class="container">
 
-      <div class="form-group">
-        <label for="password">패스워드</label>
-        <div class="input-wrap">
-          <input type="password" id="password" placeholder="비밀번호를 입력하세요" autocomplete="new-password" />
-          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/>
-          </svg>
-          <button type="button" class="toggle-pw" id="togglePw" aria-label="비밀번호 보기">
-            <svg id="eyeIcon" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>
-            </svg>
-          </button>
-        </div>
-        <div class="msg" id="pwMsg"></div>
-      </div>
-
-      <div class="form-group">
-        <label for="userName">이름</label>
-        <div class="input-wrap">
-          <input type="text" id="userName" placeholder="실명을 입력하세요" autocomplete="name" />
-          <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/>
-          </svg>
-        </div>
-        <div class="msg" id="nameMsg"></div>
-      </div>
-
-      <button type="submit" class="btn-submit" id="submitBtn">회원가입</button>
-      <div id="result"></div>
-    </form>
-
-    <div class="divider">이미 계정이 있으신가요? &nbsp;<a href="#" style="color:var(--accent);text-decoration:none;">로그인</a></div>
+  <!-- ===== 제목 영역 ===== -->
+  <div class="title-area">
+    <div class="main-title" id="mainTitle">로딩 중...</div>
+    <div class="sub-title" id="subTitle"></div>
   </div>
 
-  <script>
-    // ⚠️ 배포 후 Google Apps Script 웹앱 URL로 교체하세요
-    const GAS_URL = 'https://script.google.com/macros/s/AKfycbyHjgrp9oHfMUW3LySaYu3dhOifeQ-ZPlaoquhb5t3_L6eXU1L93jGcblySSwtDAHv-Xw/exec';
+  <!-- =========================================================
+       화면 1: 마감 안내
+       ========================================================= -->
+  <div class="screen" id="screenDeadline">
+    <div class="deadline-notice">
+      <div class="icon">🚫</div>
+      <h2>마감되었습니다</h2>
+      <p id="deadlineMsg">마감 날짜가 지나 더 이상 이용이 불가합니다.</p>
+    </div>
+  </div>
 
-    /* 파티클 생성 */
-    const container = document.getElementById('particles');
-    for (let i = 0; i < 18; i++) {
-      const p = document.createElement('div');
-      p.className = 'particle';
-      p.style.left = Math.random() * 100 + '%';
-      p.style.animationDuration = (6 + Math.random() * 10) + 's';
-      p.style.animationDelay = (Math.random() * 10) + 's';
-      p.style.width = p.style.height = (Math.random() > 0.5 ? 2 : 3) + 'px';
-      p.style.opacity = 0.4 + Math.random() * 0.3;
-      container.appendChild(p);
+  <!-- =========================================================
+       화면 2: 가입 전 안내 (회원가입 기간 전)
+       ========================================================= -->
+  <div class="screen" id="screenBefore">
+    <div class="deadline-notice">
+      <div class="icon">⏳</div>
+      <h2>준비 중입니다</h2>
+      <p id="beforeMsg">아직 이용 기간이 아닙니다.</p>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       화면 3: 로그인
+       ========================================================= -->
+  <div class="screen" id="screenLogin">
+    <div class="message" id="loginMessage"></div>
+    <div class="form-group">
+      <label for="loginEmail">아이디 (이메일)</label>
+      <input type="email" id="loginEmail" placeholder="example@email.com">
+    </div>
+    <div class="form-group">
+      <label for="loginPassword">비밀번호</label>
+      <input type="password" id="loginPassword" placeholder="비밀번호를 입력하세요">
+    </div>
+    <button class="btn btn-primary" id="btnLogin">로그인</button>
+    <div class="btn-row">
+      <button class="btn btn-secondary" id="btnGoRegister">회원가입</button>
+      <button class="btn btn-secondary" id="btnGoFindPw">비밀번호 찾기</button>
+    </div>
+  </div>
+
+  <!-- =========================================================
+       화면 4: 회원가입
+       ========================================================= -->
+  <div class="screen" id="screenRegister">
+    <div class="message" id="registerMessage"></div>
+    <div class="form-group">
+      <label for="regStudentId">학번</label>
+      <input type="text" id="regStudentId" placeholder="예시) 3901">
+    </div>
+    <div class="form-group">
+      <label for="regName">이름</label>
+      <input type="text" id="regName" placeholder="예시) 홍길동 - 반드시 한글로 입력하세요">
+    </div>
+    <div class="form-group">
+      <label for="regEmail">아이디 (이메일)</label>
+      <input type="email" id="regEmail"
+             placeholder="예시) example@email.com - 이메일 주소를 입력">
+    </div>
+    <p style="font-size:11px; color:#999; margin:-8px 0 12px 4px;">
+      ※ 비밀번호 분실 시 위 이메일로 비밀번호를 보내드립니다.
+    </p>
+    <div class="form-group">
+      <label for="regPassword">비밀번호</label>
+      <input type="password" id="regPassword" placeholder="비밀번호를 설정하세요">
+    </div>
+    <button class="btn btn-primary" id="btnRegister">회원가입</button>
+    <button class="btn btn-secondary" style="margin-top:10px;" id="btnBackToLogin1">← 로그인으로 돌아가기</button>
+  </div>
+
+  <!-- =========================================================
+       화면 5: 비밀번호 찾기
+       ========================================================= -->
+  <div class="screen" id="screenFindPw">
+    <div class="message" id="findPwMessage"></div>
+    <div class="form-group">
+      <label for="findStudentId">학번</label>
+      <input type="text" id="findStudentId" placeholder="예시) 3901">
+    </div>
+    <div class="form-group">
+      <label for="findName">이름</label>
+      <input type="text" id="findName" placeholder="예시) 홍길동">
+    </div>
+    <div class="form-group">
+      <label for="findEmail">이메일</label>
+      <input type="email" id="findEmail" placeholder="가입 시 입력한 이메일 주소">
+    </div>
+    <button class="btn btn-primary" id="btnFindPw">비밀번호 찾기</button>
+    <button class="btn btn-secondary" style="margin-top:10px;" id="btnBackToLogin2">← 로그인으로 돌아가기</button>
+  </div>
+
+  <!-- =========================================================
+       화면 6: 로그인 후 - 자료입력 대기
+       ========================================================= -->
+  <div class="screen" id="screenWaitInput">
+    <div class="deadline-notice">
+      <div class="icon">📅</div>
+      <h2>로그인 성공!</h2>
+      <p id="waitInputMsg">자료 입력 기간이 아직 시작되지 않았습니다.</p>
+    </div>
+    <button class="btn btn-secondary" style="margin-top:16px;" id="btnLogout1">로그아웃</button>
+  </div>
+
+  <!-- ===== 퍼센트 로딩바 (공통 컴포넌트) ===== -->
+  <div class="progress-bar-container" id="progressBar">
+    <div class="progress-bar-bg">
+      <div class="progress-bar-fill" id="progressFill">0%</div>
+    </div>
+    <div class="progress-message" id="progressMessage"></div>
+  </div>
+
+</div><!-- /.container -->
+
+<!-- ============================================================
+     ★★★ 자바스크립트 ★★★
+     ============================================================ -->
+<script>
+// ============================================================
+// ★★★ 설정 변수 (배포 웹 앱 주소가 바뀌면 여기만 수정) ★★★
+// ============================================================
+const WEB_APP_URL    = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
+const GITHUB_BASE    = '';  // GitHub Pages 기본 경로 (같은 폴더면 빈 문자열)
+
+// ============================================================
+// ★ 전역 상태
+// ============================================================
+let appRules   = {};   // 서버에서 받은 규칙
+let currentUser = null; // 로그인된 사용자
+
+// ============================================================
+// ★ DOM 요소 캐시
+// ============================================================
+const $ = id => document.getElementById(id);
+
+const screens = {
+  deadline : $('screenDeadline'),
+  before   : $('screenBefore'),
+  login    : $('screenLogin'),
+  register : $('screenRegister'),
+  findPw   : $('screenFindPw'),
+  waitInput: $('screenWaitInput'),
+};
+
+// ============================================================
+// ★ 화면 전환
+// ============================================================
+function showScreen(name) {
+  Object.values(screens).forEach(s => s.classList.remove('active'));
+  if (screens[name]) screens[name].classList.add('active');
+}
+
+// ============================================================
+// ★ 로딩 표시
+// ============================================================
+function showLoading()  { $('loadingOverlay').classList.add('active'); }
+function hideLoading()  { $('loadingOverlay').classList.remove('active'); }
+
+// ============================================================
+// ★ 메시지 표시
+// ============================================================
+function showMessage(elementId, text, type) {
+  const el = $(elementId);
+  el.textContent = text;
+  el.className = 'message ' + (type || 'error');
+}
+function clearMessages() {
+  document.querySelectorAll('.message').forEach(el => {
+    el.className = 'message'; el.textContent = '';
+  });
+}
+
+// ============================================================
+// ★ 퍼센트 로딩바 제어
+// ============================================================
+function showProgressBar()  { $('progressBar').classList.add('active'); }
+function hideProgressBar()  { $('progressBar').classList.remove('active'); }
+function updateProgress(percent, message) {
+  const fill = $('progressFill');
+  fill.style.width = percent + '%';
+  fill.textContent = Math.round(percent) + '%';
+  $('progressMessage').textContent = message || '';
+}
+
+// ============================================================
+// ★ 모달 (공지사항)
+// ============================================================
+function showNoticeModal(content, callback) {
+  $('noticeContent').textContent = content;
+  $('noticeModal').classList.add('active');
+  $('btnCloseNotice').onclick = function() {
+    $('noticeModal').classList.remove('active');
+    if (callback) callback();
+  };
+}
+
+// ============================================================
+// ★ API 호출 헬퍼
+// ============================================================
+async function apiGet(action, params) {
+  let url = WEB_APP_URL + '?action=' + encodeURIComponent(action);
+  if (params) {
+    for (const key in params) {
+      url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
+    }
+  }
+  const resp = await fetch(url);
+  return resp.json();
+}
+
+async function apiPost(data) {
+  const resp = await fetch(WEB_APP_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify(data),
+  });
+  return resp.json();
+}
+
+// ============================================================
+// ★ 초기화 - 규칙 로드 후 화면 분기
+// ============================================================
+async function init() {
+  showLoading();
+  try {
+    appRules = await apiGet('getRules');
+    if (!appRules.success) {
+      $('mainTitle').textContent = '오류';
+      $('subTitle').textContent  = appRules.message || '설정을 불러올 수 없습니다.';
+      hideLoading();
+      return;
     }
 
-    /* 비밀번호 토글 */
-    const togglePw = document.getElementById('togglePw');
-    const pwInput  = document.getElementById('password');
-    const eyeIcon  = document.getElementById('eyeIcon');
+    // 제목 세팅
+    $('mainTitle').textContent = appRules.mainTitle || '학생 자료 입력 시스템';
+    $('subTitle').textContent  = appRules.subTitle  || '';
 
-    togglePw.addEventListener('click', () => {
-      const isHidden = pwInput.type === 'password';
-      pwInput.type = isHidden ? 'text' : 'password';
-      eyeIcon.innerHTML = isHidden
-        ? `<path d="M17.94 17.94A10.94 10.94 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>`
-        : `<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>`;
-    });
+    const today    = appRules.today;
+    const regDate  = appRules.registerDate;
+    const inpDate  = appRules.inputDate;
+    const deadDate = appRules.deadlineDate;
 
-    /* 유효성 검사 */
-    function showMsg(id, text, type) {
-      const el = document.getElementById(id);
-      el.textContent = text;
-      el.className = 'msg ' + (text ? type : '');
+    // 날짜 분기
+    if (deadDate && today >= deadDate) {
+      $('deadlineMsg').textContent =
+        '마감 날짜(' + deadDate + ')가 지나 더 이상 이용이 불가합니다.';
+      showScreen('deadline');
+    } else if (regDate && today < regDate) {
+      $('beforeMsg').textContent =
+        regDate + '부터 이용 가능합니다. 잠시만 기다려 주세요.';
+      showScreen('before');
+    } else {
+      showScreen('login');
     }
 
-    function validate() {
-      let ok = true;
-      const id   = document.getElementById('userId').value.trim();
-      const pw   = document.getElementById('password').value;
-      const name = document.getElementById('userName').value.trim();
+  } catch (err) {
+    $('mainTitle').textContent = '연결 오류';
+    $('subTitle').textContent  = '서버에 연결할 수 없습니다.';
+    console.error(err);
+  }
+  hideLoading();
+}
 
-      if (!id) {
-        showMsg('idMsg', '아이디를 입력해주세요.', 'error'); ok = false;
-      } else if (id.length < 4) {
-        showMsg('idMsg', '아이디는 4자 이상이어야 합니다.', 'error'); ok = false;
-      } else {
-        showMsg('idMsg', '', '');
-      }
+// ============================================================
+// ★ 로그인
+// ============================================================
+async function handleLogin() {
+  clearMessages();
+  const email    = $('loginEmail').value.trim();
+  const password = $('loginPassword').value.trim();
 
-      if (!pw) {
-        showMsg('pwMsg', '비밀번호를 입력해주세요.', 'error'); ok = false;
-      } else if (pw.length < 6) {
-        showMsg('pwMsg', '비밀번호는 6자 이상이어야 합니다.', 'error'); ok = false;
-      } else {
-        showMsg('pwMsg', '', '');
-      }
+  if (!email || !password) {
+    showMessage('loginMessage', '아이디와 비밀번호를 입력해주세요.', 'error');
+    return;
+  }
 
-      if (!name) {
-        showMsg('nameMsg', '이름을 입력해주세요.', 'error'); ok = false;
-      } else {
-        showMsg('nameMsg', '', '');
-      }
+  showLoading();
+  try {
+    const res = await apiPost({ action: 'login', email, password });
 
-      return ok;
+    if (!res.success) {
+      showMessage('loginMessage', res.message, 'error');
+      hideLoading();
+      return;
     }
 
-    /* 폼 제출 */
-    document.getElementById('signupForm').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!validate()) return;
+    currentUser = res.user;
 
-      const btn    = document.getElementById('submitBtn');
-      const result = document.getElementById('result');
-
-      btn.disabled = true;
-      btn.innerHTML = '<span class="spinner"></span>처리 중...';
-      result.className = '';
-      result.style.display = 'none';
-
-      const payload = {
-        id:       document.getElementById('userId').value.trim(),
-        password: document.getElementById('password').value,
-        name:     document.getElementById('userName').value.trim()
-      };
-
-      try {
-        const res  = await fetch(GAS_URL, {
-          method: 'POST',
-          body: JSON.stringify(payload)
-        });
-        const data = await res.json();
-
-        if (data.success) {
-          result.textContent = '✓ ' + data.message;
-          result.className = 'success';
-          document.getElementById('signupForm').reset();
-          ['idMsg','pwMsg','nameMsg'].forEach(id => showMsg(id,'',''));
-        } else {
-          result.textContent = '✕ ' + data.message;
-          result.className = 'error';
-        }
-      } catch (err) {
-        result.textContent = '✕ 서버 연결에 실패했습니다. GAS URL을 확인해주세요.';
-        result.className = 'error';
-      } finally {
-        result.style.display = 'block';
-        btn.disabled = false;
-        btn.innerHTML = '회원가입';
-      }
-    });
-
-    /* 실시간 검사 초기화 */
-    ['userId','password','userName'].forEach(id => {
-      document.getElementById(id).addEventListener('input', () => {
-        const msgId = id === 'userId' ? 'idMsg' : id === 'password' ? 'pwMsg' : 'nameMsg';
-        showMsg(msgId, '', '');
+    // 공지사항이 있으면 모달 표시
+    if (res.notice && res.notice.trim()) {
+      hideLoading();
+      showNoticeModal(res.notice, function() {
+        afterLoginRedirect(res);
       });
+    } else {
+      hideLoading();
+      afterLoginRedirect(res);
+    }
+
+  } catch (err) {
+    showMessage('loginMessage', '서버 연결 오류가 발생했습니다.', 'error');
+    hideLoading();
+  }
+}
+
+function afterLoginRedirect(res) {
+  if (!res.canInput) {
+    // 자료 입력 기간 전
+    $('waitInputMsg').textContent = res.inputMessage;
+    showScreen('waitInput');
+  } else {
+    // 자료 입력 가능 → firstpage.html로 이동
+    // 사용자 정보를 sessionStorage에 저장
+    sessionStorage.setItem('currentUser', JSON.stringify(res.user));
+    sessionStorage.setItem('appRules', JSON.stringify(appRules));
+    window.location.href = GITHUB_BASE + 'firstpage.html';
+  }
+}
+
+// ============================================================
+// ★ 회원가입
+// ============================================================
+async function handleRegister() {
+  clearMessages();
+  const studentId = $('regStudentId').value.trim();
+  const name      = $('regName').value.trim();
+  const email     = $('regEmail').value.trim();
+  const password  = $('regPassword').value.trim();
+
+  if (!studentId || !name || !email || !password) {
+    showMessage('registerMessage', '모든 항목을 입력해주세요.', 'error');
+    return;
+  }
+
+  // 한글 이름 검증
+  if (!/^[가-힣]+$/.test(name)) {
+    showMessage('registerMessage', '이름은 반드시 한글로 입력해주세요.', 'error');
+    return;
+  }
+
+  // 이메일 형식 검증
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    showMessage('registerMessage', '올바른 이메일 형식을 입력해주세요.', 'error');
+    return;
+  }
+
+  showLoading();
+  try {
+    const res = await apiPost({
+      action: 'register', studentId, name, email, password
     });
-  </script>
+
+    if (res.success) {
+      showMessage('registerMessage', res.message, 'success');
+      setTimeout(() => {
+        clearMessages();
+        showScreen('login');
+        showMessage('loginMessage', '회원가입 완료! 로그인해주세요.', 'success');
+      }, 1500);
+    } else {
+      showMessage('registerMessage', res.message, 'error');
+    }
+
+  } catch (err) {
+    showMessage('registerMessage', '서버 연결 오류가 발생했습니다.', 'error');
+  }
+  hideLoading();
+}
+
+// ============================================================
+// ★ 비밀번호 찾기
+// ============================================================
+async function handleFindPassword() {
+  clearMessages();
+  const studentId = $('findStudentId').value.trim();
+  const name      = $('findName').value.trim();
+  const email     = $('findEmail').value.trim();
+
+  if (!studentId || !name || !email) {
+    showMessage('findPwMessage', '학번, 이름, 이메일을 모두 입력해주세요.', 'error');
+    return;
+  }
+
+  showLoading();
+  try {
+    const res = await apiPost({
+      action: 'findPassword', studentId, name, email
+    });
+
+    if (res.success) {
+      showMessage('findPwMessage', res.message, 'success');
+    } else {
+      showMessage('findPwMessage', res.message, 'error');
+    }
+
+  } catch (err) {
+    showMessage('findPwMessage', '서버 연결 오류가 발생했습니다.', 'error');
+  }
+  hideLoading();
+}
+
+// ============================================================
+// ★ 이벤트 바인딩
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+
+  // 로그인
+  $('btnLogin').addEventListener('click', handleLogin);
+  $('loginPassword').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') handleLogin();
+  });
+
+  // 회원가입 화면 이동
+  $('btnGoRegister').addEventListener('click', function() {
+    clearMessages(); showScreen('register');
+  });
+
+  // 비밀번호 찾기 화면 이동
+  $('btnGoFindPw').addEventListener('click', function() {
+    clearMessages(); showScreen('findPw');
+  });
+
+  // 로그인으로 돌아가기
+  $('btnBackToLogin1').addEventListener('click', function() {
+    clearMessages(); showScreen('login');
+  });
+  $('btnBackToLogin2').addEventListener('click', function() {
+    clearMessages(); showScreen('login');
+  });
+
+  // 회원가입 실행
+  $('btnRegister').addEventListener('click', handleRegister);
+
+  // 비밀번호 찾기 실행
+  $('btnFindPw').addEventListener('click', handleFindPassword);
+
+  // 로그아웃
+  $('btnLogout1').addEventListener('click', function() {
+    currentUser = null;
+    sessionStorage.clear();
+    clearMessages();
+    showScreen('login');
+  });
+
+  // 초기화
+  init();
+});
+</script>
 </body>
 </html>
