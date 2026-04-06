@@ -1,669 +1,468 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>로그인</title>
-  <style>
-    /* ============================================================
-       ★★★ 설정: 배포 웹 앱 주소 (CSS 아님, JS에서 사용) ★★★
-       ============================================================ */
+    <meta charset="UTF-8">
+    <!-- ★ 모바일 반응형 필수 메타태그 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>학생 관리 시스템</title>
 
-    /* ============================================================
-       ★★★ 전역 스타일 ★★★
-       ============================================================ */
-    * { margin: 0; padding: 0; box-sizing: border-box; }
+    <!-- ★ Tailwind CSS CDN - 이 한 줄이면 Tailwind 사용 가능 -->
+    <script src="https://cdn.tailwindcss.com"></script>
 
-    body {
-      font-family: 'Pretendard', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px;
-    }
-
-    .container {
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-      padding: 40px 35px;
-      width: 100%;
-      max-width: 420px;
-      animation: fadeIn 0.6s ease;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(20px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* ===== 제목 ===== */
-    .title-area { text-align: center; margin-bottom: 30px; }
-    .main-title {
-      font-size: 26px; font-weight: 800;
-      color: #333; margin-bottom: 6px;
-    }
-    .sub-title {
-      font-size: 14px; color: #888; font-weight: 400;
-    }
-
-    /* ===== 폼 공통 ===== */
-    .form-group { margin-bottom: 16px; }
-    .form-group label {
-      display: block; font-size: 13px;
-      font-weight: 600; color: #555; margin-bottom: 5px;
-    }
-    .form-group input {
-      width: 100%; padding: 12px 14px;
-      border: 2px solid #e0e0e0; border-radius: 10px;
-      font-size: 14px; transition: border-color 0.3s;
-      outline: none;
-    }
-    .form-group input:focus { border-color: #667eea; }
-
-    /* ===== 버튼 ===== */
-    .btn {
-      width: 100%; padding: 13px;
-      border: none; border-radius: 10px;
-      font-size: 15px; font-weight: 700;
-      cursor: pointer; transition: all 0.3s;
-      margin-top: 6px;
-    }
-    .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff;
-    }
-    .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
-    .btn-secondary {
-      background: #f0f0f0; color: #555;
-    }
-    .btn-secondary:hover { background: #e0e0e0; }
-
-    .btn-row {
-      display: flex; gap: 10px; margin-top: 10px;
-    }
-    .btn-row .btn { flex: 1; }
-
-    /* ===== 메시지 ===== */
-    .message {
-      text-align: center; padding: 10px; border-radius: 8px;
-      margin-bottom: 14px; font-size: 13px; display: none;
-    }
-    .message.error   { background: #fce4ec; color: #c62828; display: block; }
-    .message.success { background: #e8f5e9; color: #2e7d32; display: block; }
-    .message.info    { background: #e3f2fd; color: #1565c0; display: block; }
-
-    /* ===== 마감 안내 ===== */
-    .deadline-notice {
-      text-align: center; padding: 30px 20px;
-    }
-    .deadline-notice .icon { font-size: 48px; margin-bottom: 15px; }
-    .deadline-notice h2 { color: #c62828; margin-bottom: 10px; }
-    .deadline-notice p  { color: #666; font-size: 14px; }
-
-    /* ===== 로딩 오버레이 ===== */
-    .loading-overlay {
-      display: none;
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center; align-items: center;
-      z-index: 9999;
-    }
-    .loading-overlay.active { display: flex; }
-    .spinner {
-      width: 50px; height: 50px;
-      border: 5px solid #fff3;
-      border-top: 5px solid #fff;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ===== 퍼센트 로딩바 ===== */
-    .progress-bar-container {
-      display: none; margin: 16px 0;
-    }
-    .progress-bar-container.active { display: block; }
-    .progress-bar-bg {
-      width: 100%; height: 22px;
-      background: #e0e0e0; border-radius: 11px;
-      overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, #667eea, #764ba2);
-      border-radius: 11px;
-      transition: width 0.4s ease;
-      display: flex; align-items: center;
-      justify-content: center;
-      color: #fff; font-size: 11px; font-weight: 700;
-      min-width: 30px;
-    }
-    .progress-message {
-      text-align: center; font-size: 12px;
-      color: #888; margin-top: 4px;
-    }
-
-    /* ===== 모달 (공지사항) ===== */
-    .modal-overlay {
-      display: none;
-      position: fixed; top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.5);
-      justify-content: center; align-items: center;
-      z-index: 10000;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-box {
-      background: #fff; border-radius: 16px;
-      padding: 30px 25px; width: 90%; max-width: 400px;
-      max-height: 80vh; overflow-y: auto;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-      animation: fadeIn 0.3s ease;
-    }
-    .modal-box h3 {
-      font-size: 18px; color: #333;
-      margin-bottom: 15px; text-align: center;
-    }
-    .modal-box .notice-content {
-      font-size: 14px; color: #555;
-      line-height: 1.8; white-space: pre-wrap;
-      background: #f9f9f9; padding: 15px;
-      border-radius: 10px; margin-bottom: 20px;
-    }
-    .modal-box .btn-close-modal {
-      width: 100%; padding: 12px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: #fff; border: none; border-radius: 10px;
-      font-size: 14px; font-weight: 700; cursor: pointer;
-    }
-
-    /* ===== 화면 전환 ===== */
-    .screen { display: none; }
-    .screen.active { display: block; }
-  </style>
+    <style>
+        /* Tailwind로 처리 안 되는 커스텀 스타일만 여기에 */
+        .loading-overlay {
+            background: rgba(0, 0, 0, 0.5);
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spinner {
+            animation: spin 1s linear infinite;
+        }
+    </style>
 </head>
-<body>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
 
-<!-- ============================================================
-     ★ 로딩 오버레이
-     ============================================================ -->
-<div class="loading-overlay" id="loadingOverlay">
-  <div class="spinner"></div>
-</div>
-
-<!-- ============================================================
-     ★ 공지사항 모달
-     ============================================================ -->
-<div class="modal-overlay" id="noticeModal">
-  <div class="modal-box">
-    <h3>📢 공지사항</h3>
-    <div class="notice-content" id="noticeContent"></div>
-    <button class="btn-close-modal" id="btnCloseNotice">확인</button>
-  </div>
-</div>
-
-<!-- ============================================================
-     ★ 메인 컨테이너
-     ============================================================ -->
-<div class="container">
-
-  <!-- ===== 제목 영역 ===== -->
-  <div class="title-area">
-    <div class="main-title" id="mainTitle">로딩 중...</div>
-    <div class="sub-title" id="subTitle"></div>
-  </div>
-
-  <!-- =========================================================
-       화면 1: 마감 안내
-       ========================================================= -->
-  <div class="screen" id="screenDeadline">
-    <div class="deadline-notice">
-      <div class="icon">🚫</div>
-      <h2>마감되었습니다</h2>
-      <p id="deadlineMsg">마감 날짜가 지나 더 이상 이용이 불가합니다.</p>
-    </div>
-  </div>
-
-  <!-- =========================================================
-       화면 2: 가입 전 안내 (회원가입 기간 전)
-       ========================================================= -->
-  <div class="screen" id="screenBefore">
-    <div class="deadline-notice">
-      <div class="icon">⏳</div>
-      <h2>준비 중입니다</h2>
-      <p id="beforeMsg">아직 이용 기간이 아닙니다.</p>
-    </div>
-  </div>
-
-  <!-- =========================================================
-       화면 3: 로그인
-       ========================================================= -->
-  <div class="screen" id="screenLogin">
-    <div class="message" id="loginMessage"></div>
-    <div class="form-group">
-      <label for="loginEmail">아이디 (이메일)</label>
-      <input type="email" id="loginEmail" placeholder="example@email.com">
-    </div>
-    <div class="form-group">
-      <label for="loginPassword">비밀번호</label>
-      <input type="password" id="loginPassword" placeholder="비밀번호를 입력하세요">
-    </div>
-    <button class="btn btn-primary" id="btnLogin">로그인</button>
-    <div class="btn-row">
-      <button class="btn btn-secondary" id="btnGoRegister">회원가입</button>
-      <button class="btn btn-secondary" id="btnGoFindPw">비밀번호 찾기</button>
-    </div>
-  </div>
-
-  <!-- =========================================================
-       화면 4: 회원가입
-       ========================================================= -->
-  <div class="screen" id="screenRegister">
-    <div class="message" id="registerMessage"></div>
-    <div class="form-group">
-      <label for="regStudentId">학번</label>
-      <input type="text" id="regStudentId" placeholder="예시) 3901">
-    </div>
-    <div class="form-group">
-      <label for="regName">이름</label>
-      <input type="text" id="regName" placeholder="예시) 홍길동 - 반드시 한글로 입력하세요">
-    </div>
-    <div class="form-group">
-      <label for="regEmail">아이디 (이메일)</label>
-      <input type="email" id="regEmail"
-             placeholder="예시) example@email.com - 이메일 주소를 입력">
-    </div>
-    <p style="font-size:11px; color:#999; margin:-8px 0 12px 4px;">
-      ※ 비밀번호 분실 시 위 이메일로 비밀번호를 보내드립니다.
-    </p>
-    <div class="form-group">
-      <label for="regPassword">비밀번호</label>
-      <input type="password" id="regPassword" placeholder="비밀번호를 설정하세요">
-    </div>
-    <button class="btn btn-primary" id="btnRegister">회원가입</button>
-    <button class="btn btn-secondary" style="margin-top:10px;" id="btnBackToLogin1">← 로그인으로 돌아가기</button>
-  </div>
-
-  <!-- =========================================================
-       화면 5: 비밀번호 찾기
-       ========================================================= -->
-  <div class="screen" id="screenFindPw">
-    <div class="message" id="findPwMessage"></div>
-    <div class="form-group">
-      <label for="findStudentId">학번</label>
-      <input type="text" id="findStudentId" placeholder="예시) 3901">
-    </div>
-    <div class="form-group">
-      <label for="findName">이름</label>
-      <input type="text" id="findName" placeholder="예시) 홍길동">
-    </div>
-    <div class="form-group">
-      <label for="findEmail">이메일</label>
-      <input type="email" id="findEmail" placeholder="가입 시 입력한 이메일 주소">
-    </div>
-    <button class="btn btn-primary" id="btnFindPw">비밀번호 찾기</button>
-    <button class="btn btn-secondary" style="margin-top:10px;" id="btnBackToLogin2">← 로그인으로 돌아가기</button>
-  </div>
-
-  <!-- =========================================================
-       화면 6: 로그인 후 - 자료입력 대기
-       ========================================================= -->
-  <div class="screen" id="screenWaitInput">
-    <div class="deadline-notice">
-      <div class="icon">📅</div>
-      <h2>로그인 성공!</h2>
-      <p id="waitInputMsg">자료 입력 기간이 아직 시작되지 않았습니다.</p>
-    </div>
-    <button class="btn btn-secondary" style="margin-top:16px;" id="btnLogout1">로그아웃</button>
-  </div>
-
-  <!-- ===== 퍼센트 로딩바 (공통 컴포넌트) ===== -->
-  <div class="progress-bar-container" id="progressBar">
-    <div class="progress-bar-bg">
-      <div class="progress-bar-fill" id="progressFill">0%</div>
-    </div>
-    <div class="progress-message" id="progressMessage"></div>
-  </div>
-
-</div><!-- /.container -->
-
-<!-- ============================================================
-     ★★★ 자바스크립트 ★★★
-     ============================================================ -->
+<!-- ============================================================ -->
+<!--  설정 변수                                                     -->
+<!-- ============================================================ -->
 <script>
-// ============================================================
-// ★★★ 설정 변수 (배포 웹 앱 주소가 바뀌면 여기만 수정) ★★★
-// ============================================================
-const WEB_APP_URL    = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
-const GITHUB_BASE    = '';  // GitHub Pages 기본 경로 (같은 폴더면 빈 문자열)
-
-// ============================================================
-// ★ 전역 상태
-// ============================================================
-let appRules   = {};   // 서버에서 받은 규칙
-let currentUser = null; // 로그인된 사용자
-
-// ============================================================
-// ★ DOM 요소 캐시
-// ============================================================
-const $ = id => document.getElementById(id);
-
-const screens = {
-  deadline : $('screenDeadline'),
-  before   : $('screenBefore'),
-  login    : $('screenLogin'),
-  register : $('screenRegister'),
-  findPw   : $('screenFindPw'),
-  waitInput: $('screenWaitInput'),
-};
-
-// ============================================================
-// ★ 화면 전환
-// ============================================================
-function showScreen(name) {
-  Object.values(screens).forEach(s => s.classList.remove('active'));
-  if (screens[name]) screens[name].classList.add('active');
-}
-
-// ============================================================
-// ★ 로딩 표시
-// ============================================================
-function showLoading()  { $('loadingOverlay').classList.add('active'); }
-function hideLoading()  { $('loadingOverlay').classList.remove('active'); }
-
-// ============================================================
-// ★ 메시지 표시
-// ============================================================
-function showMessage(elementId, text, type) {
-  const el = $(elementId);
-  el.textContent = text;
-  el.className = 'message ' + (type || 'error');
-}
-function clearMessages() {
-  document.querySelectorAll('.message').forEach(el => {
-    el.className = 'message'; el.textContent = '';
-  });
-}
-
-// ============================================================
-// ★ 퍼센트 로딩바 제어
-// ============================================================
-function showProgressBar()  { $('progressBar').classList.add('active'); }
-function hideProgressBar()  { $('progressBar').classList.remove('active'); }
-function updateProgress(percent, message) {
-  const fill = $('progressFill');
-  fill.style.width = percent + '%';
-  fill.textContent = Math.round(percent) + '%';
-  $('progressMessage').textContent = message || '';
-}
-
-// ============================================================
-// ★ 모달 (공지사항)
-// ============================================================
-function showNoticeModal(content, callback) {
-  $('noticeContent').textContent = content;
-  $('noticeModal').classList.add('active');
-  $('btnCloseNotice').onclick = function() {
-    $('noticeModal').classList.remove('active');
-    if (callback) callback();
-  };
-}
-
-// ============================================================
-// ★ API 호출 헬퍼
-// ============================================================
-async function apiGet(action, params) {
-  let url = WEB_APP_URL + '?action=' + encodeURIComponent(action);
-  if (params) {
-    for (const key in params) {
-      url += '&' + encodeURIComponent(key) + '=' + encodeURIComponent(params[key]);
-    }
-  }
-  const resp = await fetch(url);
-  return resp.json();
-}
-
-async function apiPost(data) {
-  const resp = await fetch(WEB_APP_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(data),
-  });
-  return resp.json();
-}
-
-// ============================================================
-// ★ 초기화 - 규칙 로드 후 화면 분기
-// ============================================================
-async function init() {
-  showLoading();
-  try {
-    appRules = await apiGet('getRules');
-    if (!appRules.success) {
-      $('mainTitle').textContent = '오류';
-      $('subTitle').textContent  = appRules.message || '설정을 불러올 수 없습니다.';
-      hideLoading();
-      return;
-    }
-
-    // 제목 세팅
-    $('mainTitle').textContent = appRules.mainTitle || '학생 자료 입력 시스템';
-    $('subTitle').textContent  = appRules.subTitle  || '';
-
-    const today    = appRules.today;
-    const regDate  = appRules.registerDate;
-    const inpDate  = appRules.inputDate;
-    const deadDate = appRules.deadlineDate;
-
-    // 날짜 분기
-    if (deadDate && today >= deadDate) {
-      $('deadlineMsg').textContent =
-        '마감 날짜(' + deadDate + ')가 지나 더 이상 이용이 불가합니다.';
-      showScreen('deadline');
-    } else if (regDate && today < regDate) {
-      $('beforeMsg').textContent =
-        regDate + '부터 이용 가능합니다. 잠시만 기다려 주세요.';
-      showScreen('before');
-    } else {
-      showScreen('login');
-    }
-
-  } catch (err) {
-    $('mainTitle').textContent = '연결 오류';
-    $('subTitle').textContent  = '서버에 연결할 수 없습니다.';
-    console.error(err);
-  }
-  hideLoading();
-}
-
-// ============================================================
-// ★ 로그인
-// ============================================================
-async function handleLogin() {
-  clearMessages();
-  const email    = $('loginEmail').value.trim();
-  const password = $('loginPassword').value.trim();
-
-  if (!email || !password) {
-    showMessage('loginMessage', '아이디와 비밀번호를 입력해주세요.', 'error');
-    return;
-  }
-
-  showLoading();
-  try {
-    const res = await apiPost({ action: 'login', email, password });
-
-    if (!res.success) {
-      showMessage('loginMessage', res.message, 'error');
-      hideLoading();
-      return;
-    }
-
-    currentUser = res.user;
-
-    // 공지사항이 있으면 모달 표시
-    if (res.notice && res.notice.trim()) {
-      hideLoading();
-      showNoticeModal(res.notice, function() {
-        afterLoginRedirect(res);
-      });
-    } else {
-      hideLoading();
-      afterLoginRedirect(res);
-    }
-
-  } catch (err) {
-    showMessage('loginMessage', '서버 연결 오류가 발생했습니다.', 'error');
-    hideLoading();
-  }
-}
-
-function afterLoginRedirect(res) {
-  if (!res.canInput) {
-    // 자료 입력 기간 전
-    $('waitInputMsg').textContent = res.inputMessage;
-    showScreen('waitInput');
-  } else {
-    // 자료 입력 가능 → firstpage.html로 이동
-    // 사용자 정보를 sessionStorage에 저장
-    sessionStorage.setItem('currentUser', JSON.stringify(res.user));
-    sessionStorage.setItem('appRules', JSON.stringify(appRules));
-    window.location.href = GITHUB_BASE + 'firstpage.html';
-  }
-}
-
-// ============================================================
-// ★ 회원가입
-// ============================================================
-async function handleRegister() {
-  clearMessages();
-  const studentId = $('regStudentId').value.trim();
-  const name      = $('regName').value.trim();
-  const email     = $('regEmail').value.trim();
-  const password  = $('regPassword').value.trim();
-
-  if (!studentId || !name || !email || !password) {
-    showMessage('registerMessage', '모든 항목을 입력해주세요.', 'error');
-    return;
-  }
-
-  // 한글 이름 검증
-  if (!/^[가-힣]+$/.test(name)) {
-    showMessage('registerMessage', '이름은 반드시 한글로 입력해주세요.', 'error');
-    return;
-  }
-
-  // 이메일 형식 검증
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    showMessage('registerMessage', '올바른 이메일 형식을 입력해주세요.', 'error');
-    return;
-  }
-
-  showLoading();
-  try {
-    const res = await apiPost({
-      action: 'register', studentId, name, email, password
-    });
-
-    if (res.success) {
-      showMessage('registerMessage', res.message, 'success');
-      setTimeout(() => {
-        clearMessages();
-        showScreen('login');
-        showMessage('loginMessage', '회원가입 완료! 로그인해주세요.', 'success');
-      }, 1500);
-    } else {
-      showMessage('registerMessage', res.message, 'error');
-    }
-
-  } catch (err) {
-    showMessage('registerMessage', '서버 연결 오류가 발생했습니다.', 'error');
-  }
-  hideLoading();
-}
-
-// ============================================================
-// ★ 비밀번호 찾기
-// ============================================================
-async function handleFindPassword() {
-  clearMessages();
-  const studentId = $('findStudentId').value.trim();
-  const name      = $('findName').value.trim();
-  const email     = $('findEmail').value.trim();
-
-  if (!studentId || !name || !email) {
-    showMessage('findPwMessage', '학번, 이름, 이메일을 모두 입력해주세요.', 'error');
-    return;
-  }
-
-  showLoading();
-  try {
-    const res = await apiPost({
-      action: 'findPassword', studentId, name, email
-    });
-
-    if (res.success) {
-      showMessage('findPwMessage', res.message, 'success');
-    } else {
-      showMessage('findPwMessage', res.message, 'error');
-    }
-
-  } catch (err) {
-    showMessage('findPwMessage', '서버 연결 오류가 발생했습니다.', 'error');
-  }
-  hideLoading();
-}
-
-// ============================================================
-// ★ 이벤트 바인딩
-// ============================================================
-document.addEventListener('DOMContentLoaded', function() {
-
-  // 로그인
-  $('btnLogin').addEventListener('click', handleLogin);
-  $('loginPassword').addEventListener('keydown', function(e) {
-    if (e.key === 'Enter') handleLogin();
-  });
-
-  // 회원가입 화면 이동
-  $('btnGoRegister').addEventListener('click', function() {
-    clearMessages(); showScreen('register');
-  });
-
-  // 비밀번호 찾기 화면 이동
-  $('btnGoFindPw').addEventListener('click', function() {
-    clearMessages(); showScreen('findPw');
-  });
-
-  // 로그인으로 돌아가기
-  $('btnBackToLogin1').addEventListener('click', function() {
-    clearMessages(); showScreen('login');
-  });
-  $('btnBackToLogin2').addEventListener('click', function() {
-    clearMessages(); showScreen('login');
-  });
-
-  // 회원가입 실행
-  $('btnRegister').addEventListener('click', handleRegister);
-
-  // 비밀번호 찾기 실행
-  $('btnFindPw').addEventListener('click', handleFindPassword);
-
-  // 로그아웃
-  $('btnLogout1').addEventListener('click', function() {
-    currentUser = null;
-    sessionStorage.clear();
-    clearMessages();
-    showScreen('login');
-  });
-
-  // 초기화
-  init();
-});
+    const GITHUB_PAGE_URL = 'https://blueskyfre.github.io/chphed.github.io';
+    const WEB_APP_URL     = 'https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec';
 </script>
+
+<!-- ============================================================ -->
+<!--  메인 컨테이너                                                  -->
+<!-- ============================================================ -->
+<div id="app" class="w-full max-w-md mx-auto">
+
+    <!-- ==================== 로딩 오버레이 ==================== -->
+    <div id="loadingOverlay" class="loading-overlay fixed inset-0 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-2xl p-8 flex flex-col items-center shadow-xl">
+            <div class="spinner w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full mb-4"></div>
+            <p id="loadingText" class="text-gray-700 font-medium">처리 중...</p>
+            <!-- 퍼센트 로딩바 -->
+            <div id="progressBarWrap" class="w-48 bg-gray-200 rounded-full h-3 mt-3 hidden">
+                <div id="progressBar" class="bg-blue-500 h-3 rounded-full transition-all duration-300" style="width:0%"></div>
+            </div>
+            <p id="progressText" class="text-sm text-gray-500 mt-1 hidden">0%</p>
+        </div>
+    </div>
+
+    <!-- ==================== 공지사항 모달 ==================== -->
+    <div id="noticeModal" class="fixed inset-0 z-40 flex items-center justify-center p-4 hidden">
+        <div class="loading-overlay fixed inset-0" onclick="closeNoticeModal()"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg z-50 overflow-hidden">
+            <div class="bg-blue-600 px-6 py-4">
+                <h3 class="text-white text-lg font-bold">📢 공지사항</h3>
+            </div>
+            <div id="noticeContent" class="px-6 py-5 max-h-[60vh] overflow-y-auto">
+                <p class="text-gray-700 whitespace-pre-line"></p>
+            </div>
+            <div class="px-6 py-4 bg-gray-50 flex justify-end">
+                <button onclick="closeNoticeModal()"
+                    class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 
+                           active:scale-95 transition-all font-medium">
+                    확인
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 준비중 화면 ==================== -->
+    <div id="screen-notReady" class="hidden">
+        <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <div class="text-6xl mb-4">⏳</div>
+            <h1 id="notReadyTitle" class="text-2xl font-bold text-gray-800 mb-2"></h1>
+            <h2 id="notReadySubtitle" class="text-lg text-gray-500 mb-6"></h2>
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                <p class="text-yellow-800 font-medium">
+                    회원가입은 <span id="notReadyDate" class="font-bold text-yellow-900"></span>부터 가능합니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 마감 화면 ==================== -->
+    <div id="screen-closed" class="hidden">
+        <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <div class="text-6xl mb-4">🚫</div>
+            <h1 id="closedTitle" class="text-2xl font-bold text-gray-800 mb-2"></h1>
+            <h2 id="closedSubtitle" class="text-lg text-gray-500 mb-6"></h2>
+            <div class="bg-red-50 border border-red-200 rounded-xl p-4">
+                <p class="text-red-800 font-medium">
+                    마감 날짜가 지났습니다.<br>더 이상 접속할 수 없습니다.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 로그인 화면 ==================== -->
+    <div id="screen-login" class="hidden">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <!-- 헤더 -->
+            <div class="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-8 text-center">
+                <h1 id="mainTitle" class="text-2xl sm:text-3xl font-bold text-white mb-1"></h1>
+                <h2 id="subTitle" class="text-sm sm:text-base text-blue-200"></h2>
+            </div>
+            <!-- 입력 폼 -->
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">아이디</label>
+                    <input type="email" id="loginId" placeholder="example@email.com"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+                    <input type="password" id="loginPw" placeholder="비밀번호를 입력하세요"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-blue-500 focus:border-blue-500 
+                               outline-none transition-all text-sm sm:text-base"
+                        onkeypress="if(event.key==='Enter') doLogin()">
+                </div>
+                <!-- 버튼 그룹 -->
+                <button onclick="doLogin()"
+                    class="w-full bg-blue-600 text-white py-3 rounded-lg font-bold 
+                           hover:bg-blue-700 active:scale-[0.98] transition-all
+                           text-sm sm:text-base">
+                    로그인
+                </button>
+                <div class="flex gap-3">
+                    <button onclick="showScreen('screen-register')"
+                        class="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium 
+                               hover:bg-gray-200 active:scale-[0.98] transition-all
+                               text-xs sm:text-sm">
+                        회원가입
+                    </button>
+                    <button onclick="showScreen('screen-findPw')"
+                        class="flex-1 bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium 
+                               hover:bg-gray-200 active:scale-[0.98] transition-all
+                               text-xs sm:text-sm">
+                        비밀번호 찾기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 회원가입 화면 ==================== -->
+    <div id="screen-register" class="hidden">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-green-600 to-green-800 px-6 py-6 text-center">
+                <h2 class="text-xl sm:text-2xl font-bold text-white">회원가입</h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">학번</label>
+                    <input type="text" id="regStudentId" placeholder="예시) 3901"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                    <input type="text" id="regName" placeholder="예시) 홍길동 - 반드시 한글로 입력하세요"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">아이디 (이메일)</label>
+                    <input type="email" id="regEmail" placeholder="예시) example@email.com - 이메일 주소를 입력"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                               outline-none transition-all text-sm sm:text-base">
+                    <p class="text-xs text-gray-400 mt-1">⚠️ 비밀번호 분실 시 이 이메일로 비밀번호를 보내드립니다.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">비밀번호</label>
+                    <input type="password" id="regPw" placeholder="비밀번호를 입력하세요"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">비밀번호 확인</label>
+                    <input type="password" id="regPwConfirm" placeholder="비밀번호를 다시 입력하세요"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-green-500 focus:border-green-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <button onclick="doRegister()"
+                    class="w-full bg-green-600 text-white py-3 rounded-lg font-bold 
+                           hover:bg-green-700 active:scale-[0.98] transition-all
+                           text-sm sm:text-base">
+                    가입하기
+                </button>
+                <button onclick="showScreen('screen-login')"
+                    class="w-full bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium 
+                           hover:bg-gray-200 active:scale-[0.98] transition-all
+                           text-xs sm:text-sm">
+                    ← 로그인으로 돌아가기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 비밀번호 찾기 화면 ==================== -->
+    <div id="screen-findPw" class="hidden">
+        <div class="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div class="bg-gradient-to-r from-orange-500 to-orange-700 px-6 py-6 text-center">
+                <h2 class="text-xl sm:text-2xl font-bold text-white">비밀번호 찾기</h2>
+            </div>
+            <div class="p-6 space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">학번</label>
+                    <input type="text" id="findStudentId" placeholder="예시) 3901"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-orange-500 focus:border-orange-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">이름</label>
+                    <input type="text" id="findName" placeholder="예시) 홍길동"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-orange-500 focus:border-orange-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">이메일</label>
+                    <input type="email" id="findEmail" placeholder="가입 시 입력한 이메일 주소"
+                        class="w-full px-4 py-3 border border-gray-300 rounded-lg 
+                               focus:ring-2 focus:ring-orange-500 focus:border-orange-500 
+                               outline-none transition-all text-sm sm:text-base">
+                </div>
+                <button onclick="doFindPassword()"
+                    class="w-full bg-orange-600 text-white py-3 rounded-lg font-bold 
+                           hover:bg-orange-700 active:scale-[0.98] transition-all
+                           text-sm sm:text-base">
+                    비밀번호 찾기
+                </button>
+                <button onclick="showScreen('screen-login')"
+                    class="w-full bg-gray-100 text-gray-700 py-2.5 rounded-lg font-medium 
+                           hover:bg-gray-200 active:scale-[0.98] transition-all
+                           text-xs sm:text-sm">
+                    ← 로그인으로 돌아가기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== 자료입력 대기 화면 ==================== -->
+    <div id="screen-waitInput" class="hidden">
+        <div class="bg-white rounded-2xl shadow-lg p-8 text-center">
+            <div class="text-6xl mb-4">📅</div>
+            <h2 class="text-xl font-bold text-gray-800 mb-4">로그인 성공!</h2>
+            <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <p class="text-blue-800 font-medium">
+                    자료 입력은 <span id="inputStartDate" class="font-bold text-blue-900"></span>부터 가능합니다.
+                </p>
+            </div>
+            <button onclick="showScreen('screen-login')"
+                class="mt-6 bg-gray-100 text-gray-700 px-6 py-2.5 rounded-lg font-medium 
+                       hover:bg-gray-200 active:scale-[0.98] transition-all text-sm">
+                ← 돌아가기
+            </button>
+        </div>
+    </div>
+
+</div> <!-- /app -->
+
+<!-- ============================================================ -->
+<!--  JavaScript                                                    -->
+<!-- ============================================================ -->
+<script>
+    /* ── 전역 변수 ── */
+    let rulesData = null;
+
+    /* ── 초기화 ── */
+    window.addEventListener('DOMContentLoaded', init);
+
+    async function init() {
+        showLoading('설정을 불러오는 중...');
+        try {
+            const res  = await fetch(`${WEB_APP_URL}?action=getRules`);
+            const data = await res.json();
+            if (data.result !== 'success') throw new Error(data.message);
+
+            rulesData = data;
+            decideScreen();
+        } catch (e) {
+            alert('초기 설정을 불러오지 못했습니다.\n' + e.message);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    /* ── 날짜 비교 → 화면 결정 ── */
+    function decideScreen() {
+        const today     = getToday();
+        const regStart  = rulesData.registerStart;   // B5
+        const inputStart= rulesData.inputStart;      // B6
+        const deadline  = rulesData.deadline;         // B7
+
+        if (today < regStart) {
+            document.getElementById('notReadyTitle').textContent    = rulesData.mainTitle;
+            document.getElementById('notReadySubtitle').textContent = rulesData.subTitle;
+            document.getElementById('notReadyDate').textContent     = regStart;
+            showScreen('screen-notReady');
+        } else if (today >= deadline) {
+            document.getElementById('closedTitle').textContent    = rulesData.mainTitle;
+            document.getElementById('closedSubtitle').textContent = rulesData.subTitle;
+            showScreen('screen-closed');
+        } else {
+            document.getElementById('mainTitle').textContent = rulesData.mainTitle;
+            document.getElementById('subTitle').textContent  = rulesData.subTitle;
+            showScreen('screen-login');
+        }
+    }
+
+    function getToday() {
+        const d = new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+
+    /* ── 화면 전환 ── */
+    function showScreen(id) {
+        document.querySelectorAll('[id^="screen-"]').forEach(el => el.classList.add('hidden'));
+        document.getElementById(id)?.classList.remove('hidden');
+    }
+
+    /* ── 로딩 ── */
+    function showLoading(text = '처리 중...') {
+        document.getElementById('loadingText').textContent = text;
+        document.getElementById('loadingOverlay').classList.remove('hidden');
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.add('hidden');
+        document.getElementById('progressBarWrap').classList.add('hidden');
+        document.getElementById('progressText').classList.add('hidden');
+    }
+
+    /* ── 로그인 ── */
+    async function doLogin() {
+        const id = document.getElementById('loginId').value.trim();
+        const pw = document.getElementById('loginPw').value.trim();
+        if (!id || !pw) return alert('아이디와 비밀번호를 모두 입력해주세요.');
+
+        showLoading('로그인 중...');
+        try {
+            const res  = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'login', id, pw })
+            });
+            const data = await res.json();
+            if (data.result !== 'success') throw new Error(data.message);
+
+            hideLoading();
+
+            // 공지사항 처리
+            if (data.notice && data.notice.trim() !== '') {
+                showNotice(data.notice, () => afterLoginRoute(data));
+            } else {
+                afterLoginRoute(data);
+            }
+        } catch (e) {
+            hideLoading();
+            alert(e.message);
+        }
+    }
+
+    function afterLoginRoute(data) {
+        const today      = getToday();
+        const inputStart = rulesData.inputStart; // B6
+
+        if (today < inputStart) {
+            document.getElementById('inputStartDate').textContent = inputStart;
+            showScreen('screen-waitInput');
+        } else {
+            // 로그인 정보를 sessionStorage에 저장 후 이동
+            sessionStorage.setItem('loginUser', JSON.stringify({
+                studentId: data.studentId,
+                name: data.name,
+                id: data.id
+            }));
+            window.location.href = GITHUB_PAGE_URL + '/firstpage.html';
+        }
+    }
+
+    /* ── 공지사항 모달 ── */
+    let noticeCallback = null;
+    function showNotice(content, callback) {
+        document.querySelector('#noticeContent p').textContent = content;
+        document.getElementById('noticeModal').classList.remove('hidden');
+        noticeCallback = callback || null;
+    }
+    function closeNoticeModal() {
+        document.getElementById('noticeModal').classList.add('hidden');
+        if (noticeCallback) { noticeCallback(); noticeCallback = null; }
+    }
+
+    /* ── 회원가입 ── */
+    async function doRegister() {
+        const studentId = document.getElementById('regStudentId').value.trim();
+        const name      = document.getElementById('regName').value.trim();
+        const email     = document.getElementById('regEmail').value.trim();
+        const pw        = document.getElementById('regPw').value.trim();
+        const pwConfirm = document.getElementById('regPwConfirm').value.trim();
+
+        if (!studentId || !name || !email || !pw || !pwConfirm) return alert('모든 항목을 입력해주세요.');
+        if (pw !== pwConfirm) return alert('비밀번호가 일치하지 않습니다.');
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return alert('올바른 이메일 형식으로 입력해주세요.');
+        if (!/^[가-힣]+$/.test(name)) return alert('이름은 한글로만 입력해주세요.');
+
+        showLoading('회원가입 처리 중...');
+        try {
+            const res  = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'register', studentId, name, email, pw })
+            });
+            const data = await res.json();
+            if (data.result !== 'success') throw new Error(data.message);
+
+            hideLoading();
+            alert('회원가입이 완료되었습니다!\n로그인해 주세요.');
+            showScreen('screen-login');
+            // 가입한 이메일을 로그인 아이디에 자동 입력
+            document.getElementById('loginId').value = email;
+        } catch (e) {
+            hideLoading();
+            alert(e.message);
+        }
+    }
+
+    /* ── 비밀번호 찾기 ── */
+    async function doFindPassword() {
+        const studentId = document.getElementById('findStudentId').value.trim();
+        const name      = document.getElementById('findName').value.trim();
+        const email     = document.getElementById('findEmail').value.trim();
+
+        if (!studentId || !name || !email) return alert('모든 항목을 입력해주세요.');
+
+        showLoading('비밀번호 찾기 중...');
+        try {
+            const res  = await fetch(WEB_APP_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain' },
+                body: JSON.stringify({ action: 'findPassword', studentId, name, email })
+            });
+            const data = await res.json();
+            if (data.result !== 'success') throw new Error(data.message);
+
+            hideLoading();
+            alert('입력하신 이메일로 비밀번호를 발송했습니다.\n이메일을 확인해 주세요.');
+            showScreen('screen-login');
+        } catch (e) {
+            hideLoading();
+            alert(e.message);
+        }
+    }
+</script>
+
 </body>
 </html>
