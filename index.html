@@ -125,16 +125,16 @@
           <input type="password" id="login-pw" placeholder="비밀번호를 입력하세요"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm sm:text-base" />
         </div>
-        <button onclick="doLogin()"
+        <button onclick="Index.doLogin()"
           class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition text-sm sm:text-base">
           로그인
         </button>
         <div class="flex gap-3">
-          <button onclick="showScreen('screen-register')"
+          <button onclick="Index.showScreen('screen-register')"
             class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition text-sm">
             회원가입
           </button>
-          <button onclick="showScreen('screen-find-pw')"
+          <button onclick="Index.showScreen('screen-find-pw')"
             class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition text-sm">
             비밀번호 찾기 및 변경
           </button>
@@ -178,11 +178,11 @@
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm sm:text-base" />
           <p id="reg-pw-match-msg" class="text-xs mt-1 hidden"></p>
         </div>
-        <button onclick="doRegister()"
+        <button onclick="Index.doRegister()"
           class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition text-sm sm:text-base">
           가입하기
         </button>
-        <button onclick="showScreen('screen-login')"
+        <button onclick="Index.showScreen('screen-login')"
           class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition text-sm">
           ← 로그인으로 돌아가기
         </button>
@@ -212,16 +212,16 @@
           <input type="email" id="find-email" placeholder="예시) example@email.com"
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition text-sm sm:text-base" />
         </div>
-        <button onclick="doFindPassword()"
+        <button onclick="Index.doFindPassword()"
           class="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-3 rounded-lg transition text-sm sm:text-base">
           비밀번호 찾기
         </button>
         <!-- ✅ [추가] 비밀번호 변경 버튼 -->
-        <button onclick="showScreen('screen-change-pw')"
+        <button onclick="Index.showScreen('screen-change-pw')"
           class="w-full bg-indigo-500 hover:bg-indigo-600 text-white font-semibold py-3 rounded-lg transition text-sm sm:text-base">
           🔄 비밀번호 변경
         </button>
-        <button onclick="showScreen('screen-login')"
+        <button onclick="Index.showScreen('screen-login')"
           class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition text-sm">
           ← 로그인으로 돌아가기
         </button>
@@ -267,11 +267,11 @@
             class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition text-sm sm:text-base" />
           <p id="chpw-match-msg" class="text-xs mt-1 hidden"></p>
         </div>
-        <button onclick="doChangePassword()"
+        <button onclick="Index.doChangePassword()"
           class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 rounded-lg transition text-sm sm:text-base">
           비밀번호 변경하기
         </button>
-        <button onclick="showScreen('screen-find-pw')"
+        <button onclick="Index.showScreen('screen-find-pw')"
           class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 rounded-lg transition text-sm">
           ← 비밀번호 찾기로 돌아가기
         </button>
@@ -287,7 +287,7 @@
       <div class="text-5xl mb-4">📅</div>
       <h2 class="text-xl sm:text-2xl font-bold text-gray-800 mb-2">로그인 성공!</h2>
       <p id="waiting-message" class="text-gray-500 text-sm sm:text-base mb-4"></p>
-      <button onclick="showScreen('screen-login')"
+      <button onclick="Index.showScreen('screen-login')"
         class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2.5 px-6 rounded-lg transition text-sm">
         돌아가기
       </button>
@@ -301,7 +301,7 @@
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] overflow-y-auto p-6 sm:p-8">
       <h3 class="text-lg sm:text-xl font-bold text-gray-800 mb-4 text-center">📢 공지사항</h3>
       <div id="modal-notice-content" class="space-y-4 text-sm sm:text-base text-gray-700"></div>
-      <button onclick="closeNoticeAndProceed()"
+      <button onclick="Index.closeNoticeAndProceed()"
         class="w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-lg transition text-sm sm:text-base">
         확인
       </button>
@@ -310,7 +310,6 @@
 
   <!-- ============================================================ -->
   <!-- ✅ [추가] 공통 모달 알림창 (alert 대체 - 재사용 가능) -->
-  <!-- 다른 페이지에서도 이 div + showAlert 함수를 복사하여 재사용 -->
   <!-- ============================================================ -->
   <div id="modal-alert" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center p-4 z-[60]">
     <div id="modal-alert-box" class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 sm:p-8">
@@ -318,7 +317,7 @@
         <div id="modal-alert-icon" class="text-4xl mb-3"></div>
         <h3 id="modal-alert-title" class="text-lg font-bold text-gray-800 mb-2"></h3>
         <p id="modal-alert-message" class="text-sm sm:text-base text-gray-600 whitespace-pre-wrap mb-6"></p>
-        <button onclick="closeAlert()"
+        <button onclick="Index.closeAlert()"
           id="modal-alert-btn"
           class="w-full font-semibold py-3 rounded-lg transition text-sm sm:text-base">
           확인
@@ -342,469 +341,490 @@
   </div>
 
   <!-- ============================================================ -->
-  <!-- 📜 JavaScript -->
+  <!-- 📜 JavaScript - IIFE 네임스페이스: Index -->
   <!-- ============================================================ -->
   <script>
     // ============================================================
-    // ⚙️ 설정 변수 (여기만 수정하세요)
+    // 🔒 IIFE 네임스페이스 - Index
+    //    IIFE 밖에는 어떤 변수나 함수도 선언하지 않는다
     // ============================================================
-    const WEB_APP_URL     = 'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec';
-    const GITHUB_PAGE_URL = 'https://blueskyfre.github.io/chphed.github.io';
+    var Index = (function() {
 
-    // ============================================================
-    // 전역 변수
-    // ============================================================
-    let rulesData = null;    // SH규칙 데이터
-    let loginUserData = null; // 로그인된 사용자 데이터
-    let alertCallback = null; // 모달 알림 콜백 (재사용)
+      // ============================================================
+      // ⚙️ 내부 설정 변수 (private)
+      // ============================================================
+      var _WEB_APP_URL     = 'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec';
+      var _GITHUB_PAGE_URL = 'https://blueskyfre.github.io/chphed.github.io';
 
-    // ============================================================
-    // 🌐 API 호출 함수 (CORS 대응)
-    // ============================================================
+      // ============================================================
+      // 내부 상태 변수 (private)
+      // ============================================================
+      var _rulesData     = null;   // SH규칙 데이터
+      var _loginUserData = null;   // 로그인된 사용자 데이터
+      var _alertCallback = null;   // 모달 알림 콜백 (재사용)
 
-    /** GET 요청 */
-    async function apiGet(action, params = {}) {
-      const url = new URL(WEB_APP_URL);
-      url.searchParams.set('action', action);
-      for (const key in params) {
-        url.searchParams.set(key, params[key]);
+      // ============================================================
+      // 🌐 API 호출 함수 (CORS 대응) (private)
+      // ============================================================
+
+      /** GET 요청 */
+      async function _apiGet(action, params) {
+        params = params || {};
+        var url = new URL(_WEB_APP_URL);
+        url.searchParams.set('action', action);
+        for (var key in params) {
+          if (params.hasOwnProperty(key)) {
+            url.searchParams.set(key, params[key]);
+          }
+        }
+
+        var response = await fetch(url.toString(), {
+          method: 'GET',
+          redirect: 'follow'
+        });
+
+        if (!response.ok) throw new Error('서버 응답 오류: ' + response.status);
+        return await response.json();
       }
 
-      const response = await fetch(url.toString(), {
-        method: 'GET',
-        redirect: 'follow'
-      });
+      /** POST 요청 (CORS 대응 - text/plain 사용) */
+      async function _apiPost(data) {
+        var response = await fetch(_WEB_APP_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(data),
+          redirect: 'follow'
+        });
 
-      if (!response.ok) throw new Error('서버 응답 오류: ' + response.status);
-      return await response.json();
-    }
-
-    /** POST 요청 (CORS 대응 - text/plain 사용) */
-    async function apiPost(data) {
-      const response = await fetch(WEB_APP_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-        body: JSON.stringify(data),
-        redirect: 'follow'
-      });
-
-      if (!response.ok) throw new Error('서버 응답 오류: ' + response.status);
-      return await response.json();
-    }
-
-    // ============================================================
-    // 🖥️ 화면 제어
-    // ============================================================
-    function showScreen(screenId) {
-      // ✅ [수정] 스켈레톤 화면도 함께 숨김 처리
-      document.getElementById('skeleton-screen').classList.add('hidden');
-      const screens = document.querySelectorAll('[id^="screen-"]');
-      screens.forEach(s => s.classList.add('hidden'));
-      const target = document.getElementById(screenId);
-      if (target) target.classList.remove('hidden');
-    }
-
-    function showLoading(text = '처리 중...') {
-      document.getElementById('loading-text').textContent = text;
-      document.getElementById('loading-overlay').classList.remove('hidden');
-    }
-
-    function hideLoading() {
-      document.getElementById('loading-overlay').classList.add('hidden');
-    }
-
-    // ============================================================
-    // ✅ [추가] 공통 모달 알림 함수 (alert 대체 - 재사용 가능)
-    // 다른 페이지에서도 이 함수들을 복사하여 재사용할 수 있습니다.
-    // 사용법: showAlert('메시지')
-    //         showAlert('메시지', 'success')
-    //         showAlert('메시지', 'error', function() { /* 확인 후 실행 */ })
-    // ============================================================
-    function showAlert(message, type, callback) {
-      // type 기본값 자동 판별: 성공/실패 키워드 기반
-      if (!type) {
-        if (/완료|성공|발송/.test(message)) type = 'success';
-        else if (/오류|실패|올바르지|않습니다|없습니다|아닙니다|일치하지/.test(message)) type = 'error';
-        else type = 'info';
+        if (!response.ok) throw new Error('서버 응답 오류: ' + response.status);
+        return await response.json();
       }
 
-      const config = {
-        success: { icon: '✅', title: '완료',  btnClass: 'bg-green-600 hover:bg-green-700 text-white' },
-        error:   { icon: '⚠️', title: '알림',  btnClass: 'bg-red-500 hover:bg-red-600 text-white' },
-        info:    { icon: 'ℹ️', title: '안내',  btnClass: 'bg-blue-600 hover:bg-blue-700 text-white' },
-        warning: { icon: '⚡', title: '주의',  btnClass: 'bg-yellow-500 hover:bg-yellow-600 text-white' }
+      // ============================================================
+      // 🖥️ 화면 제어 (public)
+      // ============================================================
+      function _showScreen(screenId) {
+        // ✅ 스켈레톤 화면도 함께 숨김 처리
+        document.getElementById('skeleton-screen').classList.add('hidden');
+        var screens = document.querySelectorAll('[id^="screen-"]');
+        screens.forEach(function(s) { s.classList.add('hidden'); });
+        var target = document.getElementById(screenId);
+        if (target) target.classList.remove('hidden');
+      }
+
+      function _showLoading(text) {
+        text = text || '처리 중...';
+        document.getElementById('loading-text').textContent = text;
+        document.getElementById('loading-overlay').classList.remove('hidden');
+      }
+
+      function _hideLoading() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
+
+      // ============================================================
+      // ✅ 공통 모달 알림 함수 (alert 대체 - 재사용 가능) (public)
+      // ============================================================
+      function _showAlert(message, type, callback) {
+        // type 기본값 자동 판별: 성공/실패 키워드 기반
+        if (!type) {
+          if (/완료|성공|발송/.test(message)) type = 'success';
+          else if (/오류|실패|올바르지|않습니다|없습니다|아닙니다|일치하지/.test(message)) type = 'error';
+          else type = 'info';
+        }
+
+        var config = {
+          success: { icon: '✅', title: '완료',  btnClass: 'bg-green-600 hover:bg-green-700 text-white' },
+          error:   { icon: '⚠️', title: '알림',  btnClass: 'bg-red-500 hover:bg-red-600 text-white' },
+          info:    { icon: 'ℹ️', title: '안내',  btnClass: 'bg-blue-600 hover:bg-blue-700 text-white' },
+          warning: { icon: '⚡', title: '주의',  btnClass: 'bg-yellow-500 hover:bg-yellow-600 text-white' }
+        };
+
+        var cfg = config[type] || config.info;
+        _alertCallback = callback || null;
+
+        document.getElementById('modal-alert-icon').textContent = cfg.icon;
+        document.getElementById('modal-alert-title').textContent = cfg.title;
+        document.getElementById('modal-alert-message').textContent = message;
+        document.getElementById('modal-alert-btn').className =
+          'w-full font-semibold py-3 rounded-lg transition text-sm sm:text-base ' + cfg.btnClass;
+
+        var modal = document.getElementById('modal-alert');
+        var box = document.getElementById('modal-alert-box');
+        modal.classList.remove('hidden');
+        box.classList.remove('modal-animate-out');
+        box.classList.add('modal-animate-in');
+      }
+
+      function _closeAlert() {
+        var modal = document.getElementById('modal-alert');
+        var box = document.getElementById('modal-alert-box');
+        box.classList.remove('modal-animate-in');
+        box.classList.add('modal-animate-out');
+        setTimeout(function() {
+          modal.classList.add('hidden');
+          if (_alertCallback) {
+            _alertCallback();
+            _alertCallback = null;
+          }
+        }, 200);
+      }
+
+      // ============================================================
+      // ✅ 스켈레톤 UI 유틸 함수 (public)
+      // ============================================================
+      function _showSkeleton(text) {
+        var el = document.getElementById('skeleton-screen');
+        if (el) {
+          el.classList.remove('hidden');
+          if (text) {
+            var statusEl = document.getElementById('skeleton-status-text');
+            if (statusEl) statusEl.textContent = text;
+          }
+        }
+      }
+
+      function _hideSkeleton() {
+        var el = document.getElementById('skeleton-screen');
+        if (el) el.classList.add('hidden');
+      }
+
+      // ============================================================
+      // ✅ 비밀번호 확인 실시간 체크 (회원가입 & 비밀번호 변경 공용) (private)
+      // ============================================================
+      function _setupPasswordMatch(pwId, confirmId, msgId) {
+        var pwField = document.getElementById(confirmId);
+        if (!pwField) return;
+        pwField.addEventListener('input', function() {
+          var pw = document.getElementById(pwId).value;
+          var confirm = this.value;
+          var msgEl = document.getElementById(msgId);
+          if (!confirm) {
+            msgEl.classList.add('hidden');
+            return;
+          }
+          msgEl.classList.remove('hidden');
+          if (pw === confirm) {
+            msgEl.textContent = '✓ 비밀번호가 일치합니다.';
+            msgEl.className = 'text-xs mt-1 text-green-600';
+          } else {
+            msgEl.textContent = '✗ 비밀번호가 일치하지 않습니다.';
+            msgEl.className = 'text-xs mt-1 text-red-500';
+          }
+        });
+      }
+
+      // ============================================================
+      // 🚀 초기화 (SH규칙 데이터 로드) (private → 내부 호출)
+      // ============================================================
+      async function _initialize() {
+        _showSkeleton('초기 설정을 불러오는 중...');
+
+        try {
+          var result = await _apiGet('getRules');
+
+          if (!result.success) {
+            throw new Error(result.message || '규칙 데이터를 가져올 수 없습니다.');
+          }
+
+          _rulesData = result.data;
+          var today = new Date().toISOString().split('T')[0]; // yyyy-MM-dd
+
+          // 날짜 비교하여 화면 결정
+          if (today < _rulesData.registerDate) {
+            document.getElementById('preparing-message').textContent =
+              _rulesData.registerDate + ' 부터 서비스가 시작됩니다.';
+            _showScreen('screen-preparing');
+
+          } else if (today >= _rulesData.closeDate) {
+            document.getElementById('closed-message').textContent =
+              '마감일(' + _rulesData.closeDate + ')이 지났습니다. 더 이상 이용할 수 없습니다.';
+            _showScreen('screen-closed');
+
+          } else {
+            document.getElementById('main-title').textContent = _rulesData.title;
+            document.getElementById('sub-title').textContent = _rulesData.subtitle;
+            _showScreen('screen-login');
+          }
+
+        } catch (err) {
+          _hideSkeleton();
+          _showAlert('초기 설정을 불러오지 못했습니다.\n' + err.message, 'error');
+        }
+      }
+
+      // ============================================================
+      // 📝 회원가입 (public)
+      // ============================================================
+      async function _doRegister() {
+        var studentId = document.getElementById('reg-studentId').value.trim();
+        var name      = document.getElementById('reg-name').value.trim();
+        var email     = document.getElementById('reg-email').value.trim();
+        var password  = document.getElementById('reg-password').value.trim();
+        var passwordConfirm = document.getElementById('reg-password-confirm').value.trim();
+
+        if (!studentId || !name || !email || !password) {
+          _showAlert('모든 항목을 입력해 주세요.', 'warning');
+          return;
+        }
+
+        if (!passwordConfirm) {
+          _showAlert('비밀번호 확인을 입력해 주세요.', 'warning');
+          return;
+        }
+        if (password !== passwordConfirm) {
+          _showAlert('비밀번호와 비밀번호 확인이 일치하지 않습니다.\n비밀번호를 다시 확인해 주세요.', 'error');
+          return;
+        }
+
+        var koreanRegex = /^[가-힣]+$/;
+        if (!koreanRegex.test(name)) {
+          _showAlert('이름은 반드시 한글로 입력해 주세요.', 'error');
+          return;
+        }
+
+        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          _showAlert('올바른 이메일 형식으로 입력해 주세요.', 'error');
+          return;
+        }
+
+        _showLoading('회원가입 처리 중...');
+
+        try {
+          var result = await _apiPost({
+            action: 'register',
+            studentId: studentId,
+            name: name,
+            email: email,
+            password: password
+          });
+
+          if (result.success) {
+            _showAlert(result.message, 'success', function() {
+              _showScreen('screen-login');
+            });
+          } else {
+            _showAlert(result.message, 'error');
+          }
+        } catch (err) {
+          _showAlert('회원가입 중 오류가 발생했습니다.\n' + err.message, 'error');
+        } finally {
+          _hideLoading();
+        }
+      }
+
+      // ============================================================
+      // 🔐 로그인 (public)
+      // ============================================================
+      async function _doLogin() {
+        var userId   = document.getElementById('login-id').value.trim();
+        var password = document.getElementById('login-pw').value.trim();
+
+        if (!userId || !password) {
+          _showAlert('아이디와 비밀번호를 입력해 주세요.', 'warning');
+          return;
+        }
+
+        _showLoading('로그인 중...');
+
+        try {
+          var result = await _apiPost({
+            action: 'login',
+            userId: userId,
+            password: password
+          });
+
+          if (!result.success) {
+            _showAlert(result.message, 'error');
+            return;
+          }
+
+          _loginUserData = result.data;
+
+          if (_loginUserData.notices && _loginUserData.notices.length > 0) {
+            _showNoticeModal(_loginUserData.notices);
+          } else {
+            _proceedAfterLogin();
+          }
+
+        } catch (err) {
+          _showAlert('로그인 중 오류가 발생했습니다.\n' + err.message, 'error');
+        } finally {
+          _hideLoading();
+        }
+      }
+
+      // ============================================================
+      // 📢 공지사항 모달 (private/public)
+      // ============================================================
+      function _showNoticeModal(notices) {
+        var contentDiv = document.getElementById('modal-notice-content');
+        contentDiv.innerHTML = '';
+
+        notices.forEach(function(notice) {
+          var div = document.createElement('div');
+          div.className = 'bg-gray-50 rounded-lg p-4';
+          div.innerHTML =
+            '<p class="font-semibold text-blue-600 mb-1">[' + notice.type + ']</p>' +
+            '<p class="whitespace-pre-wrap">' + notice.content + '</p>';
+          contentDiv.appendChild(div);
+        });
+
+        document.getElementById('modal-notice').classList.remove('hidden');
+      }
+
+      function _closeNoticeAndProceed() {
+        document.getElementById('modal-notice').classList.add('hidden');
+        _proceedAfterLogin();
+      }
+
+      // ============================================================
+      // ➡️ 로그인 후 이동 처리 (private)
+      // ============================================================
+      function _proceedAfterLogin() {
+        var today = new Date().toISOString().split('T')[0];
+
+        if (today < _rulesData.inputDate) {
+          document.getElementById('waiting-message').textContent =
+            _rulesData.inputDate + ' 부터 자료 입력이 가능합니다.';
+          _showScreen('screen-waiting');
+        } else {
+          var params = new URLSearchParams({
+            studentId: _loginUserData.studentId,
+            name: _loginUserData.name
+          });
+          window.location.href = _GITHUB_PAGE_URL + '/firstpage.html?' + params.toString();
+        }
+      }
+
+      // ============================================================
+      // 🔍 비밀번호 찾기 (public)
+      // ============================================================
+      async function _doFindPassword() {
+        var studentId = document.getElementById('find-studentId').value.trim();
+        var name      = document.getElementById('find-name').value.trim();
+        var email     = document.getElementById('find-email').value.trim();
+
+        if (!studentId || !name || !email) {
+          _showAlert('모든 항목을 입력해 주세요.', 'warning');
+          return;
+        }
+
+        _showLoading('비밀번호 찾는 중...');
+
+        try {
+          var result = await _apiPost({
+            action: 'findPassword',
+            studentId: studentId,
+            name: name,
+            email: email
+          });
+
+          if (result.success) {
+            _showAlert(result.message, 'success', function() {
+              _showScreen('screen-login');
+            });
+          } else {
+            _showAlert(result.message, 'error');
+          }
+        } catch (err) {
+          _showAlert('비밀번호 찾기 중 오류가 발생했습니다.\n' + err.message, 'error');
+        } finally {
+          _hideLoading();
+        }
+      }
+
+      // ============================================================
+      // 🔄 비밀번호 변경 (public)
+      // ============================================================
+      async function _doChangePassword() {
+        var studentId       = document.getElementById('chpw-studentId').value.trim();
+        var name            = document.getElementById('chpw-name').value.trim();
+        var email           = document.getElementById('chpw-email').value.trim();
+        var currentPassword = document.getElementById('chpw-current').value.trim();
+        var newPassword     = document.getElementById('chpw-new').value.trim();
+        var newPasswordConfirm = document.getElementById('chpw-new-confirm').value.trim();
+
+        if (!studentId || !name || !email || !currentPassword || !newPassword || !newPasswordConfirm) {
+          _showAlert('모든 항목을 입력해 주세요.', 'warning');
+          return;
+        }
+
+        if (newPassword !== newPasswordConfirm) {
+          _showAlert('새로운 비밀번호와 재확인 비밀번호가 일치하지 않습니다.\n다시 확인해 주세요.', 'error');
+          return;
+        }
+
+        if (currentPassword === newPassword) {
+          _showAlert('새로운 비밀번호가 기존 비밀번호와 동일합니다.\n다른 비밀번호를 입력해 주세요.', 'warning');
+          return;
+        }
+
+        _showLoading('비밀번호 변경 중...');
+
+        try {
+          var result = await _apiPost({
+            action: 'changePassword',
+            studentId: studentId,
+            name: name,
+            email: email,
+            currentPassword: currentPassword,
+            newPassword: newPassword
+          });
+
+          if (result.success) {
+            _showAlert(result.message, 'success', function() {
+              _showScreen('screen-login');
+            });
+          } else {
+            _showAlert(result.message, 'error');
+          }
+        } catch (err) {
+          _showAlert('비밀번호 변경 중 오류가 발생했습니다.\n' + err.message, 'error');
+        } finally {
+          _hideLoading();
+        }
+      }
+
+      // ============================================================
+      // 🏁 DOMContentLoaded 이벤트 등록 (내부 자동 실행)
+      // ============================================================
+      window.addEventListener('DOMContentLoaded', function() {
+        // 비밀번호 실시간 일치 체크 등록 (회원가입)
+        _setupPasswordMatch('reg-password', 'reg-password-confirm', 'reg-pw-match-msg');
+        // 비밀번호 실시간 일치 체크 등록 (비밀번호 변경)
+        _setupPasswordMatch('chpw-new', 'chpw-new-confirm', 'chpw-match-msg');
+        // 초기화 실행
+        _initialize();
+      });
+
+      // ============================================================
+      // 🔓 공개 API (return)
+      // ============================================================
+      return {
+        // 화면 제어
+        showScreen:           _showScreen,
+        showLoading:          _showLoading,
+        hideLoading:          _hideLoading,
+
+        // 모달 알림
+        showAlert:            _showAlert,
+        closeAlert:           _closeAlert,
+
+        // 스켈레톤 UI
+        showSkeleton:         _showSkeleton,
+        hideSkeleton:         _hideSkeleton,
+
+        // 비즈니스 로직
+        doLogin:              _doLogin,
+        doRegister:           _doRegister,
+        doFindPassword:       _doFindPassword,
+        doChangePassword:     _doChangePassword,
+        closeNoticeAndProceed: _closeNoticeAndProceed
       };
 
-      const cfg = config[type] || config.info;
-      alertCallback = callback || null;
-
-      document.getElementById('modal-alert-icon').textContent = cfg.icon;
-      document.getElementById('modal-alert-title').textContent = cfg.title;
-      document.getElementById('modal-alert-message').textContent = message;
-      document.getElementById('modal-alert-btn').className =
-        'w-full font-semibold py-3 rounded-lg transition text-sm sm:text-base ' + cfg.btnClass;
-
-      const modal = document.getElementById('modal-alert');
-      const box = document.getElementById('modal-alert-box');
-      modal.classList.remove('hidden');
-      box.classList.remove('modal-animate-out');
-      box.classList.add('modal-animate-in');
-    }
-
-    function closeAlert() {
-      const modal = document.getElementById('modal-alert');
-      const box = document.getElementById('modal-alert-box');
-      box.classList.remove('modal-animate-in');
-      box.classList.add('modal-animate-out');
-      setTimeout(function() {
-        modal.classList.add('hidden');
-        if (alertCallback) {
-          alertCallback();
-          alertCallback = null;
-        }
-      }, 200);
-    }
-
-    // ============================================================
-    // ✅ [추가] 스켈레톤 UI 유틸 함수 (재사용 가능)
-    // 다른 페이지에서도 skeleton-screen div + 이 함수들을 복사하여 재사용
-    // ============================================================
-    function showSkeleton(text) {
-      const el = document.getElementById('skeleton-screen');
-      if (el) {
-        el.classList.remove('hidden');
-        if (text) {
-          const statusEl = document.getElementById('skeleton-status-text');
-          if (statusEl) statusEl.textContent = text;
-        }
-      }
-    }
-
-    function hideSkeleton() {
-      const el = document.getElementById('skeleton-screen');
-      if (el) el.classList.add('hidden');
-    }
-
-    // ============================================================
-    // ✅ [추가] 비밀번호 확인 실시간 체크 (회원가입 & 비밀번호 변경 공용)
-    // ============================================================
-    function setupPasswordMatch(pwId, confirmId, msgId) {
-      const pwField = document.getElementById(confirmId);
-      if (!pwField) return;
-      pwField.addEventListener('input', function() {
-        const pw = document.getElementById(pwId).value;
-        const confirm = this.value;
-        const msgEl = document.getElementById(msgId);
-        if (!confirm) {
-          msgEl.classList.add('hidden');
-          return;
-        }
-        msgEl.classList.remove('hidden');
-        if (pw === confirm) {
-          msgEl.textContent = '✓ 비밀번호가 일치합니다.';
-          msgEl.className = 'text-xs mt-1 text-green-600';
-        } else {
-          msgEl.textContent = '✗ 비밀번호가 일치하지 않습니다.';
-          msgEl.className = 'text-xs mt-1 text-red-500';
-        }
-      });
-    }
-
-    // ============================================================
-    // 🚀 초기화 (SH규칙 데이터 로드)
-    // ============================================================
-    async function initialize() {
-      // ✅ [수정] 스켈레톤 UI로 초기 로딩 표시 (스피너 대신)
-      showSkeleton('초기 설정을 불러오는 중...');
-
-      try {
-        const result = await apiGet('getRules');
-
-        if (!result.success) {
-          throw new Error(result.message || '규칙 데이터를 가져올 수 없습니다.');
-        }
-
-        rulesData = result.data;
-        const today = new Date().toISOString().split('T')[0]; // yyyy-MM-dd
-
-        // 날짜 비교하여 화면 결정
-        if (today < rulesData.registerDate) {
-          // 회원가입 시작일 이전 → 준비중
-          document.getElementById('preparing-message').textContent =
-            rulesData.registerDate + ' 부터 서비스가 시작됩니다.';
-          showScreen('screen-preparing');
-
-        } else if (today >= rulesData.closeDate) {
-          // 마감일 이후 → 마감
-          document.getElementById('closed-message').textContent =
-            '마감일(' + rulesData.closeDate + ')이 지났습니다. 더 이상 이용할 수 없습니다.';
-          showScreen('screen-closed');
-
-        } else {
-          // 회원가입·로그인 가능 기간
-          document.getElementById('main-title').textContent = rulesData.title;
-          document.getElementById('sub-title').textContent = rulesData.subtitle;
-          showScreen('screen-login');
-        }
-
-      } catch (err) {
-        hideSkeleton();
-        showAlert('초기 설정을 불러오지 못했습니다.\n' + err.message, 'error');
-      }
-    }
-
-    // ============================================================
-    // 📝 회원가입
-    // ============================================================
-    async function doRegister() {
-      const studentId = document.getElementById('reg-studentId').value.trim();
-      const name      = document.getElementById('reg-name').value.trim();
-      const email     = document.getElementById('reg-email').value.trim();
-      const password  = document.getElementById('reg-password').value.trim();
-      const passwordConfirm = document.getElementById('reg-password-confirm').value.trim();
-
-      if (!studentId || !name || !email || !password) {
-        showAlert('모든 항목을 입력해 주세요.', 'warning');
-        return;
-      }
-
-      // ✅ [추가] 비밀번호 확인 검증
-      if (!passwordConfirm) {
-        showAlert('비밀번호 확인을 입력해 주세요.', 'warning');
-        return;
-      }
-      if (password !== passwordConfirm) {
-        showAlert('비밀번호와 비밀번호 확인이 일치하지 않습니다.\n비밀번호를 다시 확인해 주세요.', 'error');
-        return;
-      }
-
-      // 한글 이름 검증
-      const koreanRegex = /^[가-힣]+$/;
-      if (!koreanRegex.test(name)) {
-        showAlert('이름은 반드시 한글로 입력해 주세요.', 'error');
-        return;
-      }
-
-      // 이메일 형식 검증
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        showAlert('올바른 이메일 형식으로 입력해 주세요.', 'error');
-        return;
-      }
-
-      showLoading('회원가입 처리 중...');
-
-      try {
-        const result = await apiPost({
-          action: 'register',
-          studentId: studentId,
-          name: name,
-          email: email,
-          password: password
-        });
-
-        if (result.success) {
-          showAlert(result.message, 'success', function() {
-            showScreen('screen-login');
-          });
-        } else {
-          showAlert(result.message, 'error');
-        }
-      } catch (err) {
-        showAlert('회원가입 중 오류가 발생했습니다.\n' + err.message, 'error');
-      } finally {
-        hideLoading();
-      }
-    }
-
-    // ============================================================
-    // 🔐 로그인
-    // ============================================================
-    async function doLogin() {
-      const userId   = document.getElementById('login-id').value.trim();
-      const password = document.getElementById('login-pw').value.trim();
-
-      if (!userId || !password) {
-        showAlert('아이디와 비밀번호를 입력해 주세요.', 'warning');
-        return;
-      }
-
-      showLoading('로그인 중...');
-
-      try {
-        const result = await apiPost({
-          action: 'login',
-          userId: userId,
-          password: password
-        });
-
-        if (!result.success) {
-          showAlert(result.message, 'error');
-          return;
-        }
-
-        loginUserData = result.data;
-
-        // ✅ [수정] 공지사항 처리: 공지가 있으면 모달, 없으면('공지없음' 포함) 바로 이동
-        if (loginUserData.notices && loginUserData.notices.length > 0) {
-          showNoticeModal(loginUserData.notices);
-        } else {
-          // '공지없음' 또는 공지 내용이 비어있는 경우 → 모달 없이 바로 이동
-          proceedAfterLogin();
-        }
-
-      } catch (err) {
-        showAlert('로그인 중 오류가 발생했습니다.\n' + err.message, 'error');
-      } finally {
-        hideLoading();
-      }
-    }
-
-    // ============================================================
-    // 📢 공지사항 모달
-    // ============================================================
-    function showNoticeModal(notices) {
-      const contentDiv = document.getElementById('modal-notice-content');
-      contentDiv.innerHTML = '';
-
-      notices.forEach(notice => {
-        const div = document.createElement('div');
-        div.className = 'bg-gray-50 rounded-lg p-4';
-        div.innerHTML =
-          '<p class="font-semibold text-blue-600 mb-1">[' + notice.type + ']</p>' +
-          '<p class="whitespace-pre-wrap">' + notice.content + '</p>';
-        contentDiv.appendChild(div);
-      });
-
-      document.getElementById('modal-notice').classList.remove('hidden');
-    }
-
-    function closeNoticeAndProceed() {
-      document.getElementById('modal-notice').classList.add('hidden');
-      proceedAfterLogin();
-    }
-
-    // ============================================================
-    // ➡️ 로그인 후 이동 처리
-    // ============================================================
-    function proceedAfterLogin() {
-      const today = new Date().toISOString().split('T')[0];
-
-      if (today < rulesData.inputDate) {
-        // 자료입력 시작일 이전 → 대기 화면
-        document.getElementById('waiting-message').textContent =
-          rulesData.inputDate + ' 부터 자료 입력이 가능합니다.';
-        showScreen('screen-waiting');
-      } else {
-        // 자료입력 가능 → firstpage.html로 이동
-        const params = new URLSearchParams({
-          studentId: loginUserData.studentId,
-          name: loginUserData.name
-        });
-        window.location.href = GITHUB_PAGE_URL + '/firstpage.html?' + params.toString();
-      }
-    }
-
-    // ============================================================
-    // 🔍 비밀번호 찾기
-    // ============================================================
-    async function doFindPassword() {
-      const studentId = document.getElementById('find-studentId').value.trim();
-      const name      = document.getElementById('find-name').value.trim();
-      const email     = document.getElementById('find-email').value.trim();
-
-      if (!studentId || !name || !email) {
-        showAlert('모든 항목을 입력해 주세요.', 'warning');
-        return;
-      }
-
-      showLoading('비밀번호 찾는 중...');
-
-      try {
-        const result = await apiPost({
-          action: 'findPassword',
-          studentId: studentId,
-          name: name,
-          email: email
-        });
-
-        if (result.success) {
-          showAlert(result.message, 'success', function() {
-            showScreen('screen-login');
-          });
-        } else {
-          showAlert(result.message, 'error');
-        }
-      } catch (err) {
-        showAlert('비밀번호 찾기 중 오류가 발생했습니다.\n' + err.message, 'error');
-      } finally {
-        hideLoading();
-      }
-    }
-
-    // ============================================================
-    // 🔄 [추가] 비밀번호 변경
-    // ============================================================
-    async function doChangePassword() {
-      const studentId       = document.getElementById('chpw-studentId').value.trim();
-      const name            = document.getElementById('chpw-name').value.trim();
-      const email           = document.getElementById('chpw-email').value.trim();
-      const currentPassword = document.getElementById('chpw-current').value.trim();
-      const newPassword     = document.getElementById('chpw-new').value.trim();
-      const newPasswordConfirm = document.getElementById('chpw-new-confirm').value.trim();
-
-      if (!studentId || !name || !email || !currentPassword || !newPassword || !newPasswordConfirm) {
-        showAlert('모든 항목을 입력해 주세요.', 'warning');
-        return;
-      }
-
-      if (newPassword !== newPasswordConfirm) {
-        showAlert('새로운 비밀번호와 재확인 비밀번호가 일치하지 않습니다.\n다시 확인해 주세요.', 'error');
-        return;
-      }
-
-      if (currentPassword === newPassword) {
-        showAlert('새로운 비밀번호가 기존 비밀번호와 동일합니다.\n다른 비밀번호를 입력해 주세요.', 'warning');
-        return;
-      }
-
-      showLoading('비밀번호 변경 중...');
-
-      try {
-        const result = await apiPost({
-          action: 'changePassword',
-          studentId: studentId,
-          name: name,
-          email: email,
-          currentPassword: currentPassword,
-          newPassword: newPassword
-        });
-
-        if (result.success) {
-          showAlert(result.message, 'success', function() {
-            showScreen('screen-login');
-          });
-        } else {
-          showAlert(result.message, 'error');
-        }
-      } catch (err) {
-        showAlert('비밀번호 변경 중 오류가 발생했습니다.\n' + err.message, 'error');
-      } finally {
-        hideLoading();
-      }
-    }
-
-    // ============================================================
-    // 🏁 페이지 로드 시 초기화 실행
-    // ============================================================
-    window.addEventListener('DOMContentLoaded', function() {
-      // 비밀번호 실시간 일치 체크 등록 (회원가입)
-      setupPasswordMatch('reg-password', 'reg-password-confirm', 'reg-pw-match-msg');
-      // 비밀번호 실시간 일치 체크 등록 (비밀번호 변경)
-      setupPasswordMatch('chpw-new', 'chpw-new-confirm', 'chpw-match-msg');
-      // 초기화 실행
-      initialize();
-    });
+    })();
   </script>
 </body>
 </html>
