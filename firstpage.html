@@ -301,17 +301,18 @@
       let html = '<div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl shadow-md border border-orange-200 divide-y divide-orange-100">';
 
       nearestItems.forEach((item, idx) => {
-        // D-day 계산
+      // D-day 계산 (시작날짜 기준 + 진행 중 표시)
+        const startDateObj = parseDate(item.startDate);
         const endDateObj = parseDate(item.endDate);
-        const diffTime = endDateObj.getTime() - today.getTime();
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        const diffTimeStart = startDateObj.getTime() - today.getTime();
+        const diffDaysStart = Math.ceil(diffTimeStart / (1000 * 60 * 60 * 24));
+        const isOngoing = (today >= startDateObj && today <= endDateObj);
         let dDayText = '';
-        if (diffDays === 0) dDayText = 'D-Day';
-        else if (diffDays > 0) dDayText = 'D-' + diffDays;
-        else dDayText = 'D+' + Math.abs(diffDays);
+        if (isOngoing) dDayText = '일정 진행 중';
+        else if (diffDaysStart === 0) dDayText = 'D-Day';
+        else if (diffDaysStart > 0) dDayText = 'D-' + diffDaysStart;
 
-        const dDayColor = diffDays <= 3 ? 'bg-red-500' : diffDays <= 7 ? 'bg-orange-500' : 'bg-blue-500';
-
+        const dDayColor = isOngoing ? 'bg-green-500' : diffDaysStart <= 3 ? 'bg-red-500' : diffDaysStart <= 7 ? 'bg-orange-500' : 'bg-blue-500';
         html += '<div class="p-4 sm:p-5">';
         html += '  <div class="flex items-start justify-between gap-3">';
         html += '    <div class="flex-1 min-w-0">';
