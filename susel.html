@@ -323,6 +323,37 @@
     };
 
 
+    /* ══════════════════════════════════════════════════════════════
+       📡 API 호출 공통 함수 (fetch 방식)
+       ✅ 수정: google.script.run 대신 fetch + DEPLOY_URL 사용
+       ══════════════════════════════════════════════════════════════ */
+    async function _callGetAPI(action, params) {
+      params = params || {};
+      var url = new URL(DEPLOY_URL);
+      url.searchParams.set('action', action);
+      for (var key in params) {
+        if (params.hasOwnProperty(key)) {
+          url.searchParams.set(key, params[key]);
+        }
+      }
+      var resp = await fetch(url.toString());
+      if (!resp.ok) throw new Error('서버 응답 오류: ' + resp.status);
+      return await resp.json();
+    }
+
+    async function _callPostAPI(action, payload) {
+      payload = payload || {};
+      payload.action = action;
+      var resp = await fetch(DEPLOY_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('서버 응답 오류: ' + resp.status);
+      return await resp.json();
+    }
+
+
     /* ── 초기화 ──────────────────────────── */
     function init() {
       // URL 파라미터에서 학생 정보 추출
@@ -338,57 +369,48 @@
       _loadData();
     }
 
-    /* ── 데이터 로드 ─────────────────────── */
-    function _loadData() {
-      var loaded = { options: false, student: false, classNum: false };
+    /* ══════════════════════════════════════════════════════════════
+       📥 데이터 로드
+       ✅ 수정: google.script.run → fetch (async/await) 방식으로 전면 교체
+       ══════════════════════════════════════════════════════════════ */
+    async function _loadData() {
       var studentData = null;
 
-      function _checkReady() {
-        if (loaded.options && loaded.student && loaded.classNum) {
-          _renderAll(studentData);
+      try {
+        // 3개 요청을 동시에 병렬 실행 (Promise.allSettled)
+        var results = await Promise.allSettled([
+          _callGetAPI('suselGetOptions'),
+          _callGetAPI('suselGetStudentData', { studentId: studentId }),
+          _callGetAPI('suselGetStudentClass', { studentId: studentId })
+        ]);
+
+        // 1) 옵션 목록
+        if (results[0].status === 'fulfilled' && results[0].value.success) {
+          optionsData = results[0].value.data || {};
+        } else {
+          console.error('옵션 로드 실패:', results[0].reason || results[0].value);
         }
+
+        // 2) 기존 학생 데이터
+        if (results[1].status === 'fulfilled' && results[1].value.success) {
+          studentData = results[1].value.data;
+        } else {
+          console.error('학생 데이터 로드 실패:', results[1].reason || results[1].value);
+        }
+
+        // 3) 반 정보
+        if (results[2].status === 'fulfilled' && results[2].value.success) {
+          classNum = results[2].value.data || '';
+        } else {
+          console.error('반 정보 로드 실패:', results[2].reason || results[2].value);
+        }
+
+      } catch (e) {
+        console.error('데이터 로드 중 오류:', e);
       }
 
-      // 1) 옵션 목록
-      google.script.run
-        .withSuccessHandler(function (data) {
-          optionsData = data || {};
-          loaded.options = true;
-          _checkReady();
-        })
-        .withFailureHandler(function (e) {
-          console.error('옵션 로드 실패:', e);
-          loaded.options = true;
-          _checkReady();
-        })
-        .suselGetOptions();
-
-      // 2) 기존 학생 데이터
-      google.script.run
-        .withSuccessHandler(function (data) {
-          studentData = data;
-          loaded.student = true;
-          _checkReady();
-        })
-        .withFailureHandler(function (e) {
-          console.error('학생 데이터 로드 실패:', e);
-          loaded.student = true;
-          _checkReady();
-        })
-        .suselGetStudentData(studentId);
-
-      // 3) 반 정보
-      google.script.run
-        .withSuccessHandler(function (cn) {
-          classNum = cn || '';
-          loaded.classNum = true;
-          _checkReady();
-        })
-        .withFailureHandler(function (e) {
-          loaded.classNum = true;
-          _checkReady();
-        })
-        .suselGetStudentClass(studentId);
+      // 렌더링
+      _renderAll(studentData);
     }
 
     /* ── 전체 렌더링 ─────────────────────── */
@@ -521,8 +543,11 @@
       }
     }
 
-    /* ── 저장 ────────────────────────────── */
-    function doSave() {
+    /* ══════════════════════════════════════════════════════════════
+       💾 저장
+       ✅ 수정: google.script.run → fetch POST 방식으로 교체
+       ══════════════════════════════════════════════════════════════ */
+    async function doSave() {
       // 유효성 검사
       if (!selections.suneungYn) {
         _showToast('수능 응시 여부를 선택해주세요.', 'error');
@@ -557,26 +582,27 @@
       saveBtn.disabled = true;
       saveBtn.textContent = '⏳ 저장 중...';
 
-      google.script.run
-        .withSuccessHandler(function (result) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = '💾 저장하기';
-          if (result && result.success) {
-            _showToast('✅ ' + result.message, 'success');
-          } else {
-            _showToast('저장에 실패했습니다.', 'error');
-          }
-        })
-        .withFailureHandler(function (e) {
-          saveBtn.disabled = false;
-          saveBtn.textContent = '💾 저장하기';
-          _showToast('❌ 오류: ' + (e.message || e), 'error');
-        })
-        .suselSaveSelections(payload);
+      try {
+        var result = await _callPostAPI('suselSaveSelections', payload);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 저장하기';
+        if (result && result.success) {
+          _showToast('✅ ' + result.message, 'success');
+        } else {
+          _showToast('저장에 실패했습니다: ' + (result.message || ''), 'error');
+        }
+      } catch (e) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 저장하기';
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
     }
 
 
-    /* ── 네비게이션 ──────────────────────── */
+    /* ══════════════════════════════════════════════════════════════
+       🧭 네비게이션
+       ✅ 수정: goHome()을 GitHub Pages URL로 이동하도록 변경
+       ══════════════════════════════════════════════════════════════ */
     function navigateTo(page) {
       var params = new URLSearchParams({ studentId: studentId, name: userName });
       switch (page) {
@@ -594,7 +620,8 @@
 
     function goHome() {
       var params = new URLSearchParams({ studentId: studentId, name: userName });
-      window.location.href = DEPLOY_URL + '?page=firstpage&' + params.toString();
+      // ✅ 수정: DEPLOY_URL → GITHUB_URL (GitHub Pages에서 호스팅되므로)
+      window.location.href = GITHUB_URL + '/firstpage.html?' + params.toString();
     }
 
     function doLogout() {
