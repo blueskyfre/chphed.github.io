@@ -457,8 +457,13 @@
         var params = new URLSearchParams({ studentId: _studentId, name: _userName });
         switch (page) {
           case 'suneung':
-            _showModal('수능과목선택 페이지는 준비 중입니다.');
+            window.location.href =
+            'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec'
+            + '?page=susel&' + params.toString();
             break;
+
+
+            
           case 'university':
             _showModal('응시희망대학 페이지는 준비 중입니다.');
             break;
