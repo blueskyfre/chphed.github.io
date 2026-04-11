@@ -414,7 +414,7 @@
   <!--  초기 수능 응시 여부 선택 모달 -->
   <!-- ============================================================ -->
   <div id="init-modal" class="init-modal-bg hidden">
-    <div class="init-modal-card">
+    <div class="init-modal_card">
       <div class="init-modal-title">🎯 수능 응시 여부</div>
       <div class="init-modal-desc">수능을 응시하시겠습니까?</div>
       <div>
@@ -500,7 +500,7 @@
     /* ══════════════════════════════════════════════════════════════
        📡 API 호출 공통 함수 (fetch 방식)
        ✅ 수정: google.script.run 대신 fetch + DEPLOY_URL 사용
-       ══════════════════════════════════════════════════════ */
+       ══════════════════════════════════════════════════════════════ */
     async function _callGetAPI(action, params) {
       params = params || {};
       var url = new URL(DEPLOY_URL);
@@ -543,7 +543,7 @@
       _loadData();
     }
 
-    /* ════════════════════════════════════════════  ═  ═══════════════
+    /* ═══════════════════════════════  ═  ════════════════════════════
        📥 데이터 로드
        ✅ 수정: google.script.run → fetch (async/await) 방식으로 전면 교체
        ══════════════════════════════════════════════════════════════ */
@@ -615,11 +615,21 @@
         var areaKeys = ['language','math','english','inquiry1','inquiry2','foreign'];
         areaKeys.forEach(function (k) {
           if (existingData[k]) {
-            selections[k] = existingData[k];
-            areaExam[k] = true;
-            _applyAreaToggle(k, true);
-            _highlightSubjBtn(k, existingData[k]);
-            _updateSummaryTag(k, existingData[k]);
+            // 기존 저장된 값이 '미응시'인 경우 처리
+            if (existingData[k] === '미응시') {
+              selections[k] = '미응시';
+              areaExam[k] = false;
+              _applyAreaToggle(k, false);
+              _highlightSubjBtn(k, '');
+              _updateSummaryTag(k, '미응시');
+            } else {
+              // 값이 있으면 응시로 처리
+              selections[k] = existingData[k];
+              areaExam[k] = true;
+              _applyAreaToggle(k, true);
+              _highlightSubjBtn(k, existingData[k]);
+              _updateSummaryTag(k, existingData[k]);
+            }
           }
         });
 
@@ -825,7 +835,7 @@
           parts.push(labels[k] + ': 미응시');
         }
       });
-      el.textContent = parts.length > 0 ? parts.join('  |  ') : '과목을 선택해주세요';
+      el.textContent = parts.length > 0 ? parts.join('  |  ') : '과목을 선  해  세요';
     }
 
     /* ── 과목 섹션 활성/비활성 ────────────── */
