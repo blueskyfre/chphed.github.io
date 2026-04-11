@@ -956,6 +956,10 @@
     /* ── 토스트 ──────────────────────────── */
     function _showToast(msg, type) {
       var toast = document.getElementById('toast');
+      if (!toast) {
+        alert(msg);
+        return;
+      }
       toast.textContent = msg;
       toast.className = 'toast ' + (type === 'error' ? 'toast-error' : 'toast-success') + ' show';
       setTimeout(function () { toast.classList.remove('show'); }, 3000);
