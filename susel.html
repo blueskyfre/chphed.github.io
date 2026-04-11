@@ -951,8 +951,9 @@
         case 'university':
           showModal('응시희망대학 페이지는 준비 중입니다.');
           break;
-        case 'record':
-          showModal('생기부 기초자료 작성 페이지는 준비 중입니다.');
+      case 'record':
+          window.location.href =
+        _GITHUB_PAGE_URL + '/record.html?' + params.toString();
           break;
       }
     }
