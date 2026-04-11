@@ -414,7 +414,7 @@
   <!-- ============================================================ -->
   <!--  초기 수능 응시 여부 선택 모달 -->
   <!-- ============================================================ -->
-  <div id="init-modal" class="init-modal-bg">
+  <div id="init-modal" class="init-modal-bg hidden">
     <div class="init-modal-card">
       <div class="init-modal-title">🎯 수능 응시 여부</div>
       <div class="init-modal-desc">수능을 응시하시겠습니까?</div>
@@ -608,6 +608,7 @@
         // 수능응시여부 복원
         if (existingData.suneungYn) {
           selections.suneungYn = existingData.suneungYn;
+          showInitModal = false; // 기존 데이터가 있으면 초기 모달 표시 안 함
           _highlightSuneungBtn(existingData.suneungYn);
           _updateSubjectSection();
         }
@@ -634,11 +635,12 @@
       document.getElementById('skeleton-ui').classList.add('hidden');
       document.getElementById('main-content').classList.remove('hidden');
 
-      // 초기 모달 표시 (기존 데이터가 있으면 표시하지 않음)
-      if (showInitModal && !existingData) {
-        document.getElementById('init-modal').classList.remove('hidden');
+      // 초기 모달 표시 (기존 데이터가 없고 처음 방문时才 표시)
+      var initModal = document.getElementById('init-modal');
+      if (!existingData) {
+        initModal.classList.remove('hidden');
       } else {
-        document.getElementById('init-modal').classList.add('hidden');
+        initModal.classList.add('hidden');
       }
 
       // 전체 요약 갱신
