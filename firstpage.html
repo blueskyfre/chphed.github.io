@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>2026학년도 주요 일정</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="navi.js"></script>
   <style>
     /* ============================================================
        ✅ 공통 재사용 스타일 - 스켈레톤 UI & 모달 알림
@@ -55,6 +56,9 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
 
+  <!-- 공통 네비게이션 -->
+  <div id="shared-nav"></div>
+
   <!-- ============================================================ -->
   <!--  로딩 오버레이 -->
   <!-- ============================================================ -->
@@ -79,36 +83,6 @@
       </button>
     </div>
   </div>
-
-  <!-- ============================================================ -->
-  <!--  상단 네비게이션 바 -->
-  <!-- ============================================================ -->
-  <nav class="bg-white shadow-sm sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-3">
-      <div class="flex items-center justify-between">
-        <!-- 좌측: 링크 버튼들 -->
-        <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
-          <button onclick="Firstpage.navigateTo('suneung')"
-            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-200">
-            수능과목선택
-          </button>
-          <button onclick="Firstpage.navigateTo('university')"
-            class="bg-green-50 hover:bg-green-100 text-green-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-green-200">
-            응시희망대학
-          </button>
-          <button onclick="Firstpage.navigateTo('record')"
-            class="bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-purple-200">
-            생기부 기초자료 작성
-          </button>
-        </div>
-        <!-- 우측: 로그아웃 버튼 -->
-        <button onclick="Firstpage.doLogout()"
-          class="bg-red-50 hover:bg-red-100 text-red-600 font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-red-200 ml-2 flex-shrink-0">
-          로그아웃
-        </button>
-      </div>
-    </div>
-  </nav>
 
   <!-- ============================================================ -->
   <!--  메인 콘텐츠 -->
@@ -492,6 +466,14 @@
       // 🏁 DOMContentLoaded 이벤트 등록 (내부 자동 실행)
       // ============================================================
       document.addEventListener('DOMContentLoaded', function() {
+        // 공통 네비게이션 초기화
+        NaviComponent.init({
+          activePage: 'schedule',
+          userName: _userName,
+          studentId: _studentId,
+          onLogout: function() { Firstpage.doLogout(); }
+        });
+
         // 환영 메시지 세팅
         document.getElementById('welcome-text').textContent =
           _userName ? _userName + ' 학생, 환영합니다!' : '';
