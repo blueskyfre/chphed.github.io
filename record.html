@@ -257,6 +257,10 @@
       <!-- ── 개인 추가 활동 입력 폼 ── -->
       <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
         <h3 class="text-sm font-bold text-blue-700 mb-3">✏️ 개인 추가 활동 입력</h3>
+        <label class="block text-xs text-blue-600 font-semibold mb-1">활동명</label>
+        <input id="extra-activity-name" type="text" placeholder="활동명을 입력하세요"
+          class="w-full border border-blue-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white mb-3">
+        <label class="block text-xs text-blue-600 font-semibold mb-1">활동 내용</label>
         <textarea id="extra-content-input"
           class="w-full border border-blue-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white mb-3"
           rows="3"
@@ -568,6 +572,7 @@
         byteEl.textContent = bytes + ' / ' + limit + ' bytes';
 
         // 개인 추가 활동 입력 폼 초기화
+        document.getElementById('extra-activity-name').value = '';
         document.getElementById('extra-content-input').value = '';
         ['extra-start-year','extra-start-month','extra-start-day',
          'extra-end-year','extra-end-month','extra-end-day'].forEach(function(id) {
@@ -827,9 +832,11 @@
       // 💾 개인 추가 활동 저장 (public)
       // ============================================================
       async function _saveExtraActivity() {
-        var area    = _currentTab;
-        var content = document.getElementById('extra-content-input').value.trim();
-        if (!content) { _showModal('활동 내용을 입력하세요.'); return; }
+        var area         = _currentTab;
+        var activityName = document.getElementById('extra-activity-name').value.trim();
+        var content      = document.getElementById('extra-content-input').value.trim();
+        if (!activityName) { _showModal('활동명을 입력하세요.'); return; }
+        if (!content)      { _showModal('활동 내용을 입력하세요.'); return; }
 
         function _buildDate(prefix) {
           var y = document.getElementById(prefix + '-year').value.trim();
@@ -840,14 +847,13 @@
         }
         var startDate = _buildDate('extra-start');
         var endDate   = _buildDate('extra-end');
-        var extraCode = 'EXTRA_' + _studentId + '_' + Date.now();
 
         _showLoading('개인 활동 저장 중...');
         try {
           var result = await _callAPI('saveInProgress', {
             studentId: _studentId, name: _userName,
-            activityCode: extraCode,
-            activityName: '개인추가활동',
+            activityCode: 'P',
+            activityName: activityName,
             startDate: startDate, endDate: endDate,
             area: area, competency: '', content: content
           });
