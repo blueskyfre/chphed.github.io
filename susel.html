@@ -677,9 +677,9 @@
       areaExam[key] = isYes;
       _applyAreaToggle(key, isYes);
       if (!isYes) {
-        selections[key] = '';
+        selections[key] = '미응시';
         _highlightSubjBtn(key, '');
-        _updateSummaryTag(key, '');
+        _updateSummaryTag(key, '미응시');
       }
       _updateGlobalSummary();
     }
@@ -812,14 +812,20 @@
         return;
       }
 
-      if (selections.suneungYn === '응시') {
-        if (!selections.language) { _showToast('언어영역을 선택해주세요.', 'error'); return; }
-        if (!selections.math)     { _showToast('수리영역을 선택해주세요.', 'error'); return; }
-        if (!selections.english)  { _showToast('영어를 선택해주세요.', 'error'); return; }
-        if (!selections.inquiry1) { _showToast('탐구선택1 과목을 선택해주세요.', 'error'); return; }
-        if (!selections.inquiry2) { _showToast('탐구선택2 과목을 선택해주세요.', 'error'); return; }
-        if (!selections.foreign)  { _showToast('제2외국어를 선택해주세요.', 'error'); return; }
-      }
+if (selections.suneungYn === '응시') {
+  if (!selections.language) { _showToast('언어영역을 선택해주세요.', 'error'); return; }
+  if (!selections.math)     { _showToast('수리영역을 선택해주세요.', 'error'); return; }
+  if (areaExam.english  === null) { _showToast('영어 응시 여부를 선택해주세요.', 'error'); return; }   // ← 변경
+  if (areaExam.inquiry1 === null) { _showToast('탐구선택1 응시 여부를 선택해주세요.', 'error'); return; }  // ← 변경
+  if (areaExam.inquiry2 === null) { _showToast('탐구선택2 응시 여부를 선택해주세요.', 'error'); return; }  // ← 변경
+  if (areaExam.foreign  === null) { _showToast('제2외국어 응시 여부를 선택해주세요.', 'error'); return; } // ← 변경
+  if (areaExam.english  === true  && !selections.english)  { _showToast('영어를 선택해주세요.', 'error'); return; }   // ← 추가
+  if (areaExam.inquiry1 === true  && !selections.inquiry1) { _showToast('탐구선택1 과목을 선택해주세요.', 'error'); return; }  // ← 추가
+  if (areaExam.inquiry2 === true  && !selections.inquiry2) { _showToast('탐구선택2 과목을 선택해주세요.', 'error'); return; }  // ← 추가
+  if (areaExam.foreign  === true  && !selections.foreign)  { _showToast('제2외국어를 선택해주세요.', 'error'); return; }  // ← 추가
+}
+
+      
 
       var payload = {
         classNum  : classNum,
