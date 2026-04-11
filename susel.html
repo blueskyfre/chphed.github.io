@@ -290,10 +290,10 @@
             </div>
           </div>
 
-          <!-- 카드: 영어 (선택 영역) -->
+          <!-- 카드: 영어 (응시/미응시만 선택) -->
           <div id="card-english-wrap" class="subject-card bg-white rounded-lg shadow-sm border-l-4 border-emerald-500 overflow-hidden">
             <div class="px-4 py-2.5">
-              <div class="flex items-center justify-between mb-2">
+              <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-sm font-bold text-gray-700">🌐 영어 영역</span>
                   <span id="summary-english" class="summary-tag hidden"></span>
@@ -303,7 +303,6 @@
                   <button onclick="SuselNS.toggleArea('english', false)" id="tog-english-no"  class="toggle-btn inactive">미응시</button>
                 </div>
               </div>
-              <div class="card-body flex gap-1.5 flex-wrap" id="card-english"></div>
             </div>
           </div>
 
@@ -501,7 +500,7 @@
     /* ══════════════════════════════════════════════════════════════
        📡 API 호출 공통 함수 (fetch 방식)
        ✅ 수정: google.script.run 대신 fetch + DEPLOY_URL 사용
-       ══════════════════════════════════════════════════════════════ */
+       ══════════════════════════════════════════════════════ */
     async function _callGetAPI(action, params) {
       params = params || {};
       var url = new URL(DEPLOY_URL);
@@ -544,7 +543,7 @@
       _loadData();
     }
 
-    /* ══════════════════════════════════════════════════════════════
+    /* ════════════════════════════════════════════  ═  ═══════════════
        📥 데이터 로드
        ✅ 수정: google.script.run → fetch (async/await) 방식으로 전면 교체
        ══════════════════════════════════════════════════════════════ */
@@ -596,7 +595,6 @@
       // 과목 선택 카드들
       _renderOptionButtons('card-language', 'language', optionsData.language || []);
       _renderOptionButtons('card-math',     'math',     optionsData.math     || []);
-      _renderOptionButtons('card-english',  'english',  optionsData.english  || []);
       _renderOptionButtons('card-inquiry1', 'inquiry1', optionsData.inquiry1 || []);
       _renderOptionButtons('card-inquiry2', 'inquiry2', optionsData.inquiry2 || []);
       _renderOptionButtons('card-foreign',  'foreign',  optionsData.foreign  || []);
@@ -680,6 +678,24 @@
         yesBtn.style.fontSize = '0.8rem'; yesBtn.style.padding = '0.3rem 0.9rem';
         noBtn.className  = 'toggle-btn inactive';
         noBtn.style.fontSize = '0.8rem'; noBtn.style.padding = '0.3rem 0.9rem';
+        var keys = ['language','math','english','inquiry1','inquiry2','foreign'];
+        keys.forEach(function (k) {
+          areaExam[k] = null;
+          selections[k] = '';
+          _highlightSubjBtn(k, '');
+          _updateSummaryTag(k, '');
+          var yBtn = document.getElementById('tog-' + k + '-yes');
+          var nBtn = document.getElementById('tog-' + k + '-no');
+          if (yBtn) yBtn.className = 'toggle-btn inactive';
+          if (nBtn) nBtn.className = 'toggle-btn inactive';
+          var wrap = document.getElementById('card-' + k + '-wrap');
+          if (wrap) {
+            wrap.classList.remove('disabled');
+            var body = wrap.querySelector('.card-body');
+            if (body) body.classList.remove('hidden');
+          }
+        });
+        _updateGlobalSummary();
       } else if (val === '미응시') {
         yesBtn.className = 'toggle-btn inactive';
         yesBtn.style.fontSize = '0.8rem'; yesBtn.style.padding = '0.3rem 0.9rem';
@@ -870,14 +886,13 @@
       if (selections.suneungYn === '응시') {
         if (!selections.language) { _showToast('언어영역을 선택해주세요.', 'error'); return; }
         if (!selections.math)     { _showToast('수리영역을 선택해주세요.', 'error'); return; }
-        if (areaExam.english  === null) { _showToast('영어 응시 여부를 선택해주세요.', 'error'); return; }   // ← 변경
-        if (areaExam.inquiry1 === null) { _showToast('탐구선택1 응시 여부를 선택해주세요.', 'error'); return; }  // ← 변경
-        if (areaExam.inquiry2 === null) { _showToast('탐구선택2 응시 여부를 선택해주세요.', 'error'); return; }  // ← 변경
-        if (areaExam.foreign  === null) { _showToast('제2외국어 응시 여부를 선택해주세요.', 'error'); return; } // ← 변경
-        if (areaExam.english  === true  && !selections.english)  { _showToast('영어를 선택해주세요.', 'error'); return; }   // ← 추가
-        if (areaExam.inquiry1 === true  && !selections.inquiry1) { _showToast('탐구선택1 과목을 선택해주세요.', 'error'); return; }  // ← 추가
-        if (areaExam.inquiry2 === true  && !selections.inquiry2) { _showToast('탐구선택2 과목을 선택해주세요.', 'error'); return; }  // ← 추가
-        if (areaExam.foreign  === true  && !selections.foreign)  { _showToast('제2외국어를 선택해주세요.', 'error'); return; }  // ← 추가
+        if (areaExam.english  === null) { _showToast('영어 응시 여부를 선택해주세요.', 'error'); return; }
+        if (areaExam.inquiry1 === null) { _showToast('탐구선택1 응시 여부를 선택해주세요.', 'error'); return; }
+        if (areaExam.inquiry2 === null) { _showToast('탐구선택2 응시 여부를 선택해주세요.', 'error'); return; }
+        if (areaExam.foreign  === null) { _showToast('제2외국어 응시 여부를 선택해주세요.', 'error'); return; }
+        if (areaExam.inquiry1 === true  && !selections.inquiry1) { _showToast('탐구선택1 과목을 선택해주세요.', 'error'); return; }
+        if (areaExam.inquiry2 === true  && !selections.inquiry2) { _showToast('탐구선택2 과목을 선택해주세요.', 'error'); return; }
+        if (areaExam.foreign  === true  && !selections.foreign)  { _showToast('제2외국어를 선택해주세요.', 'error'); return; }
       }
 
       var payload = {
