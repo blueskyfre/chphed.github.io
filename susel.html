@@ -635,9 +635,9 @@
       document.getElementById('skeleton-ui').classList.add('hidden');
       document.getElementById('main-content').classList.remove('hidden');
 
-      // 초기 모달 표시 (기존 데이터가 없고 처음 방문时才 표시)
+      // 초기 모달 표시 (기존 데이터가 없거나 suneungYn이 없으면 표시)
       var initModal = document.getElementById('init-modal');
-      if (!existingData) {
+      if (!existingData || !existingData.suneungYn) {
         initModal.classList.remove('hidden');
       } else {
         initModal.classList.add('hidden');
@@ -818,21 +818,31 @@
       if (!section) return;
 
       if (selections.suneungYn === '미응시') {
-        // 전체 과목 섹션 비활성 + 초기화
-        section.style.opacity = '0.4';
-        section.style.pointerEvents = 'none';
+        section.style.opacity = '0.6';
+        section.style.pointerEvents = '';
         var keys = ['language','math','english','inquiry1','inquiry2','foreign'];
         keys.forEach(function (k) {
-          selections[k] = '';
-          areaExam[k] = null;
+          selections[k] = '미응시';
+          areaExam[k] = false;
           _highlightSubjBtn(k, '');
-          _updateSummaryTag(k, '');
-          // 토글 버튼 초기화
+          _updateSummaryTag(k, '미응시');
           var yBtn = document.getElementById('tog-' + k + '-yes');
           var nBtn = document.getElementById('tog-' + k + '-no');
           if (yBtn) yBtn.className = 'toggle-btn inactive';
-          if (nBtn) nBtn.className = 'toggle-btn inactive';
-          // 카드 body 보이기 (비활성이어도 구조 유지)
+          if (nBtn) nBtn.className = 'toggle-btn active-no';
+          var wrap = document.getElementById('card-' + k + '-wrap');
+          if (wrap) {
+            wrap.classList.add('disabled');
+            var body = wrap.querySelector('.card-body');
+            if (body) body.classList.add('hidden');
+          }
+        });
+        _updateGlobalSummary();
+      } else if (selections.suneungYn === '응시') {
+        section.style.opacity = '';
+        section.style.pointerEvents = '';
+        var keys = ['language','math','english','inquiry1','inquiry2','foreign'];
+        keys.forEach(function (k) {
           var wrap = document.getElementById('card-' + k + '-wrap');
           if (wrap) {
             wrap.classList.remove('disabled');
@@ -840,15 +850,9 @@
             if (body) body.classList.remove('hidden');
           }
         });
-        document.getElementById('note-textarea').value = '';
-        _updateGlobalSummary();
-      } else if (selections.suneungYn === '응시') {
-        section.style.opacity = '';
-        section.style.pointerEvents = '';
       } else {
-        // 미선택 상태
         section.style.opacity = '0.4';
-        section.style.pointerEvents = 'none';
+        section.style.pointerEvents = '';
       }
     }
 
