@@ -34,39 +34,40 @@
     /* 로딩 오버레이 */
     .loading-overlay {
       position: fixed; inset: 0;
-      background: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.85);
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      z-index: 999;
+      z-index: 9999;
     }
 
-    /* 생기부내용 글상자 편집 모드 */
+    /* 로딩 스피너 */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid #e9d5ff;
+      border-top-color: #7c3aed;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    /* 생기부내용 글상자 */
     .content-textarea {
       width: 100%;
       min-height: 120px;
       resize: vertical;
       line-height: 1.7;
     }
-
-    /* 행사목록 카드 활성화 상태 */
-    .activity-card-active {
-      border-color: #7c3aed !important;
-      background-color: #f5f3ff !important;
-    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
   <!-- ============================================================ -->
-  <!--  로딩 오버레이 -->
+  <!--  로딩 오버레이 (스피너 + 메시지) -->
   <!-- ============================================================ -->
   <div id="loading-overlay" class="loading-overlay hidden">
-    <div class="flex space-x-2 mb-3">
-      <div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce"></div>
-      <div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
-      <div class="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style="animation-delay: 0.3s;"></div>
-    </div>
-    <p class="text-sm text-gray-600">처리 중...</p>
+    <div class="spinner mb-4"></div>
+    <p id="loading-message" class="text-sm font-medium text-purple-700">저장 중입니다...</p>
+    <p class="text-xs text-gray-400 mt-1">잠시만 기다려 주세요</p>
   </div>
 
   <!-- ============================================================ -->
@@ -87,7 +88,8 @@
   <!-- ============================================================ -->
   <div id="activity-modal" class="modal-overlay hidden">
     <div class="bg-white rounded-xl shadow-xl p-5 mx-4 max-w-lg w-full max-h-screen overflow-y-auto">
-      <h3 id="activity-modal-title" class="text-base font-bold text-gray-800 mb-4"></h3>
+      <h3 id="activity-modal-title" class="text-base font-bold text-gray-800 mb-1"></h3>
+      <p id="activity-modal-date" class="text-xs text-gray-400 mb-4"></p>
 
       <!-- 참여 여부 -->
       <div class="mb-4">
@@ -100,6 +102,12 @@
             onclick="Record.setParticipated(false)"
             class="flex-1 py-2 rounded-lg border-2 border-gray-200 text-sm font-medium transition">미참여</button>
         </div>
+      </div>
+
+      <!-- 미참여 경고 문구 -->
+      <div id="section-no-warning" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-sm text-red-600 font-medium">⚠️ 미참여로 저장하면 이 행사의 작성 내용이 삭제됩니다.</p>
+        <p class="text-xs text-red-400 mt-1">저장을 클릭하면 기존 내용이 삭제되고 미참여로 처리됩니다.</p>
       </div>
 
       <!-- 배치 영역 선택 -->
@@ -126,39 +134,30 @@
           placeholder="이 행사에서 수행한 활동을 입력하세요..."></textarea>
       </div>
 
-      <!-- 버튼 -->
+      <!-- 버튼 (저장 + 취소만, 삭제 버튼 없음) -->
       <div class="flex gap-2">
         <button onclick="Record.closeActivityModal()"
           class="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition">취소</button>
         <button id="btn-save-activity"
           onclick="Record.saveActivity()"
           class="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition hidden">저장</button>
-        <button id="btn-delete-activity"
-          onclick="Record.deleteActivity()"
-          class="py-2 px-4 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-sm font-medium transition hidden">삭제</button>
       </div>
     </div>
   </div>
 
   <!-- ============================================================ -->
-  <!--  완료탭 전체 편집 모달 -->
+  <!--  전체 내용 보기 모달 (읽기 전용) -->
   <!-- ============================================================ -->
-  <div id="edit-modal" class="modal-overlay hidden">
+  <div id="view-modal" class="modal-overlay hidden">
     <div class="bg-white rounded-xl shadow-xl p-5 mx-4 max-w-xl w-full max-h-screen overflow-y-auto">
-      <div class="flex items-center justify-between mb-4">
-        <h3 id="edit-modal-title" class="text-base font-bold text-gray-800"></h3>
-        <span id="edit-byte-info" class="text-sm font-semibold text-gray-500"></span>
+      <div class="flex items-center justify-between mb-3">
+        <h3 id="view-modal-title" class="text-base font-bold text-gray-800"></h3>
+        <span id="view-byte-info" class="text-sm font-semibold text-gray-500"></span>
       </div>
-      <textarea id="edit-content-input"
-        class="content-textarea w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400 mb-4"
-        oninput="Record.onEditInput()"
-        rows="10"></textarea>
-      <div class="flex gap-2">
-        <button onclick="Record.closeEditModal()"
-          class="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition">취소</button>
-        <button onclick="Record.saveEditContent()"
-          class="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition">저장</button>
-      </div>
+      <div id="view-content-text"
+        class="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-700 leading-relaxed mb-4 min-h-[100px] whitespace-pre-wrap max-h-72 overflow-y-auto"></div>
+      <button onclick="Record.closeViewModal()"
+        class="w-full py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition">닫기</button>
     </div>
   </div>
 
@@ -207,7 +206,7 @@
     </div>
 
     <!-- ============================================================ -->
-    <!--  생기부영역 탭 버튼 + 행사목록 탭 -->
+    <!--  생기부영역 탭 버튼 -->
     <!-- ============================================================ -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
       <div class="flex overflow-x-auto border-b border-gray-200 bg-gray-50 scrollbar-hide" id="tab-buttons">
@@ -226,8 +225,8 @@
         <div class="skeleton skeleton-row w-full"></div>
         <div class="skeleton skeleton-row w-full"></div>
       </div>
-      <!-- 행사 목록 -->
-      <div id="events-list" class="hidden space-y-3"></div>
+      <!-- 행사 목록 (그룹별 렌더) -->
+      <div id="events-list" class="hidden space-y-5"></div>
       <!-- 비어있음 -->
       <div id="events-empty" class="hidden bg-white rounded-xl shadow-md p-8 text-center text-gray-400">
         등록된 공식 행사가 없습니다.
@@ -235,42 +234,87 @@
     </div>
 
     <!-- ============================================================ -->
-    <!--  [생기부영역 탭] 완료 내용 + 행사목록 -->
+    <!--  [생기부영역 탭] 완료 내용 + 개인추가 + 행사목록 -->
     <!-- ============================================================ -->
     <div id="panel-area" class="hidden">
 
-      <!-- 상단: 영역명 + 전체 내용 편집 + 글자수 -->
+      <!-- 상단: 영역명 + 전체 내용 보기 버튼 + 글자수 -->
       <div class="flex flex-wrap items-center gap-3 mb-4">
         <h2 id="area-title" class="text-lg font-bold text-gray-800"></h2>
-        <button onclick="Record.openEditModal()"
+        <button onclick="Record.openViewModal()"
           class="bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-sm font-medium px-4 py-1.5 rounded-lg transition">
-          ✏️ 전체 내용 편집
+          👁 전체 내용 보기
         </button>
         <div id="byte-display" class="ml-auto text-sm font-semibold px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700"></div>
       </div>
 
-      <!-- 완료탭 생기부내용 표시 -->
+      <!-- 완료탭 생기부내용 미리보기 (3줄 요약) -->
       <div id="done-content-box"
-        class="bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-700 leading-relaxed mb-6 min-h-[80px] whitespace-pre-wrap shadow-sm">
-        <span class="text-gray-400">아직 작성된 내용이 없습니다.</span>
+        class="bg-white border border-gray-200 rounded-xl p-4 text-sm leading-relaxed mb-4 min-h-[56px] shadow-sm overflow-hidden"
+        style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">
       </div>
 
-      <!-- 작성중 행사 목록 (이 영역에 배치된 것들) -->
-      <div class="mb-3">
-        <h3 class="text-sm font-semibold text-gray-500 mb-2">📌 이 영역에 배치된 행사</h3>
-        <div id="area-events-list" class="space-y-2 mb-6"></div>
-      </div>
-
-      <!-- 전체 공식행사에서 추가 -->
-      <div>
-        <h3 class="text-sm font-semibold text-gray-500 mb-2">➕ 공식 행사 목록에서 추가</h3>
-        <!-- 스켈레톤 -->
-        <div id="area-events-skeleton" class="hidden space-y-2">
-          <div class="skeleton skeleton-row w-full"></div>
-          <div class="skeleton skeleton-row w-full"></div>
-          <div class="skeleton skeleton-row w-full"></div>
+      <!-- ── 개인 추가 활동 입력 폼 ── -->
+      <div class="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-6">
+        <h3 class="text-sm font-bold text-blue-700 mb-3">✏️ 개인 추가 활동 입력</h3>
+        <textarea id="extra-content-input"
+          class="w-full border border-blue-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white mb-3"
+          rows="3"
+          placeholder="공식 행사 외 개인적으로 수행한 활동을 입력하세요..."></textarea>
+        <!-- 날짜 입력 -->
+        <div class="flex flex-wrap gap-4 mb-3">
+          <div>
+            <label class="block text-xs text-blue-600 font-semibold mb-1">활동 시작일</label>
+            <div class="flex items-center gap-1">
+              <input id="extra-start-year"  type="number" placeholder="년" min="2000" max="2099"
+                class="w-16 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <span class="text-xs text-gray-400">년</span>
+              <input id="extra-start-month" type="number" placeholder="월" min="1" max="12"
+                class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <span class="text-xs text-gray-400">월</span>
+              <input id="extra-start-day"   type="number" placeholder="일" min="1" max="31"
+                class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <span class="text-xs text-gray-400">일</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-blue-600 font-semibold mb-1">활동 종료일</label>
+            <div class="flex items-center gap-1">
+              <input id="extra-end-year"  type="number" placeholder="년" min="2000" max="2099"
+                class="w-16 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <span class="text-xs text-gray-400">년</span>
+              <input id="extra-end-month" type="number" placeholder="월" min="1" max="12"
+                class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <span class="text-xs text-gray-400">월</span>
+              <input id="extra-end-day"   type="number" placeholder="일" min="1" max="31"
+                class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
+              <span class="text-xs text-gray-400">일</span>
+            </div>
+          </div>
         </div>
-        <div id="area-all-events-list" class="space-y-3"></div>
+        <button onclick="Record.saveExtraActivity()"
+          class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
+          저장
+        </button>
+      </div>
+
+      <!-- ── 이 영역에 배치된 행사 (보라색) ── -->
+      <div class="mb-5">
+        <h3 class="text-sm font-bold text-purple-700 mb-2 flex items-center gap-2">
+          <span class="inline-block w-3 h-3 rounded-full bg-purple-400"></span>
+          이 영역에 배치된 행사
+        </h3>
+        <div id="area-events-list" class="space-y-2"></div>
+      </div>
+
+      <!-- ── 공식 행사 목록에서 추가 (미입력만, 회색) ── -->
+      <div>
+        <h3 class="text-sm font-bold text-gray-500 mb-2 flex items-center gap-2">
+          <span class="inline-block w-3 h-3 rounded-full bg-gray-300"></span>
+          공식 행사 목록에서 추가
+          <span class="text-xs font-normal text-gray-400">(미입력 행사만 표시)</span>
+        </h3>
+        <div id="area-all-events-list" class="space-y-2"></div>
       </div>
 
     </div>
@@ -291,43 +335,28 @@
       var _GITHUB_PAGE_URL = 'https://blueskyfre.github.io/chphed.github.io';
       // ▲▲▲ 직접 수정이 필요한 변수 끝 ▲▲▲
 
-      // 탭 목록
-      var _TABS = ['행사목록', '자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
-
-      // 생기부영역 배치 선택지 (모달 내)
-      var _AREAS = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
-
-      // 중점역량 선택지
+      var _TABS         = ['행사목록', '자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
+      var _AREAS        = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
       var _COMPETENCIES = ['교과역량', '진로역량', '공동체역량'];
-
-      // 영역별 글자수 제한 (바이트)
-      var _BYTE_LIMIT = {
-        '자율활동':   1500,
-        '동아리활동': 1500,
-        '진로활동':   2100,
-        '개인별세특': 1500,
-        '행동발달':   1500
+      var _BYTE_LIMIT   = {
+        '자율활동': 1500, '동아리활동': 1500, '진로활동': 2100,
+        '개인별세특': 1500, '행동발달': 1500
       };
 
-      // URL 파라미터
       var _urlParams  = new URLSearchParams(window.location.search);
       var _studentId  = _urlParams.get('studentId') || '';
       var _userName   = _urlParams.get('name')      || '';
 
-      // 상태 변수
-      var _currentTab        = '행사목록';
-      var _officialActivities = [];   // SH공식활동 목록
-      var _inProgressData    = [];    // 작성중 데이터
-      var _doneData          = [];    // 완료 데이터
+      var _currentTab         = '행사목록';
+      var _officialActivities = [];
+      var _inProgressData     = [];
+      var _doneData           = [];
 
-      // 행사 입력 모달 상태
-      var _modalActivity    = null;   // 현재 열린 행사 객체
-      var _modalParticipated = null;  // true/false
-      var _modalArea        = '';
-      var _modalCompetency  = '';
-
-      // 편집 모달 상태
-      var _editArea = '';
+      var _modalActivity     = null;
+      var _modalParticipated = null;
+      var _modalArea         = '';
+      var _modalCompetency   = '';
+      var _viewArea          = '';
 
       // ============================================================
       // 📡 API 호출 공통 함수 (private)
@@ -337,9 +366,7 @@
         var url = new URL(_API_BASE);
         url.searchParams.set('action', action);
         for (var key in params) {
-          if (params.hasOwnProperty(key)) {
-            url.searchParams.set(key, String(params[key]));
-          }
+          if (params.hasOwnProperty(key)) url.searchParams.set(key, String(params[key]));
         }
         var resp = await fetch(url.toString());
         if (!resp.ok) throw new Error('서버 응답 오류: ' + resp.status);
@@ -374,14 +401,24 @@
                   .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
       }
 
-      function _showLoading() { document.getElementById('loading-overlay').classList.remove('hidden'); }
-      function _hideLoading() { document.getElementById('loading-overlay').classList.add('hidden'); }
+      /** 날짜 문자열 → 정렬용 숫자, 날짜 없으면 Infinity */
+      function _dateToSortKey(dateStr) {
+        if (!dateStr || dateStr.trim() === '' || dateStr === '-') return Infinity;
+        return parseInt(dateStr.replace(/-/g, ''), 10) || Infinity;
+      }
+
+      function _showLoading(msg) {
+        document.getElementById('loading-message').textContent = msg || '저장 중입니다...';
+        document.getElementById('loading-overlay').classList.remove('hidden');
+      }
+      function _hideLoading() {
+        document.getElementById('loading-overlay').classList.add('hidden');
+      }
 
       function _showModal(msg) {
         document.getElementById('modal-message').textContent = msg;
         document.getElementById('modal-alert').classList.remove('hidden');
       }
-
       function _closeModal() {
         document.getElementById('modal-alert').classList.add('hidden');
       }
@@ -410,11 +447,8 @@
       function _switchTab(tab) {
         _currentTab = tab;
         _renderTabs();
-
-        // 패널 전환
         document.getElementById('panel-events').classList.add('hidden');
         document.getElementById('panel-area').classList.add('hidden');
-
         if (tab === '행사목록') {
           document.getElementById('panel-events').classList.remove('hidden');
           _renderEventsList();
@@ -426,6 +460,8 @@
 
       // ============================================================
       // 🎪 행사목록 탭 렌더링 (private)
+      //    정렬: 미입력 → 참여 → 미참여, 각 그룹 내 활동시작날짜 오름차순
+      //    날짜 없는 행사는 각 그룹 내 맨 마지막
       // ============================================================
       function _renderEventsList() {
         var skeleton = document.getElementById('events-skeleton');
@@ -439,31 +475,64 @@
           return;
         }
 
-        var html = '';
-        _officialActivities.forEach(function(act) {
-          var ipEntry = _findInProgress(act['활동코드']);
-          var participated = !!ipEntry;
-          var area = ipEntry ? ipEntry.생기부영역 : '';
-          var badge = participated
-            ? '<span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">' + _escapeHtml(area) + '</span>'
-            : '<span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">미입력</span>';
+        // 상태 태깅
+        var tagged = _officialActivities.map(function(act) {
+          var ip = _findInProgress(act['활동코드']);
+          var status = !ip ? 'none' : (ip.생기부영역 === '미참여' ? 'absent' : 'joined');
+          return { act: act, ip: ip, status: status };
+        });
 
-          html += '<div class="bg-white rounded-xl shadow-sm border border-gray-200 p-4 flex flex-col sm:flex-row sm:items-center gap-3 hover:border-purple-300 transition cursor-pointer"'
-                + ' onclick="Record.openActivityModal(\'' + _escapeHtml(act['활동코드']) + '\')">';
-          html += '  <div class="flex-1 min-w-0">';
-          html += '    <div class="flex items-center gap-2 flex-wrap mb-1">';
-          html += '      <span class="text-xs text-gray-400 font-mono">' + _escapeHtml(act['활동코드']) + '</span>';
-          html += '      ' + badge;
-          html += '    </div>';
-          html += '    <p class="font-semibold text-gray-800 text-sm truncate">' + _escapeHtml(act['활동명']) + '</p>';
-          html += '    <p class="text-xs text-gray-400 mt-0.5">'
-                + _formatDisplay(act['활동시작날짜']) + ' ~ ' + _formatDisplay(act['활동종료날짜']) + '</p>';
-          html += '  </div>';
-          html += '  <div class="text-purple-400 text-lg">›</div>';
+        function _sortByDate(arr) {
+          return arr.slice().sort(function(a, b) {
+            return _dateToSortKey(a.act['활동시작날짜']) - _dateToSortKey(b.act['활동시작날짜']);
+          });
+        }
+
+        var groups = {
+          none:   _sortByDate(tagged.filter(function(t) { return t.status === 'none';   })),
+          joined: _sortByDate(tagged.filter(function(t) { return t.status === 'joined'; })),
+          absent: _sortByDate(tagged.filter(function(t) { return t.status === 'absent'; }))
+        };
+
+        var groupDefs = [
+          { key: 'none',   wrapClass: 'bg-yellow-50 border border-yellow-200', labelClass: 'text-yellow-700', label: '⬜ 미입력 행사' },
+          { key: 'joined', wrapClass: 'bg-purple-50 border border-purple-200', labelClass: 'text-purple-700', label: '✅ 참여한 행사' },
+          { key: 'absent', wrapClass: 'bg-gray-100 border border-gray-200',    labelClass: 'text-gray-500',   label: '✖ 미참여 행사'  }
+        ];
+
+        var html = '';
+        groupDefs.forEach(function(gd) {
+          var items = groups[gd.key];
+          if (items.length === 0) return;
+          html += '<div class="' + gd.wrapClass + ' rounded-xl p-4 space-y-2">';
+          html += '<p class="text-xs font-bold mb-2 ' + gd.labelClass + '">' + gd.label + ' (' + items.length + '건)</p>';
+          items.forEach(function(item) {
+            var act = item.act;
+            var ip  = item.ip;
+            var badgeHtml = item.status === 'joined'
+              ? '<span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">' + _escapeHtml(ip.생기부영역) + '</span>'
+              : item.status === 'absent'
+                ? '<span class="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">미참여</span>'
+                : '<span class="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">미입력</span>';
+
+            html += '<div class="bg-white rounded-lg border border-gray-100 p-3 flex items-center gap-3 cursor-pointer hover:border-purple-300 transition shadow-sm"'
+                 + ' onclick="Record.openActivityModal(\'' + _escapeHtml(act['활동코드']) + '\')">';
+            html += '  <div class="flex-1 min-w-0">';
+            html += '    <div class="flex items-center gap-2 flex-wrap mb-0.5">';
+            html += '      <span class="text-xs text-gray-400 font-mono">' + _escapeHtml(act['활동코드']) + '</span>';
+            html += '      ' + badgeHtml;
+            html += '    </div>';
+            html += '    <p class="font-semibold text-gray-800 text-sm truncate">' + _escapeHtml(act['활동명']) + '</p>';
+            html += '    <p class="text-xs text-gray-400 mt-0.5">'
+                 + _formatDisplay(act['활동시작날짜']) + ' ~ ' + _formatDisplay(act['활동종료날짜']) + '</p>';
+            html += '  </div>';
+            html += '  <div class="text-purple-400 text-lg">›</div>';
+            html += '</div>';
+          });
           html += '</div>';
         });
 
-        list.innerHTML = html;
+        list.innerHTML = html || '<p class="text-sm text-gray-400 text-center py-6">행사가 없습니다.</p>';
         skeleton.classList.add('hidden');
         empty.classList.add('hidden');
         list.classList.remove('hidden');
@@ -473,86 +542,95 @@
       // 📑 생기부영역 탭 패널 렌더링 (private)
       // ============================================================
       function _renderAreaPanel(area) {
-        // 영역 제목
         document.getElementById('area-title').textContent = area;
 
-        // 완료 데이터
-        var doneEntry = _doneData.find(function(d) { return d.생기부영역 === area; });
+        var doneEntry   = _doneData.find(function(d) { return d.생기부영역 === area; });
         var contentText = doneEntry ? doneEntry.생기부내용 : '';
         var bytes       = doneEntry ? parseInt(doneEntry.글자수 || '0') : 0;
         var limit       = _BYTE_LIMIT[area] || 1500;
 
-        // 글상자
+        // 미리보기 글상자
         var contentBox = document.getElementById('done-content-box');
         if (contentText) {
           contentBox.textContent = contentText;
-          contentBox.classList.remove('text-gray-400');
-          contentBox.classList.add('text-gray-700');
+          contentBox.className = 'bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-700 leading-relaxed mb-4 min-h-[56px] shadow-sm overflow-hidden';
         } else {
           contentBox.textContent = '아직 작성된 내용이 없습니다.';
-          contentBox.classList.add('text-gray-400');
-          contentBox.classList.remove('text-gray-700');
+          contentBox.className = 'bg-white border border-gray-200 rounded-xl p-4 text-sm text-gray-400 leading-relaxed mb-4 min-h-[56px] shadow-sm overflow-hidden';
         }
 
         // 글자수 표시
-        var byteColor = bytes > limit ? 'bg-red-100 text-red-600' : bytes > limit * 0.9 ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-700';
-        document.getElementById('byte-display').className = 'ml-auto text-sm font-semibold px-3 py-1.5 rounded-lg ' + byteColor;
-        document.getElementById('byte-display').textContent = bytes + ' / ' + limit + ' bytes';
+        var byteColor = bytes > limit ? 'bg-red-100 text-red-600'
+                      : bytes > limit * 0.9 ? 'bg-orange-100 text-orange-600'
+                      : 'bg-gray-100 text-gray-700';
+        var byteEl = document.getElementById('byte-display');
+        byteEl.className = 'ml-auto text-sm font-semibold px-3 py-1.5 rounded-lg ' + byteColor;
+        byteEl.textContent = bytes + ' / ' + limit + ' bytes';
 
-        // 이 영역에 배치된 행사 목록
-        var areaList = document.getElementById('area-events-list');
-        var myEntries = _inProgressData.filter(function(e) { return e.생기부영역 === area; });
+        // 개인 추가 활동 입력 폼 초기화
+        document.getElementById('extra-content-input').value = '';
+        ['extra-start-year','extra-start-month','extra-start-day',
+         'extra-end-year','extra-end-month','extra-end-day'].forEach(function(id) {
+          document.getElementById(id).value = '';
+        });
+
+        // ── 이 영역에 배치된 행사 (보라색 배경) ──
+        var areaList  = document.getElementById('area-events-list');
+        var myEntries = _inProgressData.filter(function(e) {
+          return e.생기부영역 === area && e.활동코드 && !e.활동코드.startsWith('EXTRA_');
+        });
         if (myEntries.length === 0) {
-          areaList.innerHTML = '<p class="text-xs text-gray-400 py-2">이 영역에 배치된 행사가 없습니다.</p>';
+          areaList.innerHTML = '<p class="text-xs text-gray-400 py-2 pl-1">이 영역에 배치된 공식 행사가 없습니다.</p>';
         } else {
-          var html2 = '';
+          var h2 = '';
           myEntries.forEach(function(e) {
-            html2 += '<div class="bg-purple-50 border border-purple-200 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:border-purple-400 transition"'
-                   + ' onclick="Record.openActivityModal(\'' + _escapeHtml(e.활동코드) + '\')">';
-            html2 += '  <div class="flex-1 min-w-0">';
-            html2 += '    <p class="font-medium text-sm text-gray-800 truncate">' + _escapeHtml(e.활동명) + '</p>';
-            html2 += '    <p class="text-xs text-gray-400">' + _escapeHtml(e.중점역량) + ' · ' + _formatDisplay(e.활동시작날짜) + '~' + _formatDisplay(e.활동종료날짜) + '</p>';
-            html2 += '  </div>';
-            html2 += '  <span class="text-xs text-purple-500">편집 ›</span>';
-            html2 += '</div>';
+            h2 += '<div class="bg-purple-50 border border-purple-300 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:border-purple-500 transition"'
+               + ' onclick="Record.openActivityModal(\'' + _escapeHtml(e.활동코드) + '\')">';
+            h2 += '  <div class="flex-1 min-w-0">';
+            h2 += '    <p class="font-semibold text-sm text-purple-800 truncate">' + _escapeHtml(e.활동명) + '</p>';
+            h2 += '    <p class="text-xs text-purple-400 mt-0.5">'
+               + _escapeHtml(e.중점역량) + ' · '
+               + _formatDisplay(e.활동시작날짜) + ' ~ ' + _formatDisplay(e.활동종료날짜) + '</p>';
+            h2 += '  </div>';
+            h2 += '  <span class="text-xs text-purple-500 font-medium">편집 ›</span>';
+            h2 += '</div>';
           });
-          areaList.innerHTML = html2;
+          areaList.innerHTML = h2;
         }
 
-        // 전체 공식 행사 목록 (아직 이 영역에 없는 것 포함)
-        var allList = document.getElementById('area-all-events-list');
-        var html3 = '';
-        _officialActivities.forEach(function(act) {
-          var ipEntry = _findInProgress(act['활동코드']);
-          var isThisArea = ipEntry && ipEntry.생기부영역 === area;
-          var cardBorder = isThisArea ? 'border-purple-400 bg-purple-50' : 'border-gray-200 bg-white';
-          var badge2 = ipEntry
-            ? '<span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full">' + _escapeHtml(ipEntry.생기부영역) + '</span>'
-            : '<span class="text-xs bg-gray-100 text-gray-400 px-2 py-0.5 rounded-full">미입력</span>';
-
-          html3 += '<div class="rounded-xl shadow-sm border ' + cardBorder + ' p-3 flex items-center gap-3 cursor-pointer hover:border-purple-300 transition"'
-                 + ' onclick="Record.openActivityModal(\'' + _escapeHtml(act['활동코드']) + '\')">';
-          html3 += '  <div class="flex-1 min-w-0">';
-          html3 += '    <div class="flex items-center gap-2 flex-wrap mb-0.5">';
-          html3 += '      <span class="text-xs text-gray-400 font-mono">' + _escapeHtml(act['활동코드']) + '</span>';
-          html3 += '      ' + badge2;
-          html3 += '    </div>';
-          html3 += '    <p class="font-medium text-sm text-gray-800 truncate">' + _escapeHtml(act['활동명']) + '</p>';
-          html3 += '    <p class="text-xs text-gray-400 mt-0.5">' + _formatDisplay(act['활동시작날짜']) + ' ~ ' + _formatDisplay(act['활동종료날짜']) + '</p>';
-          html3 += '  </div>';
-          html3 += '  <span class="text-purple-400 text-lg">›</span>';
-          html3 += '</div>';
+        // ── 공식 행사 목록에서 추가 (미입력 행사만, 회색 배경) ──
+        var allList      = document.getElementById('area-all-events-list');
+        var unenteredActs = _officialActivities.filter(function(act) {
+          return !_findInProgress(act['활동코드']);
         });
-        allList.innerHTML = html3 || '<p class="text-xs text-gray-400 py-2">공식 행사가 없습니다.</p>';
+        if (unenteredActs.length === 0) {
+          allList.innerHTML = '<p class="text-xs text-gray-400 py-2 pl-1">추가할 수 있는 미입력 행사가 없습니다.</p>';
+        } else {
+          var h3 = '';
+          unenteredActs.forEach(function(act) {
+            h3 += '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:border-purple-300 transition"'
+               + ' onclick="Record.openActivityModal(\'' + _escapeHtml(act['활동코드']) + '\')">';
+            h3 += '  <div class="flex-1 min-w-0">';
+            h3 += '    <div class="flex items-center gap-2 mb-0.5">';
+            h3 += '      <span class="text-xs text-gray-400 font-mono">' + _escapeHtml(act['활동코드']) + '</span>';
+            h3 += '      <span class="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">미입력</span>';
+            h3 += '    </div>';
+            h3 += '    <p class="font-medium text-sm text-gray-700 truncate">' + _escapeHtml(act['활동명']) + '</p>';
+            h3 += '    <p class="text-xs text-gray-400 mt-0.5">'
+               + _formatDisplay(act['활동시작날짜']) + ' ~ ' + _formatDisplay(act['활동종료날짜']) + '</p>';
+            h3 += '  </div>';
+            h3 += '  <span class="text-gray-400 text-lg">›</span>';
+            h3 += '</div>';
+          });
+          allList.innerHTML = h3;
+        }
       }
 
       // ============================================================
       // 🔍 작성중 데이터에서 활동코드로 찾기 (private)
       // ============================================================
       function _findInProgress(activityCode) {
-        return _inProgressData.find(function(e) {
-          return e.활동코드 === activityCode;
-        }) || null;
+        return _inProgressData.find(function(e) { return e.활동코드 === activityCode; }) || null;
       }
 
       // ============================================================
@@ -562,42 +640,44 @@
         var act = _officialActivities.find(function(a) { return a['활동코드'] === activityCode; });
         if (!act) { _showModal('행사 정보를 찾을 수 없습니다.'); return; }
 
-        _modalActivity    = act;
+        _modalActivity     = act;
         _modalParticipated = null;
-        _modalArea        = '';
-        _modalCompetency  = '';
+        _modalArea         = '';
+        _modalCompetency   = '';
 
-        // 기존 데이터 불러오기
         var existing = _findInProgress(activityCode);
-        if (existing) {
+        if (existing && existing.생기부영역 !== '미참여') {
           _modalParticipated = true;
           _modalArea         = existing.생기부영역;
           _modalCompetency   = existing.중점역량;
+        } else if (existing && existing.생기부영역 === '미참여') {
+          _modalParticipated = false;
         }
 
-        // 모달 제목
         document.getElementById('activity-modal-title').textContent = act['활동명'];
+        document.getElementById('activity-modal-date').textContent =
+          _formatDisplay(act['활동시작날짜']) + ' ~ ' + _formatDisplay(act['활동종료날짜']);
 
-        // 영역 버튼 렌더링
-        var areaBtns = document.getElementById('area-buttons');
-        areaBtns.innerHTML = _AREAS.map(function(a) {
-          var active = (a === _modalArea) ? 'border-purple-600 bg-purple-100 text-purple-700' : 'border-gray-200 text-gray-600 hover:border-purple-400';
-          return '<button onclick="Record.selectArea(\'' + a + '\')" class="py-2 rounded-lg border-2 text-sm font-medium transition ' + active + '">' + a + '</button>';
+        // 영역 버튼
+        document.getElementById('area-buttons').innerHTML = _AREAS.map(function(a) {
+          var cls = (a === _modalArea)
+            ? 'border-purple-600 bg-purple-100 text-purple-700'
+            : 'border-gray-200 text-gray-600 hover:border-purple-400';
+          return '<button onclick="Record.selectArea(\'' + a + '\')" class="py-2 rounded-lg border-2 text-sm font-medium transition ' + cls + '">' + a + '</button>';
         }).join('');
 
-        // 역량 버튼 렌더링
-        var compBtns = document.getElementById('competency-buttons');
-        compBtns.innerHTML = _COMPETENCIES.map(function(c) {
-          var active = (c === _modalCompetency) ? 'border-purple-600 bg-purple-100 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-purple-400';
-          return '<button onclick="Record.selectCompetency(\'' + c + '\')" class="py-1.5 px-4 rounded-lg border-2 text-sm font-medium transition ' + active + '">' + c + '</button>';
+        // 역량 버튼
+        document.getElementById('competency-buttons').innerHTML = _COMPETENCIES.map(function(c) {
+          var cls = (c === _modalCompetency)
+            ? 'border-purple-600 bg-purple-100 text-purple-700'
+            : 'border-gray-200 text-gray-500 hover:border-purple-400';
+          return '<button onclick="Record.selectCompetency(\'' + c + '\')" class="py-1.5 px-4 rounded-lg border-2 text-sm font-medium transition ' + cls + '">' + c + '</button>';
         }).join('');
 
-        // 내용 입력 초기화
-        document.getElementById('activity-content-input').value = existing ? existing.생기부내용 : '';
+        document.getElementById('activity-content-input').value =
+          (existing && existing.생기부영역 !== '미참여') ? existing.생기부내용 : '';
 
-        // 섹션 표시 상태 업데이트
         _updateModalSections();
-
         document.getElementById('activity-modal').classList.remove('hidden');
       }
 
@@ -605,7 +685,6 @@
         var participated = _modalParticipated;
         var hasArea = !!_modalArea;
         var hasComp = !!_modalCompetency;
-        var existing = _modalActivity ? _findInProgress(_modalActivity['활동코드']) : null;
 
         // 참여 버튼 강조
         var yesBtn = document.getElementById('btn-participated-yes');
@@ -621,18 +700,16 @@
           noBtn.className  = 'flex-1 py-2 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-medium transition';
         }
 
-        // 하위 섹션 표시
+        // 미참여 경고
+        _toggleSection('section-no-warning', participated === false);
+        // 참여 섹션
         _toggleSection('section-area',       participated === true);
         _toggleSection('section-competency', participated === true && hasArea);
         _toggleSection('section-content',    participated === true && hasArea && hasComp);
 
-        // 저장 버튼
-        var saveVisible = participated === true && hasArea && hasComp;
+        // 저장 버튼: 참여(영역+역량 완료) 또는 미참여 선택 시 표시
+        var saveVisible = (participated === true && hasArea && hasComp) || (participated === false);
         document.getElementById('btn-save-activity').classList.toggle('hidden', !saveVisible);
-
-        // 삭제 버튼 (기존 데이터 있을 때)
-        var deleteVisible = !!existing;
-        document.getElementById('btn-delete-activity').classList.toggle('hidden', !deleteVisible);
       }
 
       function _toggleSection(id, show) {
@@ -646,10 +723,7 @@
       // ============================================================
       function _setParticipated(val) {
         _modalParticipated = val;
-        if (!val) {
-          _modalArea = '';
-          _modalCompetency = '';
-        }
+        if (!val) { _modalArea = ''; _modalCompetency = ''; }
         _updateModalSections();
       }
 
@@ -658,11 +732,11 @@
       // ============================================================
       function _selectArea(area) {
         _modalArea = area;
-        // 버튼 재렌더
-        var areaBtns = document.getElementById('area-buttons');
-        areaBtns.innerHTML = _AREAS.map(function(a) {
-          var active = (a === _modalArea) ? 'border-purple-600 bg-purple-100 text-purple-700' : 'border-gray-200 text-gray-600 hover:border-purple-400';
-          return '<button onclick="Record.selectArea(\'' + a + '\')" class="py-2 rounded-lg border-2 text-sm font-medium transition ' + active + '">' + a + '</button>';
+        document.getElementById('area-buttons').innerHTML = _AREAS.map(function(a) {
+          var cls = (a === _modalArea)
+            ? 'border-purple-600 bg-purple-100 text-purple-700'
+            : 'border-gray-200 text-gray-600 hover:border-purple-400';
+          return '<button onclick="Record.selectArea(\'' + a + '\')" class="py-2 rounded-lg border-2 text-sm font-medium transition ' + cls + '">' + a + '</button>';
         }).join('');
         _updateModalSections();
       }
@@ -672,71 +746,73 @@
       // ============================================================
       function _selectCompetency(comp) {
         _modalCompetency = comp;
-        var compBtns = document.getElementById('competency-buttons');
-        compBtns.innerHTML = _COMPETENCIES.map(function(c) {
-          var active = (c === _modalCompetency) ? 'border-purple-600 bg-purple-100 text-purple-700' : 'border-gray-200 text-gray-500 hover:border-purple-400';
-          return '<button onclick="Record.selectCompetency(\'' + c + '\')" class="py-1.5 px-4 rounded-lg border-2 text-sm font-medium transition ' + active + '">' + c + '</button>';
+        document.getElementById('competency-buttons').innerHTML = _COMPETENCIES.map(function(c) {
+          var cls = (c === _modalCompetency)
+            ? 'border-purple-600 bg-purple-100 text-purple-700'
+            : 'border-gray-200 text-gray-500 hover:border-purple-400';
+          return '<button onclick="Record.selectCompetency(\'' + c + '\')" class="py-1.5 px-4 rounded-lg border-2 text-sm font-medium transition ' + cls + '">' + c + '</button>';
         }).join('');
         _updateModalSections();
       }
 
       // ============================================================
-      // 💾 행사 저장 (public)
+      // 💾 행사 저장 (참여 or 미참여) (public)
       // ============================================================
       async function _saveActivity() {
         if (!_modalActivity) return;
-        var content = document.getElementById('activity-content-input').value.trim();
 
-        _showLoading();
+        // ── 미참여 저장 ──
+        if (_modalParticipated === false) {
+          var existing = _findInProgress(_modalActivity['활동코드']);
+          _showLoading('미참여로 저장 중...');
+          try {
+            // 기존 참여 데이터 있으면 삭제 후 compileToDone
+            if (existing && existing.생기부영역 !== '미참여') {
+              var delResult = await _callAPI('deleteInProgress', {
+                studentId: _studentId, activityCode: _modalActivity['활동코드']
+              });
+              if (!delResult.success) throw new Error(delResult.message);
+              await _callAPI('compileToDone', { studentId: _studentId });
+            }
+            // 미참여 행으로 저장 (생기부영역 = '미참여')
+            await _callAPI('saveInProgress', {
+              studentId: _studentId, name: _userName,
+              activityCode: _modalActivity['활동코드'],
+              activityName: _modalActivity['활동명'],
+              startDate: _modalActivity['활동시작날짜'],
+              endDate:   _modalActivity['활동종료날짜'],
+              area: '미참여', competency: '', content: ''
+            });
+            await _reloadStudentData();
+            _closeActivityModal();
+            _switchTab(_currentTab);
+          } catch(e) {
+            _showModal('저장 실패: ' + e.message);
+          } finally {
+            _hideLoading();
+          }
+          return;
+        }
+
+        // ── 참여 저장 ──
+        var content = document.getElementById('activity-content-input').value.trim();
+        _showLoading('저장 중입니다...');
         try {
           var result = await _callAPI('saveInProgress', {
-            studentId:    _studentId,
-            name:         _userName,
+            studentId: _studentId, name: _userName,
             activityCode: _modalActivity['활동코드'],
             activityName: _modalActivity['활동명'],
-            startDate:    _modalActivity['활동시작날짜'],
-            endDate:      _modalActivity['활동종료날짜'],
-            area:         _modalArea,
-            competency:   _modalCompetency,
-            content:      content
+            startDate: _modalActivity['활동시작날짜'],
+            endDate:   _modalActivity['활동종료날짜'],
+            area: _modalArea, competency: _modalCompetency, content: content
           });
           if (!result.success) throw new Error(result.message);
-
-          // 완료탭 자동 업데이트
           await _callAPI('compileToDone', { studentId: _studentId });
-
-          // 데이터 재로드
           await _reloadStudentData();
           _closeActivityModal();
           _switchTab(_currentTab);
         } catch(e) {
           _showModal('저장 실패: ' + e.message);
-        } finally {
-          _hideLoading();
-        }
-      }
-
-      // ============================================================
-      // 🗑️ 행사 참여 취소/삭제 (public)
-      // ============================================================
-      async function _deleteActivity() {
-        if (!_modalActivity) return;
-        if (!confirm('이 행사의 작성 내용을 삭제하시겠습니까?')) return;
-
-        _showLoading();
-        try {
-          var result = await _callAPI('deleteInProgress', {
-            studentId:    _studentId,
-            activityCode: _modalActivity['활동코드']
-          });
-          if (!result.success) throw new Error(result.message);
-
-          await _callAPI('compileToDone', { studentId: _studentId });
-          await _reloadStudentData();
-          _closeActivityModal();
-          _switchTab(_currentTab);
-        } catch(e) {
-          _showModal('삭제 실패: ' + e.message);
         } finally {
           _hideLoading();
         }
@@ -748,46 +824,36 @@
       }
 
       // ============================================================
-      // ✏️ 전체 내용 편집 모달 열기 (public)
+      // 💾 개인 추가 활동 저장 (public)
       // ============================================================
-      function _openEditModal() {
-        var area = _currentTab;
-        if (!_AREAS.includes(area)) return;
+      async function _saveExtraActivity() {
+        var area    = _currentTab;
+        var content = document.getElementById('extra-content-input').value.trim();
+        if (!content) { _showModal('활동 내용을 입력하세요.'); return; }
 
-        _editArea = area;
-        var doneEntry = _doneData.find(function(d) { return d.생기부영역 === area; });
-        var contentText = doneEntry ? doneEntry.생기부내용 : '';
-        var bytes = _calcBytes(contentText);
-        var limit = _BYTE_LIMIT[area] || 1500;
+        function _buildDate(prefix) {
+          var y = document.getElementById(prefix + '-year').value.trim();
+          var m = document.getElementById(prefix + '-month').value.trim();
+          var d = document.getElementById(prefix + '-day').value.trim();
+          if (!y || !m || !d) return '';
+          return y + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+        }
+        var startDate = _buildDate('extra-start');
+        var endDate   = _buildDate('extra-end');
+        var extraCode = 'EXTRA_' + _studentId + '_' + Date.now();
 
-        document.getElementById('edit-modal-title').textContent = area + ' 전체 편집';
-        document.getElementById('edit-content-input').value = contentText;
-        document.getElementById('edit-byte-info').textContent = bytes + ' / ' + limit + ' bytes';
-        document.getElementById('edit-modal').classList.remove('hidden');
-      }
-
-      function _onEditInput() {
-        var val   = document.getElementById('edit-content-input').value;
-        var bytes = _calcBytes(val);
-        var limit = _BYTE_LIMIT[_editArea] || 1500;
-        var info  = document.getElementById('edit-byte-info');
-        info.textContent = bytes + ' / ' + limit + ' bytes';
-        info.className = 'text-sm font-semibold ' + (bytes > limit ? 'text-red-600' : bytes > limit*0.9 ? 'text-orange-500' : 'text-gray-500');
-      }
-
-      async function _saveEditContent() {
-        var content = document.getElementById('edit-content-input').value;
-        _showLoading();
+        _showLoading('개인 활동 저장 중...');
         try {
-          var result = await _callAPI('editDoneContent', {
-            studentId: _studentId,
-            area:      _editArea,
-            content:   content
+          var result = await _callAPI('saveInProgress', {
+            studentId: _studentId, name: _userName,
+            activityCode: extraCode,
+            activityName: '개인추가활동',
+            startDate: startDate, endDate: endDate,
+            area: area, competency: '', content: content
           });
           if (!result.success) throw new Error(result.message);
-
+          await _callAPI('compileToDone', { studentId: _studentId });
           await _reloadStudentData();
-          _closeEditModal();
           _switchTab(_currentTab);
         } catch(e) {
           _showModal('저장 실패: ' + e.message);
@@ -796,8 +862,32 @@
         }
       }
 
-      function _closeEditModal() {
-        document.getElementById('edit-modal').classList.add('hidden');
+      // ============================================================
+      // 👁 전체 내용 보기 모달 (읽기 전용) (public)
+      // ============================================================
+      function _openViewModal() {
+        var area = _currentTab;
+        if (!_AREAS.includes(area)) return;
+        _viewArea = area;
+
+        var doneEntry   = _doneData.find(function(d) { return d.생기부영역 === area; });
+        var contentText = doneEntry ? doneEntry.생기부내용 : '아직 작성된 내용이 없습니다.';
+        var bytes       = doneEntry ? parseInt(doneEntry.글자수 || '0') : 0;
+        var limit       = _BYTE_LIMIT[area] || 1500;
+
+        document.getElementById('view-modal-title').textContent = area + ' 전체 내용';
+        document.getElementById('view-content-text').textContent = contentText;
+
+        var byteEl = document.getElementById('view-byte-info');
+        byteEl.textContent = bytes + ' / ' + limit + ' bytes';
+        byteEl.className = 'text-sm font-semibold '
+          + (bytes > limit ? 'text-red-600' : bytes > limit*0.9 ? 'text-orange-500' : 'text-gray-500');
+
+        document.getElementById('view-modal').classList.remove('hidden');
+      }
+
+      function _closeViewModal() {
+        document.getElementById('view-modal').classList.add('hidden');
       }
 
       // ============================================================
@@ -808,8 +898,8 @@
           _callAPI('getInProgress', { studentId: _studentId }),
           _callAPI('getDone',       { studentId: _studentId })
         ]);
-        _inProgressData = (ipResult.success   && ipResult.data)   || [];
-        _doneData       = (doneResult.success  && doneResult.data)  || [];
+        _inProgressData = (ipResult.success  && ipResult.data)  || [];
+        _doneData       = (doneResult.success && doneResult.data) || [];
       }
 
       // ============================================================
@@ -818,7 +908,6 @@
       async function _init() {
         document.getElementById('welcome-text').textContent =
           _userName ? _userName + ' 학생, 환영합니다!' : '';
-
         _renderTabs();
         document.getElementById('panel-events').classList.remove('hidden');
 
@@ -828,11 +917,9 @@
             _callAPI('getInProgress', { studentId: _studentId }),
             _callAPI('getDone',       { studentId: _studentId })
           ]);
-
           _officialActivities = (actResult.success  && actResult.data)  || [];
           _inProgressData     = (ipResult.success   && ipResult.data)   || [];
           _doneData           = (doneResult.success  && doneResult.data)  || [];
-
           _switchTab('행사목록');
         } catch(e) {
           console.error('초기 로드 오류:', e);
@@ -886,11 +973,9 @@
         selectArea:         _selectArea,
         selectCompetency:   _selectCompetency,
         saveActivity:       _saveActivity,
-        deleteActivity:     _deleteActivity,
-        openEditModal:      _openEditModal,
-        closeEditModal:     _closeEditModal,
-        onEditInput:        _onEditInput,
-        saveEditContent:    _saveEditContent
+        saveExtraActivity:  _saveExtraActivity,
+        openViewModal:      _openViewModal,
+        closeViewModal:     _closeViewModal
       };
 
     })();
