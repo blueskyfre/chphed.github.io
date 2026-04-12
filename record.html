@@ -887,9 +887,11 @@
             area: area
           });
           if (!result.success) throw new Error(result.message);
-          await _callAPI('compileToDone', { studentId: _studentId });
+          var compileResult = await _callAPI('compileToDone', { studentId: _studentId });
+          // 작성중 데이터가 0개여서 compileToDone이 실패해도 삭제는 성공으로 처리
           await _reloadStudentData();
           _switchTab(_currentTab);
+          
         } catch(e) {
           _showModal('삭제 실패: ' + e.message);
         } finally {
