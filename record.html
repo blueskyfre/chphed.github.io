@@ -7,8 +7,6 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="navi.js"></script>
   <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
     /* ============================================================
        ✅ 공통 재사용 스타일 - 스켈레톤 UI & 모달 알림
        ============================================================ */
@@ -86,6 +84,21 @@
         class="bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-8 rounded-lg transition text-sm">
         확인
       </button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--  개인 추가 활동 삭제 확인 모달 -->
+  <!-- ============================================================ -->
+  <div id="delete-extra-modal" class="modal-overlay hidden">
+    <div class="bg-white rounded-xl shadow-xl p-6 mx-4 max-w-sm w-full text-center">
+      <p class="text-gray-800 text-base mb-5">개인 추가활동 내용을 삭제하겠습니까?</p>
+      <div class="flex gap-3 justify-center">
+        <button onclick="Record.cancelDeleteExtra()"
+          class="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition">취소</button>
+        <button onclick="Record.confirmDeleteExtra()"
+          class="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition">삭제</button>
+      </div>
     </div>
   </div>
 
@@ -281,10 +294,16 @@
               </div>
             </div>
           </div>
-          <button onclick="Record.saveExtraActivity()"
-            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
-            저장
-          </button>
+          <div class="flex gap-2">
+            <button onclick="Record.saveExtraActivity()"
+              class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
+              저장
+            </button>
+            <button id="btn-delete-extra" onclick="Record.openDeleteExtraModal()"
+              class="hidden bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
+              삭제
+            </button>
+          </div>
         </div>
       </div>
 
@@ -566,6 +585,38 @@
         });
         document.getElementById('extra-form-detail').classList.add('hidden');
         document.getElementById('extra-form-chevron').textContent = '▼';
+        document.getElementById('btn-delete-extra').classList.add('hidden');
+
+        // SH생기부작성중에서 활동코드=P이고 생기부영역=현재탭인 개인 추가 활동 자동 로드
+        var extraEntry = _inProgressData.find(function(e) {
+          return e.활동코드 === 'P' && e.생기부영역 === area;
+        });
+        if (extraEntry) {
+          document.getElementById('extra-activity-name').value = extraEntry.활동명 || '';
+          document.getElementById('extra-content-input').value = extraEntry.생기부내용 || '';
+          // 시작일 파싱
+          if (extraEntry.활동시작날짜) {
+            var sp = extraEntry.활동시작날짜.split('-');
+            if (sp.length === 3) {
+              document.getElementById('extra-start-year').value  = sp[0];
+              document.getElementById('extra-start-month').value = sp[1];
+              document.getElementById('extra-start-day').value   = sp[2];
+            }
+          }
+          // 종료일 파싱
+          if (extraEntry.활동종료날짜) {
+            var ep = extraEntry.활동종료날짜.split('-');
+            if (ep.length === 3) {
+              document.getElementById('extra-end-year').value  = ep[0];
+              document.getElementById('extra-end-month').value = ep[1];
+              document.getElementById('extra-end-day').value   = ep[2];
+            }
+          }
+          // 상세 폼 펼치기 및 삭제 버튼 표시
+          document.getElementById('extra-form-detail').classList.remove('hidden');
+          document.getElementById('extra-form-chevron').textContent = '▲';
+          document.getElementById('btn-delete-extra').classList.remove('hidden');
+        }
 
         // ── 이 영역에 배치된 행사 (보라색 배경) ──
         var areaList  = document.getElementById('area-events-list');
@@ -857,6 +908,45 @@
       }
 
       // ============================================================
+      // 🗑️ 개인 추가 활동 삭제 모달 열기/닫기/확인 (public)
+      // ============================================================
+      function _openDeleteExtraModal() {
+        document.getElementById('delete-extra-modal').classList.remove('hidden');
+      }
+
+      function _cancelDeleteExtra() {
+        document.getElementById('delete-extra-modal').classList.add('hidden');
+      }
+
+      async function _confirmDeleteExtra() {
+        document.getElementById('delete-extra-modal').classList.add('hidden');
+        _showLoading('개인 활동 삭제 중...');
+        try {
+          var delResult = await _callAPI('deleteInProgress', {
+            studentId: _studentId, activityCode: 'P'
+          });
+          if (!delResult.success) throw new Error(delResult.message);
+          await _callAPI('compileToDone', { studentId: _studentId });
+          await _reloadStudentData();
+          // 폼 초기화
+          document.getElementById('extra-activity-name').value = '';
+          document.getElementById('extra-content-input').value = '';
+          ['extra-start-year','extra-start-month','extra-start-day',
+           'extra-end-year','extra-end-month','extra-end-day'].forEach(function(id) {
+            document.getElementById(id).value = '';
+          });
+          document.getElementById('extra-form-detail').classList.add('hidden');
+          document.getElementById('extra-form-chevron').textContent = '▼';
+          document.getElementById('btn-delete-extra').classList.add('hidden');
+          _switchTab(_currentTab);
+        } catch(e) {
+          _showModal('삭제 실패: ' + e.message);
+        } finally {
+          _hideLoading();
+        }
+      }
+
+      // ============================================================
       // 👁 전체 내용 보기 모달 (읽기 전용) (public)
       // ============================================================
       function _openViewModal() {
@@ -999,6 +1089,9 @@
         selectCompetency:   _selectCompetency,
         saveActivity:       _saveActivity,
         saveExtraActivity:  _saveExtraActivity,
+        openDeleteExtraModal: _openDeleteExtraModal,
+        cancelDeleteExtra:  _cancelDeleteExtra,
+        confirmDeleteExtra: _confirmDeleteExtra,
         openViewModal:      _openViewModal,
         closeViewModal:     _closeViewModal,
         toggleExtraForm:    _toggleExtraForm,
