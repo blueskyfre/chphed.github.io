@@ -593,9 +593,9 @@
           document.getElementById('extra-end-year').value  = ed[0] || '';
           document.getElementById('extra-end-month').value = ed[1] ? String(parseInt(ed[1],10)) : '';
           document.getElementById('extra-end-day').value   = ed[2] ? String(parseInt(ed[2],10)) : '';
-          // 폼 펼치기
-          document.getElementById('extra-form-detail').classList.remove('hidden');
-          document.getElementById('extra-form-chevron').textContent = '▲';
+          // 개인 추가 활동 입력 폼 항상 접힌 상태 유지
+          document.getElementById('extra-form-detail').classList.add('hidden');
+          document.getElementById('extra-form-chevron').textContent = '▼';
           // 삭제 버튼 표시
           document.getElementById('btn-delete-extra').classList.remove('hidden');
         } else {
