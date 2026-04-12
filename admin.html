@@ -6,569 +6,509 @@
   <title>관리자 페이지</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    ::-webkit-scrollbar { width:6px; height:6px; }
-    ::-webkit-scrollbar-track { background:#f1f5f9; }
-    ::-webkit-scrollbar-thumb { background:#94a3b8; border-radius:3px; }
-
-    @keyframes shimmer {
-      0%   { background-position:-400px 0; }
-      100% { background-position: 400px 0; }
-    }
-    .skeleton {
-      background:linear-gradient(90deg,#e2e8f0 25%,#f8fafc 50%,#e2e8f0 75%);
-      background-size:400px 100%;
-      animation:shimmer 1.4s infinite;
-      border-radius:6px;
-    }
-
-    html, body { height:100%; margin:0; padding:0; }
-    #app { display:flex; flex-direction:column; height:100vh; }
-    #layout { display:flex; flex:1; min-height:0; }
-
-    @media (min-width:768px) {
-      #sidebar { width:220px; min-width:180px; flex-shrink:0; }
-    }
-    @media (max-width:767px) {
-      #sidebar {
-        position:fixed; left:0; top:56px; bottom:0; z-index:40;
-        width:220px; transform:translateX(-100%);
-        transition:transform .25s ease;
-        box-shadow:2px 0 12px rgba(0,0,0,.12);
-      }
-      #sidebar.open { transform:translateX(0); }
-      #sidebar-overlay {
-        display:none; position:fixed; inset:0; z-index:39;
-        background:rgba(0,0,0,.3);
-      }
-      #sidebar-overlay.show { display:block; }
-    }
-
-    #sidebar      { overflow-y:auto; background:#fff; border-right:1px solid #e2e8f0; }
-    #main-content { flex:1; overflow-y:auto; min-width:0; }
-
-    .menu-btn {
-      padding:.4rem .7rem; border-radius:.5rem;
-      font-size:.78rem; font-weight:600;
-      background:#f1f5f9; border:1px solid #e2e8f0;
-      cursor:pointer; white-space:nowrap;
-      transition:background .15s, color .15s;
-    }
-    .menu-btn:hover { background:#e0f2fe; color:#0369a1; }
-    .menu-btn.active { background:#0284c7; color:#fff; border-color:#0284c7; }
-
-    .student-item {
-      padding:.35rem .7rem; border-radius:.4rem;
-      font-size:.82rem; cursor:pointer;
-      border:1px solid transparent;
-      transition:background .12s;
-    }
-    .student-item:hover  { background:#e0f2fe; }
-    .student-item.active { background:#0ea5e9; color:#fff; }
-
-    .btn-area {
-      display:block; width:100%;
-      padding:.45rem .75rem; border-radius:.4rem;
-      font-size:.8rem; text-align:left;
-      background:#f8fafc; border:1px solid #e2e8f0;
-      cursor:pointer; transition:background .12s;
-    }
-    .btn-area:hover  { background:#dbeafe; }
-    .btn-area.active { background:#3b82f6; color:#fff; border-color:#3b82f6; }
-
-    .gigi-box {
-      background:#fff; border:1px solid #e2e8f0;
-      border-radius:.5rem; padding:.75rem 1rem;
-      min-height:52px; font-size:.85rem;
-      color:#334155; white-space:pre-wrap; line-height:1.7;
-    }
-
-    #denied-screen {
-      display:none; position:fixed; inset:0;
-      background:#0f172a; color:#f8fafc;
-      align-items:center; justify-content:center;
-      flex-direction:column; gap:1rem; z-index:999;
-    }
-    #denied-screen.show { display:flex; }
+    /* 스크롤바 스타일 */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
+    /* 사이드바 학생 선택 */
+    .student-item.active { background-color: #dbeafe; border-left: 3px solid #3b82f6; }
+    /* 영역 버튼 활성화 */
+    .area-btn.active { background-color: #1d4ed8; color: #fff; }
+    /* 상단 메뉴 버튼 활성화 */
+    .menu-btn.active { background-color: #1e40af; color: #fff; box-shadow: 0 2px 6px rgba(30,64,175,0.4); }
   </style>
 </head>
-<body class="bg-slate-100 text-slate-800 font-sans">
+<body class="bg-gray-50 min-h-screen">
 
-<!-- 접근 거부 -->
-<div id="denied-screen">
-  <svg class="w-14 h-14 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-      d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-  </svg>
-  <p class="text-lg font-semibold">접근 권한이 없습니다</p>
-  <p class="text-sm text-slate-400">관리자 계정으로 로그인 후 접속해 주세요.</p>
-  <button id="back-btn"
-    class="mt-2 px-5 py-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold rounded-lg transition-colors">
-    로그인 페이지로 이동
-  </button>
-</div>
-
-<!-- 메인 앱 -->
-<div id="app" class="hidden">
-
-  <!-- 상단 헤더 -->
-  <header class="bg-white border-b border-slate-200 shadow-sm flex items-center justify-between px-3 flex-shrink-0" style="height:56px;">
-    <div class="flex items-center gap-2 min-w-0">
-      <!-- 모바일 햄버거 -->
-      <button id="sidebar-toggle" class="md:hidden flex-shrink-0 p-1.5 rounded-lg hover:bg-slate-100">
-        <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-        </svg>
-      </button>
-      <span class="inline-flex items-center justify-center w-8 h-8 rounded-full bg-sky-100 flex-shrink-0">
-        <svg class="w-4 h-4 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-        </svg>
-      </span>
-      <div class="min-w-0">
-        <p id="header-greeting" class="text-sm font-bold text-slate-800 truncate"></p>
-        <p id="header-sub"      class="text-xs text-slate-500 truncate"></p>
-      </div>
-    </div>
-    <div class="flex items-center gap-1 flex-shrink-0 flex-wrap justify-end">
-      <button class="menu-btn" data-menu="suneung">📚 수능선택</button>
-      <button class="menu-btn" data-menu="univ">🏫 관심대학</button>
-      <button class="menu-btn" data-menu="gigi-personal">📝 생기부(개인별)</button>
-      <button class="menu-btn" data-menu="gigi-area">📋 생기부(영역별)</button>
-      <button id="logout-btn"
-        class="ml-1 px-2 py-1.5 rounded-lg text-xs font-semibold bg-red-50 hover:bg-red-100 text-red-600 border border-red-100 transition-colors">
-        로그아웃
-      </button>
-    </div>
-  </header>
-
-  <div id="sidebar-overlay"></div>
-
-  <div id="layout">
-    <!-- 좌: 사이드바 -->
-    <aside id="sidebar" class="flex flex-col">
-      <div class="p-3 border-b border-slate-100 space-y-2">
-        <div id="class-selector-wrap" class="hidden">
-          <label class="block text-xs font-medium text-slate-500 mb-1">반 선택</label>
-          <select id="class-selector"
-            class="w-full border border-slate-300 rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-sky-400 bg-white">
-            <option value="전체">전체</option>
-          </select>
-        </div>
-        <p class="text-xs font-bold text-slate-500 uppercase tracking-wide">학생 명단</p>
-      </div>
-      <div id="student-list" class="flex-1 overflow-y-auto p-2 space-y-0.5">
-        <div class="skeleton h-8 w-full mb-1"></div>
-        <div class="skeleton h-8 w-5/6 mb-1"></div>
-        <div class="skeleton h-8 w-full mb-1"></div>
-        <div class="skeleton h-8 w-4/5 mb-1"></div>
-        <div class="skeleton h-8 w-full mb-1"></div>
-      </div>
-    </aside>
-
-    <!-- 우: 콘텐츠 -->
-    <main id="main-content" class="bg-slate-50 p-4">
-      <div id="content-default" class="flex flex-col items-center justify-center h-full text-slate-400">
-        <svg class="w-16 h-16 mb-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2
-               M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/>
-        </svg>
-        <p class="text-sm">상단 메뉴를 선택하세요.</p>
-      </div>
-
-      <div id="content-loading" class="hidden space-y-3">
-        <div class="skeleton h-6 w-1/3"></div>
-        <div class="skeleton h-4 w-full"></div>
-        <div class="skeleton h-4 w-5/6"></div>
-        <div class="skeleton h-4 w-full"></div>
-        <div class="skeleton h-32 w-full mt-2 rounded-lg"></div>
-        <div class="skeleton h-4 w-3/4 mt-2"></div>
-      </div>
-
-      <div id="content-suneung"       class="hidden"></div>
-      <div id="content-univ"          class="hidden"></div>
-      <div id="content-gigi-personal" class="hidden"></div>
-
-      <div id="content-gigi-area" class="hidden h-full">
-        <div class="flex gap-4 h-full">
-          <div class="flex flex-col gap-2 flex-shrink-0 w-28">
-            <p class="text-xs font-bold text-slate-500 uppercase tracking-wide mb-1">영역 선택</p>
-            <button class="btn-area area-btn" data-area="자율활동">자율활동</button>
-            <button class="btn-area area-btn" data-area="동아리활동">동아리활동</button>
-            <button class="btn-area area-btn" data-area="진로활동">진로활동</button>
-            <button class="btn-area area-btn" data-area="개인별세특">개인별세특</button>
-            <button class="btn-area area-btn" data-area="행동발달">행동발달</button>
-          </div>
-          <div id="gigi-area-result" class="flex-1 overflow-auto">
-            <p class="text-slate-400 text-sm">좌측 영역 버튼을 선택하세요.</p>
-          </div>
-        </div>
-      </div>
-    </main>
-  </div>
-</div>
-
+<!-- ============================================================
+     ADMIN 네임스페이스 (IIFE)
+     ============================================================ -->
 <script>
-var Admin = (function () {
-  'use strict';
+var Admin = (function() {
 
+  // ─── 상태 변수 ───────────────────────────────────────────────
   var _state = {
-    user:           null,
-    currentClass:   '전체',
-    currentMenu:    null,
-    currentStudent: null,
-    currentArea:    null,
-    students:       []
+    adminId:    '',
+    adminName:  '',
+    adminAuth:  '',
+    adminClass: '',
+    allClasses: [],
+    currentClass: '',   // 현재 선택된 반 (드롭다운 or 개인 반)
+    currentMenu: '',    // 'suneung' | 'univ' | 'gibu_personal' | 'gibu_area'
+    currentArea: '',    // 생기부 영역별 선택
+    currentStudentId: '',
+    studentList: []
   };
 
-  var _PANELS = ['content-default','content-loading',
-                 'content-suneung','content-univ',
-                 'content-gigi-personal','content-gigi-area'];
-
-  function _el(id)   { return document.getElementById(id); }
-  function _show(id) { var e=_el(id); if(e) e.classList.remove('hidden'); }
-  function _hide(id) { var e=_el(id); if(e) e.classList.add('hidden'); }
-  function _only(id) { _PANELS.forEach(function(p){ _hide(p); }); _show(id); }
-
-  function _esc(s) {
-    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')
-      .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-  }
-
-  /* sessionStorage에서 유저 정보 읽기
-     index.html에서 저장 형식:
-       sessionStorage.setItem('adminUser', JSON.stringify({ name, auth, classNum, ... }));
-  */
-  function _loadSession() {
-    try { var r=sessionStorage.getItem('adminUser'); return r?JSON.parse(r):null; }
-    catch(e){ return null; }
-  }
-
-  function _goIndex() {
-    if (typeof google !== 'undefined' && google.script) {
-      google.script.run
-        .withSuccessHandler(function(url){ window.top.location.href = url || ''; })
-        .withFailureHandler(function(){ window.top.location.href = ''; })
-        .getScriptUrl();
-    }
-  }
-
-  // ── 초기화 ──────────────────────────────────────────────
+  // ─── 초기화 ──────────────────────────────────────────────────
   function _init() {
-    var user = _loadSession();
-    if (!user) {
-      _el('denied-screen').classList.add('show');
-      _el('back-btn').addEventListener('click', _goIndex);
+    // sessionStorage에서 관리자 정보 읽기
+    var raw = sessionStorage.getItem('adminInfo');
+    if (!raw) {
+      alert('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
+      location.href = 'index.html';
       return;
     }
-    _state.user = user;
-    _show('app');
+    var info = JSON.parse(raw);
+    _state.adminId    = info.adminId    || '';
+    _state.adminName  = info.adminName  || '';
+    _state.adminAuth  = info.adminAuth  || '';
+    _state.adminClass = info.adminClass || '';
+    _state.allClasses = info.allClasses || [];
+    _state.currentClass = (_state.adminAuth === '관리자') ? '전체' : _state.adminClass;
 
-    _el('header-greeting').textContent = user.name + ' 선생님 접속했습니다.';
-    if (user.auth === '관리자') {
-      _el('header-sub').textContent = '권한 : 관리자';
-      _show('class-selector-wrap');
-      _loadClassList();
-    } else {
-      _state.currentClass = user.classNum;
-      _el('header-sub').textContent = '권한 : ' + user.classNum + '반';
-    }
-
+    _renderHeader();
     _loadStudentList();
-    _initMenuButtons();
-    _initAreaButtons();
-    _initLogout();
-    _initSidebarToggle();
   }
 
-  // ── 반 목록 (관리자) ───────────────────────────────────
-  function _loadClassList() {
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (!res||!res.success) return;
-        var sel = _el('class-selector');
-        res.data.forEach(function(cls) {
-          var o=document.createElement('option');
-          o.value=cls; o.textContent=cls+'반'; sel.appendChild(o);
-        });
-        sel.addEventListener('change', function() {
-          _state.currentClass   = sel.value;
-          _state.currentStudent = null;
-          _loadStudentList();
-          if (_state.currentMenu) _loadCurrentMenu();
-        });
-      })
-      .withFailureHandler(function(){})
-      .adminGetClassList();
+  // ─── 헤더 렌더링 ─────────────────────────────────────────────
+  function _renderHeader() {
+    document.getElementById('admin-greeting').textContent =
+      _state.adminName + ' 선생님 접속했습니다.';
+
+    var authLabel;
+    if (_state.adminAuth === '관리자') {
+      authLabel = '권한 : ';
+      // 드롭다운 생성
+      var sel = document.getElementById('class-select-wrapper');
+      sel.innerHTML = '';
+      var select = document.createElement('select');
+      select.id = 'class-dropdown';
+      select.className = 'ml-1 text-sm border border-blue-300 rounded px-2 py-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400';
+      var optAll = document.createElement('option');
+      optAll.value = '전체'; optAll.textContent = '전체';
+      select.appendChild(optAll);
+      _state.allClasses.forEach(function(c) {
+        var opt = document.createElement('option');
+        opt.value = c; opt.textContent = c + '반';
+        select.appendChild(opt);
+      });
+      select.value = _state.currentClass;
+      select.addEventListener('change', function() {
+        _state.currentClass = this.value;
+        _loadStudentList();
+        _refreshContent();
+      });
+      sel.appendChild(select);
+    } else {
+      authLabel = '권한 : ' + _state.adminClass + '반';
+      document.getElementById('class-select-wrapper').innerHTML =
+        '<span class="ml-1 text-sm font-semibold text-blue-700">' + _state.adminClass + '반</span>';
+    }
+    document.getElementById('auth-label').textContent = authLabel;
   }
 
-  // ── 학생 목록 ──────────────────────────────────────────
+  // ─── 학생 명단 로드 ──────────────────────────────────────────
   function _loadStudentList() {
-    var listEl = _el('student-list');
-    listEl.innerHTML = [1,2,3,4,5].map(function(){
-      return '<div class="skeleton h-8 w-full mb-1"></div>';
-    }).join('');
+    _showSidebarSkeleton();
     google.script.run
       .withSuccessHandler(function(res) {
-        _state.students = (res&&res.success)?res.data:[];
-        _renderStudentList();
-      })
-      .withFailureHandler(function(){
-        listEl.innerHTML='<p class="text-xs text-red-400 px-2 py-1">목록 로드 실패</p>';
-      })
-      .adminGetStudentList({ classNum: _state.currentClass });
-  }
-
-  function _renderStudentList() {
-    var listEl = _el('student-list');
-    if (!_state.students.length) {
-      listEl.innerHTML='<p class="text-xs text-slate-400 px-2 py-1">학생이 없습니다.</p>'; return;
-    }
-    listEl.innerHTML='';
-    _state.students.forEach(function(s) {
-      var div=document.createElement('div');
-      div.className='student-item';
-      div.innerHTML='<span class="font-medium">'+_esc(s.name)+'</span>'
-        +'<span class="ml-1 text-xs text-slate-400">'+_esc(s.studentId)+'</span>';
-      if (_state.currentStudent && _state.currentStudent.studentId===s.studentId)
-        div.classList.add('active');
-      div.addEventListener('click', function() {
-        _state.currentStudent=s;
-        _renderStudentList();
-        if (_state.currentMenu==='gigi-personal') _loadGigiPersonal(s.studentId);
-        _closeSidebar();
-      });
-      listEl.appendChild(div);
-    });
-  }
-
-  // ── 메뉴 버튼 ──────────────────────────────────────────
-  function _initMenuButtons() {
-    document.querySelectorAll('.menu-btn[data-menu]').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        _state.currentMenu=btn.dataset.menu;
-        _state.currentStudent=null;
-        _state.currentArea=null;
-        document.querySelectorAll('.menu-btn[data-menu]').forEach(function(b){ b.classList.remove('active'); });
-        btn.classList.add('active');
-        document.querySelectorAll('.area-btn').forEach(function(b){ b.classList.remove('active'); });
-        _renderStudentList();
-        _loadCurrentMenu();
-      });
-    });
-  }
-
-  function _initAreaButtons() {
-    document.querySelectorAll('.area-btn').forEach(function(btn) {
-      btn.addEventListener('click', function() {
-        _state.currentArea=btn.dataset.area;
-        document.querySelectorAll('.area-btn').forEach(function(b){ b.classList.remove('active'); });
-        btn.classList.add('active');
-        _loadGigiByArea();
-      });
-    });
-  }
-
-  function _loadCurrentMenu() {
-    var m=_state.currentMenu;
-    if      (m==='suneung')       _loadSuneung();
-    else if (m==='univ')          _loadUniv();
-    else if (m==='gigi-personal') _showGigiPersonalPanel();
-    else if (m==='gigi-area')     _showGigiAreaPanel();
-  }
-
-  // ── 수능선택 ───────────────────────────────────────────
-  function _loadSuneung() {
-    _only('content-loading');
-    google.script.run
-      .withSuccessHandler(function(res) {
-        var el=_el('content-suneung');
-        if (!res||!res.success) {
-          el.innerHTML='<p class="text-red-500 text-sm p-2">'+_esc((res&&res.message)||'오류')+'</p>';
-          _only('content-suneung'); return;
-        }
-        var d=res.data;
-        if (!d.rows.length) {
-          el.innerHTML='<p class="text-slate-400 text-sm p-2">데이터가 없습니다.</p>';
-          _only('content-suneung'); return;
-        }
-        var h='<h2 class="text-base font-bold text-slate-700 mb-3">📚 수능 선택과목</h2>'
-          +'<div class="overflow-auto rounded-xl shadow-sm border border-slate-200">'
-          +'<table class="min-w-full text-xs bg-white">'
-          +'<thead class="bg-sky-50 sticky top-0"><tr>'
-          +'<th class="px-2 py-2 font-semibold text-slate-600 whitespace-nowrap border-b border-slate-200">반</th>'
-          +'<th class="px-2 py-2 font-semibold text-slate-600 whitespace-nowrap border-b border-slate-200">학번</th>'
-          +'<th class="px-2 py-2 font-semibold text-slate-600 whitespace-nowrap border-b border-slate-200">이름</th>';
-        d.headers.forEach(function(hd){
-          h+='<th class="px-2 py-2 font-semibold text-slate-600 whitespace-nowrap border-b border-slate-200">'+_esc(hd)+'</th>';
-        });
-        h+='</tr></thead><tbody>';
-        d.rows.forEach(function(r,i){
-          h+='<tr class="'+(i%2?'bg-slate-50':'bg-white')+' hover:bg-sky-50">'
-            +'<td class="px-2 py-1.5 border-b border-slate-100 whitespace-nowrap">'+_esc(r.classNum)+'</td>'
-            +'<td class="px-2 py-1.5 border-b border-slate-100 whitespace-nowrap">'+_esc(r.studentId)+'</td>'
-            +'<td class="px-2 py-1.5 border-b border-slate-100 font-medium whitespace-nowrap">'+_esc(r.name)+'</td>';
-          r.cols.forEach(function(v){ h+='<td class="px-2 py-1.5 border-b border-slate-100">'+_esc(v)+'</td>'; });
-          h+='</tr>';
-        });
-        h+='</tbody></table></div>';
-        el.innerHTML=h; _only('content-suneung');
-      })
-      .withFailureHandler(function(err){
-        _el('content-suneung').innerHTML='<p class="text-red-500 text-sm p-2">오류: '+_esc(err.message||'')+'</p>';
-        _only('content-suneung');
-      })
-      .adminGetSuneungData({ classNum: _state.currentClass });
-  }
-
-  // ── 관심대학 ───────────────────────────────────────────
-  function _loadUniv() {
-    _only('content-loading');
-    google.script.run
-      .withSuccessHandler(function(res) {
-        var el=_el('content-univ');
-        if (!res||!res.success) {
-          el.innerHTML='<p class="text-red-500 text-sm p-2">'+_esc((res&&res.message)||'오류')+'</p>';
-          _only('content-univ'); return;
-        }
-        var d=res.data;
-        if (!d.rows.length) {
-          el.innerHTML='<p class="text-slate-400 text-sm p-2">데이터가 없습니다.</p>';
-          _only('content-univ'); return;
-        }
-        var h='<h2 class="text-base font-bold text-slate-700 mb-3">🏫 관심대학</h2>'
-          +'<div class="overflow-auto rounded-xl shadow-sm border border-slate-200">'
-          +'<table class="min-w-full text-xs bg-white">'
-          +'<thead class="bg-emerald-50 sticky top-0"><tr>';
-        d.headers.forEach(function(hd){
-          h+='<th class="px-2 py-2 font-semibold text-slate-600 whitespace-nowrap border-b border-slate-200">'+_esc(hd)+'</th>';
-        });
-        h+='</tr></thead><tbody>';
-        d.rows.forEach(function(r,i){
-          h+='<tr class="'+(i%2?'bg-slate-50':'bg-white')+' hover:bg-emerald-50">';
-          r.cols.forEach(function(v){ h+='<td class="px-2 py-1.5 border-b border-slate-100">'+_esc(v)+'</td>'; });
-          h+='</tr>';
-        });
-        h+='</tbody></table></div>';
-        el.innerHTML=h; _only('content-univ');
-      })
-      .withFailureHandler(function(err){
-        _el('content-univ').innerHTML='<p class="text-red-500 text-sm p-2">오류: '+_esc(err.message||'')+'</p>';
-        _only('content-univ');
-      })
-      .adminGetUnivData({ classNum: _state.currentClass });
-  }
-
-  // ── 생기부 개인별 ──────────────────────────────────────
-  function _showGigiPersonalPanel() {
-    _only('content-gigi-personal');
-    _el('content-gigi-personal').innerHTML=
-      '<p class="text-slate-400 text-sm p-2">좌측 학생 목록에서 학생을 선택하세요.</p>';
-  }
-
-  function _loadGigiPersonal(studentId) {
-    _el('content-gigi-personal').innerHTML=
-      [1,2,3].map(function(){ return '<div class="skeleton h-24 w-full mb-3 rounded-lg"></div>'; }).join('');
-    _only('content-gigi-personal');
-
-    google.script.run
-      .withSuccessHandler(function(res) {
-        var el=_el('content-gigi-personal');
-        if (!res||!res.success){ el.innerHTML='<p class="text-red-500 text-sm p-2">오류</p>'; return; }
-        var d=res.data, s=_state.currentStudent;
-        var AREAS=['자율활동','동아리활동','진로활동','개인별세특','행동발달'];
-        var h='<h2 class="text-base font-bold text-slate-700 mb-4">📝 생기부 개인별 — '
-          +_esc(s?s.name:'')+'&nbsp;<span class="text-slate-400 font-normal text-sm">('+_esc(studentId)+')</span></h2>';
-        if (!d.found) {
-          h+='<div class="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-sm text-amber-700">학생이 제출한 내용이 없음</div>';
+        if (res.success) {
+          _state.studentList = res.data;
+          _renderStudentList(res.data);
         } else {
-          AREAS.forEach(function(area){
-            var content=d.areas[area]||'';
-            h+='<div class="mb-4">'
-              +'<span class="inline-block bg-sky-100 text-sky-700 text-xs font-bold px-2 py-0.5 rounded mb-1">'+_esc(area)+'</span>'
-              +'<div class="gigi-box">'+(content?_esc(content):'<span class="text-slate-400 text-xs italic">내용 없음</span>')+'</div></div>';
-          });
+          document.getElementById('student-list').innerHTML =
+            '<p class="text-red-500 text-sm p-3">' + res.message + '</p>';
         }
-        el.innerHTML=h;
       })
-      .withFailureHandler(function(err){
-        _el('content-gigi-personal').innerHTML='<p class="text-red-500 text-sm p-2">오류: '+_esc(err.message||'')+'</p>';
+      .withFailureHandler(function(err) {
+        document.getElementById('student-list').innerHTML =
+          '<p class="text-red-500 text-sm p-3">오류: ' + err.message + '</p>';
       })
-      .adminGetGigibooPersonal({ studentId: studentId });
+      .adminGetStudentList(_state.adminId, _state.currentClass);
   }
 
-  // ── 생기부 영역별 ──────────────────────────────────────
-  function _showGigiAreaPanel() {
-    _only('content-gigi-area');
-    _el('gigi-area-result').innerHTML='<p class="text-slate-400 text-sm">좌측 영역 버튼을 선택하세요.</p>';
+  function _showSidebarSkeleton() {
+    var html = '';
+    for (var i = 0; i < 8; i++) {
+      html += '<div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">'
+            + '<div class="w-8 h-3 bg-gray-200 rounded animate-pulse"></div>'
+            + '<div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>'
+            + '</div>';
+    }
+    document.getElementById('student-list').innerHTML = html;
   }
 
-  function _loadGigiByArea() {
-    var resultEl=_el('gigi-area-result');
-    resultEl.innerHTML=[1,2,3].map(function(){ return '<div class="skeleton h-20 w-full mb-2 rounded-lg"></div>'; }).join('');
-    google.script.run
-      .withSuccessHandler(function(res){
-        if (!res||!res.success){ resultEl.innerHTML='<p class="text-red-500 text-sm">오류</p>'; return; }
-        var rows=res.data, area=_state.currentArea;
-        var h='<h2 class="text-base font-bold text-slate-700 mb-3">📋 '+_esc(area)+' 영역별 생기부</h2>';
-        if (!rows.length){ h+='<p class="text-slate-400 text-sm">데이터가 없습니다.</p>'; resultEl.innerHTML=h; return; }
-        rows.forEach(function(r){
-          h+='<div class="bg-white border border-slate-200 rounded-xl p-3 mb-3 shadow-sm">'
-            +'<div class="flex items-center gap-2 mb-1.5">'
-            +'<span class="font-bold text-sm text-slate-800">'+_esc(r.name)+'</span>'
-            +'<span class="text-xs text-slate-400">'+_esc(r.studentId)+'</span>'
-            +'<span class="ml-auto text-xs bg-sky-50 text-sky-600 border border-sky-200 px-2 py-0.5 rounded-full">'+_esc(r.classNum)+'반</span>'
-            +'</div>'
-            +'<div class="gigi-box border-t border-slate-100 pt-2 mt-1">'
-            +(r.content?_esc(r.content):'<span class="text-slate-400 text-xs italic">내용 없음</span>')
-            +'</div></div>';
-        });
-        resultEl.innerHTML=h;
-      })
-      .withFailureHandler(function(err){
-        resultEl.innerHTML='<p class="text-red-500 text-sm">오류: '+_esc(err.message||'')+'</p>';
-      })
-      .adminGetGigibooByArea({ classNum: _state.currentClass, area: _state.currentArea });
-  }
-
-  // ── 로그아웃 ───────────────────────────────────────────
-  function _initLogout() {
-    _el('logout-btn').addEventListener('click', function(){
-      sessionStorage.removeItem('adminUser');
-      _goIndex();
+  function _renderStudentList(students) {
+    var ul = document.getElementById('student-list');
+    if (!students || students.length === 0) {
+      ul.innerHTML = '<p class="text-gray-400 text-sm p-3 text-center">학생이 없습니다.</p>';
+      return;
+    }
+    ul.innerHTML = '';
+    students.forEach(function(s) {
+      var li = document.createElement('div');
+      li.className = 'student-item flex items-center gap-2 px-3 py-2 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors';
+      li.dataset.id = s.studentId;
+      li.innerHTML =
+        '<span class="text-xs text-gray-400 w-12 shrink-0">' + s.studentId + '</span>' +
+        '<span class="text-sm font-medium text-gray-800 truncate">' + s.name + '</span>' +
+        (s.studentClass ? '<span class="text-xs text-gray-400 ml-auto shrink-0">' + s.studentClass + '반</span>' : '');
+      li.addEventListener('click', function() {
+        document.querySelectorAll('.student-item').forEach(function(el) { el.classList.remove('active'); });
+        li.classList.add('active');
+        _state.currentStudentId = s.studentId;
+        if (_state.currentMenu === 'gibu_personal') {
+          _loadGibuPersonalForStudent(s.studentId, s.name, students);
+        }
+      });
+      ul.appendChild(li);
     });
   }
 
-  function _goIndex() {
-    if (typeof google !== 'undefined' && google.script) {
-      google.script.run
-        .withSuccessHandler(function(url){ window.top.location.href = url||''; })
-        .withFailureHandler(function(){ window.top.location.href=''; })
-        .getScriptUrl();
+  // ─── 메뉴 버튼 클릭 ──────────────────────────────────────────
+  function _onMenuClick(menu) {
+    _state.currentMenu = menu;
+    _state.currentStudentId = '';
+
+    // 버튼 활성화
+    document.querySelectorAll('.menu-btn').forEach(function(b) { b.classList.remove('active'); });
+    document.getElementById('btn-' + menu).classList.add('active');
+
+    // 사이드바 초기화 (생기부 영역별은 사이드바가 영역 버튼으로 변경)
+    _resetSidebar(menu);
+    _clearContent();
+
+    if (menu === 'suneung')       { _loadSuneung(); }
+    else if (menu === 'univ')     { _loadUniv(); }
+    else if (menu === 'gibu_personal') {
+      _loadStudentList();   // 학생 명단 다시
+      _renderStudentList(_state.studentList);
+      document.getElementById('content-area').innerHTML =
+        '<p class="text-gray-400 text-center mt-20">좌측에서 학생을 선택하세요.</p>';
+    }
+    else if (menu === 'gibu_area') { _renderAreaButtons(); }
+  }
+
+  function _resetSidebar(menu) {
+    if (menu === 'gibu_area') {
+      // 영역 버튼 사이드바로 변경
+      document.getElementById('sidebar-title').textContent = '생기부 영역';
+    } else {
+      document.getElementById('sidebar-title').textContent = '학생 명단';
+      _renderStudentList(_state.studentList);
     }
   }
 
-  // ── 모바일 사이드바 ─────────────────────────────────────
-  function _initSidebarToggle() {
-    var btn=_el('sidebar-toggle'), ov=_el('sidebar-overlay');
-    if (!btn) return;
-    btn.addEventListener('click', function(){
-      _el('sidebar').classList.toggle('open');
-      ov.classList.toggle('show');
+  function _refreshContent() {
+    if (!_state.currentMenu) return;
+    if (_state.currentMenu === 'suneung')         _loadSuneung();
+    else if (_state.currentMenu === 'univ')       _loadUniv();
+    else if (_state.currentMenu === 'gibu_personal') {
+      _loadStudentList();
+      _clearContent();
+    }
+    else if (_state.currentMenu === 'gibu_area') {
+      _renderAreaButtons();
+      _clearContent();
+    }
+  }
+
+  // ─── 중앙 로딩 ────────────────────────────────────────────────
+  function _showContentSkeleton(rows) {
+    var r = rows || 5;
+    var html = '<div class="p-4 space-y-3">';
+    for (var i = 0; i < r; i++) {
+      html += '<div class="h-4 bg-gray-200 rounded animate-pulse w-' + (i % 2 === 0 ? 'full' : '3/4') + '"></div>';
+    }
+    html += '</div>';
+    document.getElementById('content-area').innerHTML = html;
+  }
+
+  function _clearContent() {
+    document.getElementById('content-area').innerHTML =
+      '<p class="text-gray-400 text-center mt-20">메뉴를 선택하세요.</p>';
+  }
+
+  // ─── 수능선택 ─────────────────────────────────────────────────
+  function _loadSuneung() {
+    _showContentSkeleton(10);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) _renderSuneung(res.data);
+        else _showError(res.message);
+      })
+      .withFailureHandler(function(err) { _showError(err.message); })
+      .adminGetSuneungData(_state.adminId, _state.currentClass);
+  }
+
+  function _renderSuneung(data) {
+    if (!data || !data.rows || data.rows.length === 0) {
+      document.getElementById('content-area').innerHTML =
+        '<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>';
+      return;
+    }
+    var html = '<div class="overflow-x-auto p-2">'
+             + '<table class="min-w-full text-sm border-collapse">'
+             + '<thead><tr class="bg-blue-700 text-white">'
+             + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">반</th>'
+             + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">학번</th>'
+             + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">이름</th>';
+    data.headers.forEach(function(h) {
+      html += '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">' + h + '</th>';
     });
-    ov.addEventListener('click', _closeSidebar);
-  }
-  function _closeSidebar() {
-    var s=_el('sidebar'), o=_el('sidebar-overlay');
-    if(s) s.classList.remove('open');
-    if(o) o.classList.remove('show');
+    html += '</tr></thead><tbody>';
+    data.rows.forEach(function(row, idx) {
+      var bg = idx % 2 === 0 ? 'bg-white' : 'bg-blue-50';
+      html += '<tr class="' + bg + ' hover:bg-yellow-50 transition-colors">'
+            + '<td class="px-3 py-1.5 border border-gray-200 text-center">' + row.studentClass + '</td>'
+            + '<td class="px-3 py-1.5 border border-gray-200 text-center">' + row.studentId + '</td>'
+            + '<td class="px-3 py-1.5 border border-gray-200 font-medium">' + row.name + '</td>';
+      row.values.forEach(function(v) {
+        html += '<td class="px-3 py-1.5 border border-gray-200 text-center whitespace-nowrap">' + (v || '-') + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('content-area').innerHTML = html;
   }
 
-  return { init: _init };
+  // ─── 관심대학 ─────────────────────────────────────────────────
+  function _loadUniv() {
+    _showContentSkeleton(10);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) _renderUniv(res.data);
+        else _showError(res.message);
+      })
+      .withFailureHandler(function(err) { _showError(err.message); })
+      .adminGetUnivData(_state.adminId, _state.currentClass);
+  }
+
+  function _renderUniv(data) {
+    if (!data || !data.rows || data.rows.length === 0) {
+      document.getElementById('content-area').innerHTML =
+        '<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>';
+      return;
+    }
+    var html = '<div class="overflow-x-auto p-2">'
+             + '<table class="min-w-full text-sm border-collapse">'
+             + '<thead><tr class="bg-emerald-700 text-white">';
+    data.headers.forEach(function(h) {
+      html += '<th class="px-3 py-2 border border-emerald-600 whitespace-nowrap">' + h + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    data.rows.forEach(function(row, idx) {
+      var bg = idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50';
+      html += '<tr class="' + bg + ' hover:bg-yellow-50 transition-colors">';
+      row.values.forEach(function(v) {
+        html += '<td class="px-3 py-1.5 border border-gray-200 whitespace-nowrap">' + (v || '-') + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('content-area').innerHTML = html;
+  }
+
+  // ─── 생기부 (개인별) ──────────────────────────────────────────
+  function _loadGibuPersonalForStudent(studentId, studentName, allStudents) {
+    _showContentSkeleton(6);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) _renderGibuPersonal(res.data, studentId, studentName);
+        else _showError(res.message);
+      })
+      .withFailureHandler(function(err) { _showError(err.message); })
+      .adminGetGibuByStudent(_state.adminId, _state.currentClass);
+  }
+
+  function _renderGibuPersonal(students, targetId) {
+    var found = null;
+    for (var i = 0; i < students.length; i++) {
+      if (students[i].studentId === targetId) { found = students[i]; break; }
+    }
+    if (!found) {
+      document.getElementById('content-area').innerHTML =
+        '<p class="text-gray-400 text-center mt-20">학생 정보를 찾을 수 없습니다.</p>';
+      return;
+    }
+    var areas = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
+    var html = '<div class="p-4">'
+             + '<h2 class="text-lg font-bold text-gray-800 mb-4">'
+             + found.studentId + ' ' + found.name + ' 학생 생활기록부</h2>';
+    areas.forEach(function(area) {
+      var content = found.areas[area] || '';
+      html += '<div class="mb-4">'
+            + '<div class="flex items-center gap-2 mb-1">'
+            + '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">' + area + '</span>'
+            + '</div>'
+            + '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 min-h-[60px] whitespace-pre-wrap">'
+            + (content || '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
+            + '</div></div>';
+    });
+    html += '</div>';
+    document.getElementById('content-area').innerHTML = html;
+  }
+
+  // ─── 생기부 (영역별) ──────────────────────────────────────────
+  function _renderAreaButtons() {
+    var areas = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
+    var ul = document.getElementById('student-list');
+    ul.innerHTML = '';
+    areas.forEach(function(area) {
+      var btn = document.createElement('button');
+      btn.className = 'area-btn w-full text-left px-4 py-3 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-blue-50 transition-colors';
+      btn.textContent = area;
+      btn.dataset.area = area;
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.area-btn').forEach(function(b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        _state.currentArea = area;
+        _loadGibuByArea(area);
+      });
+      ul.appendChild(btn);
+    });
+  }
+
+  function _loadGibuByArea(area) {
+    _showContentSkeleton(8);
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.success) _renderGibuArea(res.data, area);
+        else _showError(res.message);
+      })
+      .withFailureHandler(function(err) { _showError(err.message); })
+      .adminGetGibuByArea(_state.adminId, _state.currentClass, area);
+  }
+
+  function _renderGibuArea(rows, area) {
+    if (!rows || rows.length === 0) {
+      document.getElementById('content-area').innerHTML =
+        '<p class="text-gray-400 text-center mt-20">' + area + ' 데이터가 없습니다.</p>';
+      return;
+    }
+    var html = '<div class="p-4">'
+             + '<h2 class="text-lg font-bold text-gray-800 mb-4">'
+             + '<span class="bg-blue-100 text-blue-800 text-sm px-2 py-0.5 rounded mr-2">' + area + '</span>'
+             + '영역별 생기부 내용</h2>';
+    rows.forEach(function(row) {
+      html += '<div class="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">'
+            + '<div class="flex items-center gap-3 bg-gray-50 px-4 py-2 border-b border-gray-200">'
+            + '<span class="text-xs text-gray-500">' + row.studentClass + '반</span>'
+            + '<span class="text-xs font-mono text-gray-600">' + row.studentId + '</span>'
+            + '<span class="font-semibold text-gray-800">' + row.name + '</span>'
+            + '</div>'
+            + '<div class="p-3 text-sm text-gray-700 whitespace-pre-wrap min-h-[48px]">'
+            + (row.content || '<span class="text-gray-400 italic">내용 없음</span>')
+            + '</div></div>';
+    });
+    html += '</div>';
+    document.getElementById('content-area').innerHTML = html;
+  }
+
+  // ─── 오류 표시 ────────────────────────────────────────────────
+  function _showError(msg) {
+    document.getElementById('content-area').innerHTML =
+      '<div class="p-6 text-center">'
+      + '<div class="text-red-500 text-4xl mb-3">⚠️</div>'
+      + '<p class="text-red-600 font-medium">' + (msg || '오류가 발생했습니다.') + '</p>'
+      + '</div>';
+  }
+
+  // ─── 로그아웃 ─────────────────────────────────────────────────
+  function _logout() {
+    if (confirm('로그아웃 하시겠습니까?')) {
+      sessionStorage.removeItem('adminInfo');
+      location.href = 'index.html';
+    }
+  }
+
+  // ─── 공개 API ─────────────────────────────────────────────────
+  return {
+    init:        _init,
+    onMenuClick: _onMenuClick,
+    logout:      _logout
+  };
+
 })();
-
-document.addEventListener('DOMContentLoaded', function(){ Admin.init(); });
 </script>
+
+<!-- ============================================================
+     HTML 구조
+     ============================================================ -->
+
+<!-- 상단 헤더 -->
+<header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
+  <div class="max-w-screen-2xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+
+    <!-- 좌측: 인사 + 권한 -->
+    <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
+      <span class="text-base sm:text-lg font-bold" id="admin-greeting">로딩 중...</span>
+      <div class="flex items-center text-blue-200 text-sm">
+        <span id="auth-label"></span>
+        <span id="class-select-wrapper" class="ml-1"></span>
+      </div>
+    </div>
+
+    <!-- 우측: 메뉴 버튼 + 로그아웃 -->
+    <div class="flex flex-wrap gap-2 items-center">
+      <button id="btn-suneung"
+        class="menu-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-blue-700 hover:bg-blue-900 text-white border border-blue-500 transition-all"
+        onclick="Admin.onMenuClick('suneung')">수능선택</button>
+      <button id="btn-univ"
+        class="menu-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-blue-700 hover:bg-blue-900 text-white border border-blue-500 transition-all"
+        onclick="Admin.onMenuClick('univ')">관심대학</button>
+      <button id="btn-gibu_personal"
+        class="menu-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-blue-700 hover:bg-blue-900 text-white border border-blue-500 transition-all"
+        onclick="Admin.onMenuClick('gibu_personal')">생기부(개인별)</button>
+      <button id="btn-gibu_area"
+        class="menu-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-blue-700 hover:bg-blue-900 text-white border border-blue-500 transition-all"
+        onclick="Admin.onMenuClick('gibu_area')">생기부(영역별)</button>
+      <button
+        class="px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-red-500 hover:bg-red-700 text-white border border-red-400 transition-all ml-2"
+        onclick="Admin.logout()">로그아웃</button>
+    </div>
+  </div>
+</header>
+
+<!-- 본문: 좌측 사이드바 + 중앙 콘텐츠 -->
+<div class="flex h-[calc(100vh-70px)] max-w-screen-2xl mx-auto">
+
+  <!-- 좌측 사이드바 -->
+  <aside class="w-44 sm:w-52 md:w-60 shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
+    <div class="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide" id="sidebar-title">학생 명단</span>
+      <span class="text-xs text-gray-400" id="student-count"></span>
+    </div>
+    <div id="student-list" class="flex-1 overflow-y-auto">
+      <!-- 스켈레톤 초기 상태 -->
+      <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+        <div class="w-8 h-3 bg-gray-200 rounded animate-pulse"></div>
+        <div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+        <div class="w-8 h-3 bg-gray-200 rounded animate-pulse"></div>
+        <div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+      <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+        <div class="w-10 h-3 bg-gray-200 rounded animate-pulse"></div>
+        <div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- 중앙 콘텐츠 -->
+  <main class="flex-1 overflow-y-auto bg-gray-50">
+    <div id="content-area" class="min-h-full">
+      <div class="flex flex-col items-center justify-center h-64 text-gray-400">
+        <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p class="text-sm">상단 메뉴를 클릭하여 데이터를 조회하세요.</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- 초기화 -->
+<script>
+  // index.html 로그인 성공 후 sessionStorage에 adminInfo가 저장되어 있어야 함
+  // 예: sessionStorage.setItem('adminInfo', JSON.stringify(data));
+  document.addEventListener('DOMContentLoaded', function() {
+    Admin.init();
+  });
+</script>
+
 </body>
 </html>
