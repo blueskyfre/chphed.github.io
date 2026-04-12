@@ -6,43 +6,64 @@
   <title>관리자 페이지</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    /* 스크롤바 스타일 */
+    @keyframes skeleton-shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+    .skeleton-box {
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.5s ease-in-out infinite;
+      border-radius: 0.375rem;
+    }
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #f1f5f9; }
     ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
-    /* 사이드바 학생 선택 */
     .student-item.active { background-color: #dbeafe; border-left: 3px solid #3b82f6; }
-    /* 영역 버튼 활성화 */
     .area-btn.active { background-color: #1d4ed8; color: #fff; }
-    /* 상단 메뉴 버튼 활성화 */
     .menu-btn.active { background-color: #1e40af; color: #fff; box-shadow: 0 2px 6px rgba(30,64,175,0.4); }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-<!-- ============================================================
-     ADMIN 네임스페이스 (IIFE)
-     ============================================================ -->
 <script>
+// ============================================================
+// Admin 네임스페이스 (IIFE)
+// ============================================================
 var Admin = (function() {
+
+  // ─── 설정 ────────────────────────────────────────────────────
+  var _WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec';
 
   // ─── 상태 변수 ───────────────────────────────────────────────
   var _state = {
-    adminId:    '',
-    adminName:  '',
-    adminAuth:  '',
-    adminClass: '',
-    allClasses: [],
-    currentClass: '',   // 현재 선택된 반 (드롭다운 or 개인 반)
-    currentMenu: '',    // 'suneung' | 'univ' | 'gibu_personal' | 'gibu_area'
-    currentArea: '',    // 생기부 영역별 선택
+    adminId:      '',
+    adminName:    '',
+    adminAuth:    '',
+    adminClass:   '',
+    allClasses:   [],
+    currentClass: '',
+    currentMenu:  '',
+    currentArea:  '',
     currentStudentId: '',
-    studentList: []
+    studentList:  []
   };
+
+  // ─── API 호출 (GET) ──────────────────────────────────────────
+  async function _apiGet(action, params) {
+    params = params || {};
+    var url = new URL(_WEB_APP_URL);
+    url.searchParams.set('action', action);
+    for (var key in params) {
+      if (params.hasOwnProperty(key)) url.searchParams.set(key, params[key]);
+    }
+    var res = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
+    if (!res.ok) throw new Error('서버 응답 오류: ' + res.status);
+    return await res.json();
+  }
 
   // ─── 초기화 ──────────────────────────────────────────────────
   function _init() {
-    // sessionStorage에서 관리자 정보 읽기
     var raw = sessionStorage.getItem('adminInfo');
     if (!raw) {
       alert('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
@@ -66,15 +87,13 @@ var Admin = (function() {
     document.getElementById('admin-greeting').textContent =
       _state.adminName + ' 선생님 접속했습니다.';
 
-    var authLabel;
     if (_state.adminAuth === '관리자') {
-      authLabel = '권한 : ';
-      // 드롭다운 생성
-      var sel = document.getElementById('class-select-wrapper');
-      sel.innerHTML = '';
+      document.getElementById('auth-label').textContent = '권한 : ';
+      var wrapper = document.getElementById('class-select-wrapper');
+      wrapper.innerHTML = '';
       var select = document.createElement('select');
       select.id = 'class-dropdown';
-      select.className = 'ml-1 text-sm border border-blue-300 rounded px-2 py-0.5 bg-white focus:outline-none focus:ring-2 focus:ring-blue-400';
+      select.className = 'ml-1 text-sm border border-blue-300 rounded px-2 py-0.5 bg-white text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-400';
       var optAll = document.createElement('option');
       optAll.value = '전체'; optAll.textContent = '전체';
       select.appendChild(optAll);
@@ -89,41 +108,41 @@ var Admin = (function() {
         _loadStudentList();
         _refreshContent();
       });
-      sel.appendChild(select);
+      wrapper.appendChild(select);
     } else {
-      authLabel = '권한 : ' + _state.adminClass + '반';
+      document.getElementById('auth-label').textContent = '권한 : ' + _state.adminClass + '반';
       document.getElementById('class-select-wrapper').innerHTML =
-        '<span class="ml-1 text-sm font-semibold text-blue-700">' + _state.adminClass + '반</span>';
+        '<span class="ml-1 text-sm font-semibold text-blue-200">' + _state.adminClass + '반</span>';
     }
-    document.getElementById('auth-label').textContent = authLabel;
   }
 
   // ─── 학생 명단 로드 ──────────────────────────────────────────
-  function _loadStudentList() {
+  async function _loadStudentList() {
     _showSidebarSkeleton();
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (res.success) {
-          _state.studentList = res.data;
-          _renderStudentList(res.data);
-        } else {
-          document.getElementById('student-list').innerHTML =
-            '<p class="text-red-500 text-sm p-3">' + res.message + '</p>';
-        }
-      })
-      .withFailureHandler(function(err) {
+    try {
+      var res = await _apiGet('adminGetStudentList', {
+        adminId:     _state.adminId,
+        filterClass: _state.currentClass
+      });
+      if (res.success) {
+        _state.studentList = res.data;
+        _renderStudentList(res.data);
+      } else {
         document.getElementById('student-list').innerHTML =
-          '<p class="text-red-500 text-sm p-3">오류: ' + err.message + '</p>';
-      })
-      .adminGetStudentList(_state.adminId, _state.currentClass);
+          '<p class="text-red-400 text-xs p-3">' + res.message + '</p>';
+      }
+    } catch (err) {
+      document.getElementById('student-list').innerHTML =
+        '<p class="text-red-400 text-xs p-3">오류: ' + err.message + '</p>';
+    }
   }
 
   function _showSidebarSkeleton() {
     var html = '';
     for (var i = 0; i < 8; i++) {
       html += '<div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">'
-            + '<div class="w-8 h-3 bg-gray-200 rounded animate-pulse"></div>'
-            + '<div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>'
+            + '<div class="skeleton-box w-10 h-3"></div>'
+            + '<div class="skeleton-box flex-1 h-3"></div>'
             + '</div>';
     }
     document.getElementById('student-list').innerHTML = html;
@@ -149,97 +168,90 @@ var Admin = (function() {
         li.classList.add('active');
         _state.currentStudentId = s.studentId;
         if (_state.currentMenu === 'gibu_personal') {
-          _loadGibuPersonalForStudent(s.studentId, s.name, students);
+          _renderGibuPersonalForStudent(s.studentId);
         }
       });
       ul.appendChild(li);
     });
   }
 
-  // ─── 메뉴 버튼 클릭 ──────────────────────────────────────────
+  // ─── 메뉴 클릭 ───────────────────────────────────────────────
   function _onMenuClick(menu) {
     _state.currentMenu = menu;
     _state.currentStudentId = '';
 
-    // 버튼 활성화
     document.querySelectorAll('.menu-btn').forEach(function(b) { b.classList.remove('active'); });
     document.getElementById('btn-' + menu).classList.add('active');
 
-    // 사이드바 초기화 (생기부 영역별은 사이드바가 영역 버튼으로 변경)
-    _resetSidebar(menu);
-    _clearContent();
+    document.getElementById('sidebar-title').textContent =
+      menu === 'gibu_area' ? '생기부 영역' : '학생 명단';
 
-    if (menu === 'suneung')       { _loadSuneung(); }
-    else if (menu === 'univ')     { _loadUniv(); }
-    else if (menu === 'gibu_personal') {
-      _loadStudentList();   // 학생 명단 다시
-      _renderStudentList(_state.studentList);
-      document.getElementById('content-area').innerHTML =
-        '<p class="text-gray-400 text-center mt-20">좌측에서 학생을 선택하세요.</p>';
-    }
-    else if (menu === 'gibu_area') { _renderAreaButtons(); }
-  }
-
-  function _resetSidebar(menu) {
     if (menu === 'gibu_area') {
-      // 영역 버튼 사이드바로 변경
-      document.getElementById('sidebar-title').textContent = '생기부 영역';
-    } else {
-      document.getElementById('sidebar-title').textContent = '학생 명단';
+      _renderAreaButtons();
+      _clearContent();
+    } else if (menu === 'gibu_personal') {
       _renderStudentList(_state.studentList);
+      _clearContent('<p class="text-gray-400 text-center mt-20">좌측에서 학생을 선택하세요.</p>');
+    } else if (menu === 'suneung') {
+      _renderStudentList(_state.studentList);
+      _loadSuneung();
+    } else if (menu === 'univ') {
+      _renderStudentList(_state.studentList);
+      _loadUniv();
     }
   }
 
   function _refreshContent() {
     if (!_state.currentMenu) return;
-    if (_state.currentMenu === 'suneung')         _loadSuneung();
-    else if (_state.currentMenu === 'univ')       _loadUniv();
-    else if (_state.currentMenu === 'gibu_personal') {
-      _loadStudentList();
-      _clearContent();
-    }
-    else if (_state.currentMenu === 'gibu_area') {
-      _renderAreaButtons();
-      _clearContent();
-    }
+    if (_state.currentMenu === 'suneung')           _loadSuneung();
+    else if (_state.currentMenu === 'univ')         _loadUniv();
+    else if (_state.currentMenu === 'gibu_personal') _clearContent('<p class="text-gray-400 text-center mt-20">좌측에서 학생을 선택하세요.</p>');
+    else if (_state.currentMenu === 'gibu_area')    { _renderAreaButtons(); _clearContent(); }
   }
 
-  // ─── 중앙 로딩 ────────────────────────────────────────────────
+  // ─── 콘텐츠 영역 유틸 ────────────────────────────────────────
   function _showContentSkeleton(rows) {
-    var r = rows || 5;
     var html = '<div class="p-4 space-y-3">';
-    for (var i = 0; i < r; i++) {
-      html += '<div class="h-4 bg-gray-200 rounded animate-pulse w-' + (i % 2 === 0 ? 'full' : '3/4') + '"></div>';
+    for (var i = 0; i < (rows || 6); i++) {
+      html += '<div class="skeleton-box h-4 ' + (i % 2 === 0 ? 'w-full' : 'w-3/4') + '"></div>';
     }
     html += '</div>';
     document.getElementById('content-area').innerHTML = html;
   }
 
-  function _clearContent() {
+  function _clearContent(msg) {
     document.getElementById('content-area').innerHTML =
-      '<p class="text-gray-400 text-center mt-20">메뉴를 선택하세요.</p>';
+      msg || '<div class="flex flex-col items-center justify-center h-64 text-gray-400">'
+           + '<p class="text-sm">상단 메뉴를 클릭하여 데이터를 조회하세요.</p></div>';
+  }
+
+  function _showError(msg) {
+    document.getElementById('content-area').innerHTML =
+      '<div class="p-6 text-center">'
+      + '<div class="text-4xl mb-3">⚠️</div>'
+      + '<p class="text-red-600 font-medium">' + (msg || '오류가 발생했습니다.') + '</p>'
+      + '</div>';
   }
 
   // ─── 수능선택 ─────────────────────────────────────────────────
-  function _loadSuneung() {
+  async function _loadSuneung() {
     _showContentSkeleton(10);
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (res.success) _renderSuneung(res.data);
-        else _showError(res.message);
-      })
-      .withFailureHandler(function(err) { _showError(err.message); })
-      .adminGetSuneungData(_state.adminId, _state.currentClass);
+    try {
+      var res = await _apiGet('adminGetSuneungData', {
+        adminId:     _state.adminId,
+        filterClass: _state.currentClass
+      });
+      if (res.success) _renderSuneung(res.data);
+      else _showError(res.message);
+    } catch (err) { _showError(err.message); }
   }
 
   function _renderSuneung(data) {
     if (!data || !data.rows || data.rows.length === 0) {
-      document.getElementById('content-area').innerHTML =
-        '<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>';
+      _clearContent('<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>');
       return;
     }
-    var html = '<div class="overflow-x-auto p-2">'
-             + '<table class="min-w-full text-sm border-collapse">'
+    var html = '<div class="overflow-x-auto p-2"><table class="min-w-full text-sm border-collapse">'
              + '<thead><tr class="bg-blue-700 text-white">'
              + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">반</th>'
              + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">학번</th>'
@@ -249,8 +261,7 @@ var Admin = (function() {
     });
     html += '</tr></thead><tbody>';
     data.rows.forEach(function(row, idx) {
-      var bg = idx % 2 === 0 ? 'bg-white' : 'bg-blue-50';
-      html += '<tr class="' + bg + ' hover:bg-yellow-50 transition-colors">'
+      html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-blue-50') + ' hover:bg-yellow-50">'
             + '<td class="px-3 py-1.5 border border-gray-200 text-center">' + row.studentClass + '</td>'
             + '<td class="px-3 py-1.5 border border-gray-200 text-center">' + row.studentId + '</td>'
             + '<td class="px-3 py-1.5 border border-gray-200 font-medium">' + row.name + '</td>';
@@ -264,33 +275,31 @@ var Admin = (function() {
   }
 
   // ─── 관심대학 ─────────────────────────────────────────────────
-  function _loadUniv() {
+  async function _loadUniv() {
     _showContentSkeleton(10);
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (res.success) _renderUniv(res.data);
-        else _showError(res.message);
-      })
-      .withFailureHandler(function(err) { _showError(err.message); })
-      .adminGetUnivData(_state.adminId, _state.currentClass);
+    try {
+      var res = await _apiGet('adminGetUnivData', {
+        adminId:     _state.adminId,
+        filterClass: _state.currentClass
+      });
+      if (res.success) _renderUniv(res.data);
+      else _showError(res.message);
+    } catch (err) { _showError(err.message); }
   }
 
   function _renderUniv(data) {
     if (!data || !data.rows || data.rows.length === 0) {
-      document.getElementById('content-area').innerHTML =
-        '<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>';
+      _clearContent('<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>');
       return;
     }
-    var html = '<div class="overflow-x-auto p-2">'
-             + '<table class="min-w-full text-sm border-collapse">'
+    var html = '<div class="overflow-x-auto p-2"><table class="min-w-full text-sm border-collapse">'
              + '<thead><tr class="bg-emerald-700 text-white">';
     data.headers.forEach(function(h) {
       html += '<th class="px-3 py-2 border border-emerald-600 whitespace-nowrap">' + h + '</th>';
     });
     html += '</tr></thead><tbody>';
     data.rows.forEach(function(row, idx) {
-      var bg = idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50';
-      html += '<tr class="' + bg + ' hover:bg-yellow-50 transition-colors">';
+      html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50') + ' hover:bg-yellow-50">';
       row.values.forEach(function(v) {
         html += '<td class="px-3 py-1.5 border border-gray-200 whitespace-nowrap">' + (v || '-') + '</td>';
       });
@@ -300,47 +309,43 @@ var Admin = (function() {
     document.getElementById('content-area').innerHTML = html;
   }
 
-  // ─── 생기부 (개인별) ──────────────────────────────────────────
-  function _loadGibuPersonalForStudent(studentId, studentName, allStudents) {
+  // ─── 생기부(개인별) ───────────────────────────────────────────
+  async function _renderGibuPersonalForStudent(targetId) {
     _showContentSkeleton(6);
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (res.success) _renderGibuPersonal(res.data, studentId, studentName);
-        else _showError(res.message);
-      })
-      .withFailureHandler(function(err) { _showError(err.message); })
-      .adminGetGibuByStudent(_state.adminId, _state.currentClass);
+    try {
+      var res = await _apiGet('adminGetGibuByStudent', {
+        adminId:     _state.adminId,
+        filterClass: _state.currentClass
+      });
+      if (!res.success) { _showError(res.message); return; }
+
+      var found = null;
+      for (var i = 0; i < res.data.length; i++) {
+        if (res.data[i].studentId === targetId) { found = res.data[i]; break; }
+      }
+      if (!found) {
+        _clearContent('<p class="text-gray-400 text-center mt-20">학생 정보를 찾을 수 없습니다.</p>');
+        return;
+      }
+
+      var areas = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
+      var html = '<div class="p-4">'
+               + '<h2 class="text-lg font-bold text-gray-800 mb-4">'
+               + found.studentId + ' ' + found.name + ' 학생 생활기록부</h2>';
+      areas.forEach(function(area) {
+        var content = found.areas[area] || '';
+        html += '<div class="mb-4">'
+              + '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded mb-1">' + area + '</span>'
+              + '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 min-h-[60px] whitespace-pre-wrap">'
+              + (content || '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
+              + '</div></div>';
+      });
+      html += '</div>';
+      document.getElementById('content-area').innerHTML = html;
+    } catch (err) { _showError(err.message); }
   }
 
-  function _renderGibuPersonal(students, targetId) {
-    var found = null;
-    for (var i = 0; i < students.length; i++) {
-      if (students[i].studentId === targetId) { found = students[i]; break; }
-    }
-    if (!found) {
-      document.getElementById('content-area').innerHTML =
-        '<p class="text-gray-400 text-center mt-20">학생 정보를 찾을 수 없습니다.</p>';
-      return;
-    }
-    var areas = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
-    var html = '<div class="p-4">'
-             + '<h2 class="text-lg font-bold text-gray-800 mb-4">'
-             + found.studentId + ' ' + found.name + ' 학생 생활기록부</h2>';
-    areas.forEach(function(area) {
-      var content = found.areas[area] || '';
-      html += '<div class="mb-4">'
-            + '<div class="flex items-center gap-2 mb-1">'
-            + '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded">' + area + '</span>'
-            + '</div>'
-            + '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 min-h-[60px] whitespace-pre-wrap">'
-            + (content || '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
-            + '</div></div>';
-    });
-    html += '</div>';
-    document.getElementById('content-area').innerHTML = html;
-  }
-
-  // ─── 생기부 (영역별) ──────────────────────────────────────────
+  // ─── 생기부(영역별) ───────────────────────────────────────────
   function _renderAreaButtons() {
     var areas = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
     var ul = document.getElementById('student-list');
@@ -349,7 +354,6 @@ var Admin = (function() {
       var btn = document.createElement('button');
       btn.className = 'area-btn w-full text-left px-4 py-3 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-blue-50 transition-colors';
       btn.textContent = area;
-      btn.dataset.area = area;
       btn.addEventListener('click', function() {
         document.querySelectorAll('.area-btn').forEach(function(b) { b.classList.remove('active'); });
         btn.classList.add('active');
@@ -360,21 +364,22 @@ var Admin = (function() {
     });
   }
 
-  function _loadGibuByArea(area) {
+  async function _loadGibuByArea(area) {
     _showContentSkeleton(8);
-    google.script.run
-      .withSuccessHandler(function(res) {
-        if (res.success) _renderGibuArea(res.data, area);
-        else _showError(res.message);
-      })
-      .withFailureHandler(function(err) { _showError(err.message); })
-      .adminGetGibuByArea(_state.adminId, _state.currentClass, area);
+    try {
+      var res = await _apiGet('adminGetGibuByArea', {
+        adminId:     _state.adminId,
+        filterClass: _state.currentClass,
+        area:        area
+      });
+      if (res.success) _renderGibuArea(res.data, area);
+      else _showError(res.message);
+    } catch (err) { _showError(err.message); }
   }
 
   function _renderGibuArea(rows, area) {
     if (!rows || rows.length === 0) {
-      document.getElementById('content-area').innerHTML =
-        '<p class="text-gray-400 text-center mt-20">' + area + ' 데이터가 없습니다.</p>';
+      _clearContent('<p class="text-gray-400 text-center mt-20">' + area + ' 데이터가 없습니다.</p>');
       return;
     }
     var html = '<div class="p-4">'
@@ -394,15 +399,6 @@ var Admin = (function() {
     });
     html += '</div>';
     document.getElementById('content-area').innerHTML = html;
-  }
-
-  // ─── 오류 표시 ────────────────────────────────────────────────
-  function _showError(msg) {
-    document.getElementById('content-area').innerHTML =
-      '<div class="p-6 text-center">'
-      + '<div class="text-red-500 text-4xl mb-3">⚠️</div>'
-      + '<p class="text-red-600 font-medium">' + (msg || '오류가 발생했습니다.') + '</p>'
-      + '</div>';
   }
 
   // ─── 로그아웃 ─────────────────────────────────────────────────
@@ -430,8 +426,6 @@ var Admin = (function() {
 <!-- 상단 헤더 -->
 <header class="bg-gradient-to-r from-blue-800 to-blue-600 text-white shadow-lg">
   <div class="max-w-screen-2xl mx-auto px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-
-    <!-- 좌측: 인사 + 권한 -->
     <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3">
       <span class="text-base sm:text-lg font-bold" id="admin-greeting">로딩 중...</span>
       <div class="flex items-center text-blue-200 text-sm">
@@ -439,8 +433,6 @@ var Admin = (function() {
         <span id="class-select-wrapper" class="ml-1"></span>
       </div>
     </div>
-
-    <!-- 우측: 메뉴 버튼 + 로그아웃 -->
     <div class="flex flex-wrap gap-2 items-center">
       <button id="btn-suneung"
         class="menu-btn px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium bg-blue-700 hover:bg-blue-900 text-white border border-blue-500 transition-all"
@@ -461,28 +453,26 @@ var Admin = (function() {
   </div>
 </header>
 
-<!-- 본문: 좌측 사이드바 + 중앙 콘텐츠 -->
-<div class="flex h-[calc(100vh-70px)] max-w-screen-2xl mx-auto">
+<!-- 본문 -->
+<div class="flex" style="height: calc(100vh - 70px);">
 
   <!-- 좌측 사이드바 -->
   <aside class="w-44 sm:w-52 md:w-60 shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
-    <div class="px-3 py-2 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
+    <div class="px-3 py-2 bg-gray-50 border-b border-gray-200">
       <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide" id="sidebar-title">학생 명단</span>
-      <span class="text-xs text-gray-400" id="student-count"></span>
     </div>
     <div id="student-list" class="flex-1 overflow-y-auto">
-      <!-- 스켈레톤 초기 상태 -->
       <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-        <div class="w-8 h-3 bg-gray-200 rounded animate-pulse"></div>
-        <div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>
+        <div class="skeleton-box w-10 h-3"></div>
+        <div class="skeleton-box flex-1 h-3"></div>
       </div>
       <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-        <div class="w-8 h-3 bg-gray-200 rounded animate-pulse"></div>
-        <div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>
+        <div class="skeleton-box w-10 h-3"></div>
+        <div class="skeleton-box flex-1 h-3"></div>
       </div>
       <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
-        <div class="w-10 h-3 bg-gray-200 rounded animate-pulse"></div>
-        <div class="flex-1 h-3 bg-gray-200 rounded animate-pulse"></div>
+        <div class="skeleton-box w-10 h-3"></div>
+        <div class="skeleton-box flex-1 h-3"></div>
       </div>
     </div>
   </aside>
@@ -501,13 +491,8 @@ var Admin = (function() {
   </main>
 </div>
 
-<!-- 초기화 -->
 <script>
-  // index.html 로그인 성공 후 sessionStorage에 adminInfo가 저장되어 있어야 함
-  // 예: sessionStorage.setItem('adminInfo', JSON.stringify(data));
-  document.addEventListener('DOMContentLoaded', function() {
-    Admin.init();
-  });
+  document.addEventListener('DOMContentLoaded', function() { Admin.init(); });
 </script>
 
 </body>
