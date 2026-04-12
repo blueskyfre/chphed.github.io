@@ -642,6 +642,14 @@
 
           _loginUserData = result.data;
 
+          // ✅ 관리자 로그인이면 바로 admin.html로 이동 (공지·날짜 체크 없이)
+          if (_loginUserData.userType === 'admin') {
+            sessionStorage.setItem('adminInfo', JSON.stringify(_loginUserData));
+            window.location.href = _GITHUB_PAGE_URL + '/admin.html';
+            return;
+          }
+
+          // ✅ 학생 로그인 - 기존 공지사항 모달 → proceedAfterLogin 흐름 유지
           if (_loginUserData.notices && _loginUserData.notices.length > 0) {
             _showNoticeModal(_loginUserData.notices);
           } else {
