@@ -8,9 +8,6 @@
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
 
-  <!-- 공통 네비게이션 컴포넌트 -->
-  <script src="navi.js"></script>
-
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -133,7 +130,7 @@
 
     /* ── 초기 모달 스타일 ── */
     .init-modal-bg {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      position: fixed; inset: 0; background: rgba(0,0,0,0.7);
       display: flex; align-items: center; justify-content: center; z-index: 10000;
     }
     .init-modal-card {
@@ -164,9 +161,45 @@
 <body class="bg-gray-50 min-h-screen">
 
   <!-- ============================================================ -->
-  <!--  상단 네비게이션 바 (navi.js 에서 동적 주입) -->
+  <!--  상단 네비게이션 바 (공통 디자인) -->
   <!-- ============================================================ -->
-  <div id="shared-nav"></div>
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3">
+      <div class="flex items-center justify-between">
+        <!-- 좌측: 링크 버튼들 (4개) -->
+        <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
+          <button onclick="SuselNS.navigateTo('schedule')"
+            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-200">
+            일정
+          </button>
+          <button onclick="SuselNS.navigateTo('suneung')"
+            class="bg-blue-500 text-white font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-500 shadow">
+            수능과목선택
+          </button>
+          <button onclick="SuselNS.navigateTo('university')"
+            class="bg-green-50 hover:bg-green-100 text-green-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-green-200">
+            관심대학
+          </button>
+          <button onclick="SuselNS.navigateTo('record')"
+            class="bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-purple-200">
+            생기부 기초자료
+          </button>
+        </div>
+        <!-- 우측: 사용자 정보 & 저장 & 로그아웃 -->
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span id="nav-user-info" class="text-xs sm:text-sm text-gray-600 font-medium"></span>
+          <button onclick="SuselNS.doSave()"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-blue-600 font-medium">
+            💾 저장
+          </button>
+          <button onclick="SuselNS.doLogout()"
+            class="bg-red-50 hover:bg-red-100 text-red-600 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-red-200">
+            로그아웃
+          </button>
+        </div>
+      </div>
+    </div>
+  </nav>
 
   <!-- ============================================================ -->
   <!--  스켈레톤 로딩 UI -->
@@ -502,14 +535,9 @@
       studentId = params.get('studentId') || '';
       userName  = params.get('name')      || '';
 
-      // ── 공통 네비게이션 초기화 (navi.js) ──
-      NaviComponent.init({
-        activePage : 'suneung',
-        userName   : userName,
-        studentId  : studentId,
-        onSave     : doSave,
-        onLogout   : doLogout
-      });
+      // 네비게이션 바 사용자 정보 표시
+      var navInfo = document.getElementById('nav-user-info');
+      if (navInfo) navInfo.textContent = userName ? (userName + ' 학생') : '';
 
       // 서버에서 옵션 목록 + 기존 데이터 동시 로드
       _loadData();
@@ -740,16 +768,21 @@
       var noBtn  = document.getElementById('tog-' + key + '-no');
       var bodyEl = wrap ? wrap.querySelector('.card-body') : null;
 
-      if (isYes) {
+      if (isYes === true) {
         if (wrap) wrap.classList.remove('disabled');
         if (yesBtn) { yesBtn.className = 'toggle-btn active-yes'; }
         if (noBtn)  { noBtn.className  = 'toggle-btn inactive'; }
         if (bodyEl) bodyEl.classList.remove('hidden');
-      } else {
+      } else if (isYes === false) {
         if (wrap) wrap.classList.add('disabled');
         if (yesBtn) { yesBtn.className = 'toggle-btn inactive'; }
         if (noBtn)  { noBtn.className  = 'toggle-btn active-no'; }
         if (bodyEl) bodyEl.classList.add('hidden');
+      } else {
+        if (wrap) wrap.classList.remove('disabled');
+        if (yesBtn) { yesBtn.className = 'toggle-btn inactive'; }
+        if (noBtn)  { noBtn.className  = 'toggle-btn inactive'; }
+        if (bodyEl) bodyEl.classList.remove('hidden');
       }
     }
 
@@ -760,10 +793,18 @@
         selections[key] = '';
         _highlightSubjBtn(key, '');
         _updateSummaryTag(key, '');
+        if (areaExam[key] === true) {
+          areaExam[key] = null;
+          _applyAreaToggle(key, null);
+        }
       } else {
         selections[key] = value;
         _highlightSubjBtn(key, value);
         _updateSummaryTag(key, value);
+        if (areaExam[key] === null) {
+          areaExam[key] = true;
+          _applyAreaToggle(key, true);
+        }
       }
       _updateGlobalSummary();
     }
