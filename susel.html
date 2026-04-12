@@ -925,7 +925,12 @@
         suneungYn : selections.suneungYn,
         language  : selections.suneungYn === '응시' ? selections.language  : '',
         math      : selections.suneungYn === '응시' ? selections.math      : '',
-        english   : selections.suneungYn === '응시' ? (areaExam.english === true ? '응시' : (areaExam.english === false ? '미응시' : '')) : '',
+        english   : (function(){
+          if (selections.suneungYn !== '응시') return '';
+          if (areaExam.english === true) return '응시';
+          if (areaExam.english === false) return '미응시';
+          return '';
+        })(),
         inquiry1  : selections.suneungYn === '응시' ? selections.inquiry1  : '',
         inquiry2  : selections.suneungYn === '응시' ? selections.inquiry2  : '',
         foreign   : selections.suneungYn === '응시' ? selections.foreign   : '',
