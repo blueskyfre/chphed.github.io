@@ -666,10 +666,16 @@
       // ============================================================
       // 🔍 작성중 데이터에서 활동코드로 찾기 (private)
       // ============================================================
-      function _findInProgress(activityCode) {
+      function _findInProgress(activityCode, area) {
+        if (activityCode === 'P' && area) {
+          return _inProgressData.find(function(e) {
+            return e.활동코드 === 'P' && e.생기부영역 === area;
+          }) || null;
+        }
         return _inProgressData.find(function(e) { return e.활동코드 === activityCode; }) || null;
       }
 
+      
       // ============================================================
       // 📌 행사 입력 모달 열기 (public)
       // ============================================================
