@@ -88,21 +88,6 @@
   </div>
 
   <!-- ============================================================ -->
-  <!--  개인 추가 활동 삭제 확인 모달 -->
-  <!-- ============================================================ -->
-  <div id="delete-extra-modal" class="modal-overlay hidden">
-    <div class="bg-white rounded-xl shadow-xl p-6 mx-4 max-w-sm w-full text-center">
-      <p class="text-gray-800 text-base mb-5">개인 추가활동 내용을 삭제하겠습니까?</p>
-      <div class="flex gap-3 justify-center">
-        <button onclick="Record.cancelDeleteExtra()"
-          class="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition">취소</button>
-        <button onclick="Record.confirmDeleteExtra()"
-          class="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition">삭제</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- ============================================================ -->
   <!--  행사 입력 모달 (참여 여부 + 설정) -->
   <!-- ============================================================ -->
   <div id="activity-modal" class="modal-overlay hidden">
@@ -119,14 +104,14 @@
             class="flex-1 py-2 rounded-lg border-2 border-gray-200 text-sm font-medium transition">참여</button>
           <button id="btn-participated-no"
             onclick="Record.setParticipated(false)"
-            class="flex-1 py-2 rounded-lg border-2 border-gray-200 text-sm font-medium transition">미참여</button>
+            class="flex-1 py-2 rounded-lg border-2 border-gray-200 text-sm font-medium transition">불참</button>
         </div>
       </div>
 
-      <!-- 미참여 경고 문구 -->
+      <!-- 불참 경고 문구 -->
       <div id="section-no-warning" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-        <p class="text-sm text-red-600 font-medium">⚠️ 미참여로 저장하면 이 행사의 작성 내용이 삭제됩니다.</p>
-        <p class="text-xs text-red-400 mt-1">저장을 클릭하면 기존 내용이 삭제되고 미참여로 처리됩니다.</p>
+        <p class="text-sm text-red-600 font-medium">⚠️ 불참으로 저장하면 이 행사의 작성 내용이 삭제됩니다.</p>
+        <p class="text-xs text-red-400 mt-1">저장을 클릭하면 기존 내용이 삭제되고 불참으로 처리됩니다.</p>
       </div>
 
       <!-- 배치 영역 선택 -->
@@ -294,16 +279,10 @@
               </div>
             </div>
           </div>
-          <div class="flex gap-2">
-            <button onclick="Record.saveExtraActivity()"
-              class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
-              저장
-            </button>
-            <button id="btn-delete-extra" onclick="Record.openDeleteExtraModal()"
-              class="hidden bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
-              삭제
-            </button>
-          </div>
+          <button onclick="Record.saveExtraActivity()"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
+            저장
+          </button>
         </div>
       </div>
 
@@ -487,7 +466,7 @@
         // 상태 태깅
         var tagged = _officialActivities.map(function(act) {
           var ip = _findInProgress(act['활동코드']);
-          var status = !ip ? 'none' : (ip.생기부영역 === '미참여' ? 'absent' : 'joined');
+          var status = !ip ? 'none' : (ip.생기부영역 === '불참' ? 'absent' : 'joined');
           return { act: act, ip: ip, status: status };
         });
 
@@ -506,7 +485,7 @@
         var groupDefs = [
           { key: 'none',   wrapClass: 'bg-yellow-50 border border-yellow-200', labelClass: 'text-yellow-700', label: '⬜ 미입력 행사' },
           { key: 'joined', wrapClass: 'bg-purple-50 border border-purple-200', labelClass: 'text-purple-700', label: '✅ 참여한 행사' },
-          { key: 'absent', wrapClass: 'bg-gray-100 border border-gray-200',    labelClass: 'text-gray-500',   label: '✖ 미참여 행사'  }
+          { key: 'absent', wrapClass: 'bg-gray-100 border border-gray-200',    labelClass: 'text-gray-500',   label: '✖ 불참 행사'  }
         ];
 
         var html = '';
@@ -521,7 +500,7 @@
             var badgeHtml = item.status === 'joined'
               ? '<span class="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full font-medium">' + _escapeHtml(ip.생기부영역) + '</span>'
               : item.status === 'absent'
-                ? '<span class="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">미참여</span>'
+                ? '<span class="text-xs bg-gray-300 text-gray-600 px-2 py-0.5 rounded-full">불참</span>'
                 : '<span class="text-xs bg-yellow-100 text-yellow-600 px-2 py-0.5 rounded-full">미입력</span>';
 
             html += '<div class="bg-white rounded-lg border border-gray-100 p-3 flex items-center gap-3 cursor-pointer hover:border-purple-300 transition shadow-sm"'
@@ -585,38 +564,6 @@
         });
         document.getElementById('extra-form-detail').classList.add('hidden');
         document.getElementById('extra-form-chevron').textContent = '▼';
-        document.getElementById('btn-delete-extra').classList.add('hidden');
-
-        // SH생기부작성중에서 활동코드=P이고 생기부영역=현재탭인 개인 추가 활동 자동 로드
-        var extraEntry = _inProgressData.find(function(e) {
-          return e.활동코드 === 'P' && e.생기부영역 === area;
-        });
-        if (extraEntry) {
-          document.getElementById('extra-activity-name').value = extraEntry.활동명 || '';
-          document.getElementById('extra-content-input').value = extraEntry.생기부내용 || '';
-          // 시작일 파싱
-          if (extraEntry.활동시작날짜) {
-            var sp = extraEntry.활동시작날짜.split('-');
-            if (sp.length === 3) {
-              document.getElementById('extra-start-year').value  = sp[0];
-              document.getElementById('extra-start-month').value = sp[1];
-              document.getElementById('extra-start-day').value   = sp[2];
-            }
-          }
-          // 종료일 파싱
-          if (extraEntry.활동종료날짜) {
-            var ep = extraEntry.활동종료날짜.split('-');
-            if (ep.length === 3) {
-              document.getElementById('extra-end-year').value  = ep[0];
-              document.getElementById('extra-end-month').value = ep[1];
-              document.getElementById('extra-end-day').value   = ep[2];
-            }
-          }
-          // 상세 폼 펼치기 및 삭제 버튼 표시
-          document.getElementById('extra-form-detail').classList.remove('hidden');
-          document.getElementById('extra-form-chevron').textContent = '▲';
-          document.getElementById('btn-delete-extra').classList.remove('hidden');
-        }
 
         // ── 이 영역에 배치된 행사 (보라색 배경) ──
         var areaList  = document.getElementById('area-events-list');
@@ -690,11 +637,11 @@
         _modalCompetency   = '';
 
         var existing = _findInProgress(activityCode);
-        if (existing && existing.생기부영역 !== '미참여') {
+        if (existing && existing.생기부영역 !== '불참') {
           _modalParticipated = true;
           _modalArea         = existing.생기부영역;
           _modalCompetency   = existing.중점역량;
-        } else if (existing && existing.생기부영역 === '미참여') {
+        } else if (existing && existing.생기부영역 === '불참') {
           _modalParticipated = false;
         }
 
@@ -719,7 +666,7 @@
         }).join('');
 
         document.getElementById('activity-content-input').value =
-          (existing && existing.생기부영역 !== '미참여') ? existing.생기부내용 : '';
+          (existing && existing.생기부영역 !== '불참') ? existing.생기부내용 : '';
 
         _updateModalSections();
         document.getElementById('activity-modal').classList.remove('hidden');
@@ -805,27 +752,27 @@
       async function _saveActivity() {
         if (!_modalActivity) return;
 
-        // ── 미참여 저장 ──
+        // ── 불참 저장 ──
         if (_modalParticipated === false) {
           var existing = _findInProgress(_modalActivity['활동코드']);
-          _showLoading('미참여로 저장 중...');
+          _showLoading('불참으로 저장 중...');
           try {
             // 기존 참여 데이터 있으면 삭제 후 compileToDone
-            if (existing && existing.생기부영역 !== '미참여') {
+            if (existing && existing.생기부영역 !== '불참') {
               var delResult = await _callAPI('deleteInProgress', {
                 studentId: _studentId, activityCode: _modalActivity['활동코드']
               });
               if (!delResult.success) throw new Error(delResult.message);
               await _callAPI('compileToDone', { studentId: _studentId });
             }
-            // 미참여 행으로 저장 (생기부영역 = '미참여')
+            // 불참 행으로 저장 (생기부영역 = '불참')
             await _callAPI('saveInProgress', {
               studentId: _studentId, name: _userName,
               activityCode: _modalActivity['활동코드'],
               activityName: _modalActivity['활동명'],
               startDate: _modalActivity['활동시작날짜'],
               endDate:   _modalActivity['활동종료날짜'],
-              area: '미참여', competency: '', content: ''
+              area: '불참', competency: '', content: ''
             });
             await _reloadStudentData();
             _closeActivityModal();
@@ -902,45 +849,6 @@
           _switchTab(_currentTab);
         } catch(e) {
           _showModal('저장 실패: ' + e.message);
-        } finally {
-          _hideLoading();
-        }
-      }
-
-      // ============================================================
-      // 🗑️ 개인 추가 활동 삭제 모달 열기/닫기/확인 (public)
-      // ============================================================
-      function _openDeleteExtraModal() {
-        document.getElementById('delete-extra-modal').classList.remove('hidden');
-      }
-
-      function _cancelDeleteExtra() {
-        document.getElementById('delete-extra-modal').classList.add('hidden');
-      }
-
-      async function _confirmDeleteExtra() {
-        document.getElementById('delete-extra-modal').classList.add('hidden');
-        _showLoading('개인 활동 삭제 중...');
-        try {
-          var delResult = await _callAPI('deleteInProgress', {
-            studentId: _studentId, activityCode: 'P'
-          });
-          if (!delResult.success) throw new Error(delResult.message);
-          await _callAPI('compileToDone', { studentId: _studentId });
-          await _reloadStudentData();
-          // 폼 초기화
-          document.getElementById('extra-activity-name').value = '';
-          document.getElementById('extra-content-input').value = '';
-          ['extra-start-year','extra-start-month','extra-start-day',
-           'extra-end-year','extra-end-month','extra-end-day'].forEach(function(id) {
-            document.getElementById(id).value = '';
-          });
-          document.getElementById('extra-form-detail').classList.add('hidden');
-          document.getElementById('extra-form-chevron').textContent = '▼';
-          document.getElementById('btn-delete-extra').classList.add('hidden');
-          _switchTab(_currentTab);
-        } catch(e) {
-          _showModal('삭제 실패: ' + e.message);
         } finally {
           _hideLoading();
         }
@@ -1089,9 +997,6 @@
         selectCompetency:   _selectCompetency,
         saveActivity:       _saveActivity,
         saveExtraActivity:  _saveExtraActivity,
-        openDeleteExtraModal: _openDeleteExtraModal,
-        cancelDeleteExtra:  _cancelDeleteExtra,
-        confirmDeleteExtra: _confirmDeleteExtra,
         openViewModal:      _openViewModal,
         closeViewModal:     _closeViewModal,
         toggleExtraForm:    _toggleExtraForm,
