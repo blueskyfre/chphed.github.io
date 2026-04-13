@@ -34,6 +34,16 @@ var Admin = (function() {
  
   // ─── 설정 ────────────────────────────────────────────────────
   var _WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec';
+
+// ─── 글자수 제한 표현 변수 ───────────────────────────────────────────────
+  var _BYTE_LIMIT = {
+  '자율활동':   1500,
+  '동아리활동': 1500,
+  '진로활동':   2100,
+  '개인별세특': 1500,
+  '행동발달':   1500
+};
+
  
   // ─── 상태 변수 ───────────────────────────────────────────────
   var _state = {
@@ -340,7 +350,7 @@ var Admin = (function() {
         var bytes = found.areabytes ? (found.areabytes[area] || '') : '';
         html += '<div class="mb-4">'
               + '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded mb-1">' + area + '</span>'
-              + (bytes !== '' ? '<span class="ml-2 text-xs text-gray-500">' + bytes + '자</span>' : '')
+              + (bytes !== '' ? '<span class="ml-2 text-xs text-gray-500">(' + bytes + '바이트 / ' + (_BYTE_LIMIT[area] || 1500) + '바이트)</span>' : '')
               + '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 min-h-[60px] whitespace-pre-wrap">'
               + (content || '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
               + '</div></div>';
@@ -399,7 +409,7 @@ var Admin = (function() {
             + '<span class="text-xs text-gray-500">' + row.studentClass + '반</span>'
             + '<span class="text-xs font-mono text-gray-600">' + row.studentId + '</span>'
             + '<span class="font-semibold text-gray-800">' + row.name + '</span>'
-            + (row.bytes !== undefined && row.bytes !== '' ? '<span class="ml-2 text-xs text-gray-500">' + row.bytes + '자</span>' : '')
+            + (row.bytes !== undefined && row.bytes !== '' ? '<span class="ml-2 text-xs text-gray-500">(' + row.bytes + '바이트 / ' + (_BYTE_LIMIT[row.area] || 1500) + '바이트)</span>' : '')
             + '</div>'
             + '<div class="p-3 text-sm text-gray-700 whitespace-pre-wrap min-h-[48px]">'
             + (row.content || '<span class="text-gray-400 italic">내용 없음</span>')
