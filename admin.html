@@ -201,10 +201,10 @@ var Admin = (function() {
  
     if (menu === 'gibu_area') {
       _renderAreaButtons();
-      _clearContent();
+      _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에 있는 생기부 영역을 클릭하여 데이터를 조회하세요.</p></div>');
     } else if (menu === 'gibu_personal') {
       _renderStudentList(_state.studentList);
-      _clearContent('<p class="text-gray-400 text-center mt-20">좌측에서 학생을 선택하세요.</p>');
+      _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
     } else if (menu === 'suneung') {
       _renderStudentList(_state.studentList);
       _loadSuneung();
@@ -218,8 +218,8 @@ var Admin = (function() {
     if (!_state.currentMenu) return;
     if (_state.currentMenu === 'suneung')           _loadSuneung();
     else if (_state.currentMenu === 'univ')         _loadUniv();
-    else if (_state.currentMenu === 'gibu_personal') _clearContent('<p class="text-gray-400 text-center mt-20">좌측에서 학생을 선택하세요.</p>');
-    else if (_state.currentMenu === 'gibu_area')    { _renderAreaButtons(); _clearContent(); }
+    else if (_state.currentMenu === 'gibu_personal') _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
+    else if (_state.currentMenu === 'gibu_area')    { _renderAreaButtons(); _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에 있는 생기부 영역을 클릭하여 데이터를 조회하세요.</p></div>'); }
   }
  
   // ─── 콘텐츠 영역 유틸 ────────────────────────────────────────
@@ -421,17 +421,25 @@ var Admin = (function() {
  
   // ─── 로그아웃 ─────────────────────────────────────────────────
   function _logout() {
-    if (confirm('로그아웃 하시겠습니까?')) {
-      sessionStorage.removeItem('adminInfo');
-      location.href = 'index.html';
-    }
+    document.getElementById('logout-modal').classList.remove('hidden');
+  }
+
+  function _confirmLogout() {
+    sessionStorage.removeItem('adminInfo');
+    location.href = 'index.html';
+  }
+
+  function _cancelLogout() {
+    document.getElementById('logout-modal').classList.add('hidden');
   }
  
   // ─── 공개 API ─────────────────────────────────────────────────
   return {
-    init:        _init,
-    onMenuClick: _onMenuClick,
-    logout:      _logout
+    init:          _init,
+    onMenuClick:   _onMenuClick,
+    logout:        _logout,
+    confirmLogout: _confirmLogout,
+    cancelLogout:  _cancelLogout
   };
  
 })();
@@ -509,6 +517,40 @@ var Admin = (function() {
   </main>
 </div>
  
+<!-- 로그아웃 확인 모달 -->
+<div id="logout-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <!-- 배경 오버레이 -->
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="Admin.cancelLogout()"></div>
+  <!-- 모달 카드 -->
+  <div class="relative bg-white rounded-2xl shadow-2xl w-80 overflow-hidden">
+    <!-- 상단 컬러 바 -->
+    <div class="h-1.5 bg-gradient-to-r from-blue-800 to-blue-500"></div>
+    <div class="px-7 py-6">
+      <!-- 아이콘 -->
+      <div class="flex justify-center mb-4">
+        <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
+          <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+          </svg>
+        </div>
+      </div>
+      <h3 class="text-center text-lg font-bold text-gray-800 mb-1">로그아웃</h3>
+      <p class="text-center text-sm text-gray-500 mb-6">정말 로그아웃 하시겠습니까?</p>
+      <div class="flex gap-3">
+        <button onclick="Admin.cancelLogout()"
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          취소
+        </button>
+        <button onclick="Admin.confirmLogout()"
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-red-500 text-white hover:bg-red-600 transition-colors shadow-sm">
+          로그아웃
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() { Admin.init(); });
 </script>
