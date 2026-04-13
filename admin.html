@@ -105,14 +105,15 @@ var Admin = (function() {
       select.value = _state.currentClass;
       select.addEventListener('change', function() {
         _state.currentClass = this.value;
-        _loadStudentList();
+        if (_state.currentMenu !== 'gibu_area') {
+          _loadStudentList();
+        }
         _refreshContent();
       });
       wrapper.appendChild(select);
     } else {
       document.getElementById('auth-label').textContent = '권한 : ' + _state.adminClass + '반';
-      document.getElementById('class-select-wrapper').innerHTML =
-        '<span class="ml-1 text-sm font-semibold text-blue-200">' + _state.adminClass + '반</span>';
+      document.getElementById('class-select-wrapper').innerHTML = '';
     }
   }
 
@@ -161,8 +162,7 @@ var Admin = (function() {
       li.dataset.id = s.studentId;
       li.innerHTML =
         '<span class="text-xs text-gray-400 w-12 shrink-0">' + s.studentId + '</span>' +
-        '<span class="text-sm font-medium text-gray-800 truncate">' + s.name + '</span>' +
-        (s.studentClass ? '<span class="text-xs text-gray-400 ml-auto shrink-0">' + s.studentClass + '반</span>' : '');
+        '<span class="text-sm font-medium text-gray-800 truncate">' + s.name + '</span>';
       li.addEventListener('click', function() {
         document.querySelectorAll('.student-item').forEach(function(el) { el.classList.remove('active'); });
         li.classList.add('active');
@@ -313,10 +313,13 @@ var Admin = (function() {
   async function _renderGibuPersonalForStudent(targetId) {
     _showContentSkeleton(6);
     try {
-      var res = await _apiGet('adminGetGibuByStudent', {
-        adminId:     _state.adminId,
-        filterClass: _state.currentClass
-      });
+      var [res, doneRes] = await Promise.all([
+        _apiGet('adminGetGibuByStudent', {
+          adminId:     _state.adminId,
+          filterClass: _state.currentClass
+        }),
+        _apiGet('getDone', { studentId: targetId })
+      ]);
       if (!res.success) { _showError(res.message); return; }
 
       var found = null;
@@ -328,14 +331,23 @@ var Admin = (function() {
         return;
       }
 
+      // getDone 결과에서 글자수 맵 구성 (생기부영역 → 글자수)
+      var bytesMap = {};
+      if (doneRes.success && doneRes.data) {
+        doneRes.data.forEach(function(d) { bytesMap[d.생기부영역] = d.글자수; });
+      }
+
       var areas = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
       var html = '<div class="p-4">'
                + '<h2 class="text-lg font-bold text-gray-800 mb-4">'
                + found.studentId + ' ' + found.name + ' 학생 생활기록부</h2>';
       areas.forEach(function(area) {
         var content = found.areas[area] || '';
+        var byteCount = bytesMap[area] || '';
+        var byteHtml = byteCount ? '<span class="ml-2 text-xs font-semibold text-gray-500">(' + byteCount + ' bytes)</span>' : '';
         html += '<div class="mb-4">'
               + '<span class="inline-block bg-blue-100 text-blue-800 text-xs font-semibold px-2 py-0.5 rounded mb-1">' + area + '</span>'
+              + byteHtml
               + '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 text-sm text-gray-700 min-h-[60px] whitespace-pre-wrap">'
               + (content || '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
               + '</div></div>';
@@ -367,13 +379,22 @@ var Admin = (function() {
   async function _loadGibuByArea(area) {
     _showContentSkeleton(8);
     try {
-      var res = await _apiGet('adminGetGibuByArea', {
-        adminId:     _state.adminId,
-        filterClass: _state.currentClass,
-        area:        area
+      var [res, byteRes] = await Promise.all([
+        _apiGet('adminGetGibuByArea', {
+          adminId:     _state.adminId,
+          filterClass: _state.currentClass,
+          area:        area
+        }),
+        _apiGet('getAreaByteMap', { area: area })
+      ]);
+      if (!res.success) { _showError(res.message); return; }
+      // 글자수 맵 (학번 → 글자수) 을 각 row에 주입
+      var byteMap = (byteRes.success && byteRes.data) ? byteRes.data : {};
+      var rows = (res.data || []).map(function(row) {
+        row.byteCount = byteMap[row.studentId] || '';
+        return row;
       });
-      if (res.success) _renderGibuArea(res.data, area);
-      else _showError(res.message);
+      _renderGibuArea(rows, area);
     } catch (err) { _showError(err.message); }
   }
 
@@ -387,11 +408,13 @@ var Admin = (function() {
              + '<span class="bg-blue-100 text-blue-800 text-sm px-2 py-0.5 rounded mr-2">' + area + '</span>'
              + '영역별 생기부 내용</h2>';
     rows.forEach(function(row) {
+      var byteHtml = row.byteCount ? '<span class="ml-2 text-xs font-semibold text-gray-500">(' + row.byteCount + ' bytes)</span>' : '';
       html += '<div class="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">'
             + '<div class="flex items-center gap-3 bg-gray-50 px-4 py-2 border-b border-gray-200">'
             + '<span class="text-xs text-gray-500">' + row.studentClass + '반</span>'
             + '<span class="text-xs font-mono text-gray-600">' + row.studentId + '</span>'
             + '<span class="font-semibold text-gray-800">' + row.name + '</span>'
+            + byteHtml
             + '</div>'
             + '<div class="p-3 text-sm text-gray-700 whitespace-pre-wrap min-h-[48px]">'
             + (row.content || '<span class="text-gray-400 italic">내용 없음</span>')
