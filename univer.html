@@ -1,41 +1,820 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>관심대학 관리</title>
-    <style>
-        /* 화면 중앙 정렬을 위한 스타일 */
-        body {
-            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f8f9fa;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>관심대학 조사</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
 
-        .container {
-            text-align: center;
-            padding: 2rem;
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
+    /* ── 스켈레톤 ── */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position:  400px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: 0.5rem;
+    }
+    .skeleton-row  { height: 52px; width: 100%; margin-bottom: 6px; }
+    .skeleton-text { height: 20px; width: 40%; margin-bottom: 12px; }
 
-        h1 {
-            color: #333;
-            font-size: 2.5rem;
-            margin: 0;
-        }
-    </style>
+    /* ── 토스트 ── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      padding: 12px 28px; border-radius: 12px; color: #fff; font-weight: 600;
+      z-index: 9999; opacity: 0; transition: opacity 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.18); white-space: nowrap;
+    }
+    .toast.show    { opacity: 1; }
+    .toast-success { background: #22c55e; }
+    .toast-error   { background: #ef4444; }
+
+    /* ── 모달 ── */
+    .modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9990; padding: 1rem;
+    }
+
+    /* ── 테이블 행 호버 ── */
+    .univ-row { cursor: pointer; transition: background 0.15s; }
+    .univ-row:hover { background: #eff6ff !important; }
+
+    /* ── 선택 버튼 그룹 ── */
+    .seg-btn {
+      flex: 1; padding: 0.45rem 0.5rem; font-size: 0.78rem; font-weight: 500;
+      border: 1px solid #d1d5db; background: #fff; color: #374151;
+      cursor: pointer; transition: all 0.15s; text-align: center;
+    }
+    .seg-btn:first-child { border-radius: 0.375rem 0 0 0.375rem; }
+    .seg-btn:last-child  { border-radius: 0 0.375rem 0.375rem 0; }
+    .seg-btn:not(:first-child) { border-left: none; }
+    .seg-btn.selected {
+      background: #2563eb; color: #fff; border-color: #2563eb; font-weight: 600;
+    }
+    .seg-btn:hover:not(.selected) { background: #eff6ff; border-color: #93c5fd; }
+
+    /* ── 뱃지 ── */
+    .rank-badge {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 24px; height: 24px; border-radius: 50%;
+      font-size: 0.75rem; font-weight: 700;
+      background: #e0e7ff; color: #3730a3;
+    }
+
+    /* ── 모달 입력 공통 ── */
+    .field-label { font-size: 0.75rem; font-weight: 600; color: #4b5563; margin-bottom: 4px; }
+    .field-input {
+      width: 100%; border: 1px solid #d1d5db; border-radius: 0.375rem;
+      padding: 0.45rem 0.6rem; font-size: 0.85rem; color: #111827;
+      outline: none; transition: border-color 0.15s;
+    }
+    .field-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+    select.field-input { background: #fff; cursor: pointer; }
+  </style>
 </head>
-<body>
+<body class="bg-gray-50 min-h-screen">
 
-    <div class="container">
-        <h1>관심대학</h1>
+  <!-- ── 네비게이션 ── -->
+  <nav class="bg-white shadow-sm sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 py-3">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
+          <button onclick="UniverNS.navigateTo('schedule')"
+            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-200">
+            일정
+          </button>
+          <button onclick="UniverNS.navigateTo('suneung')"
+            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-200">
+            수능과목선택
+          </button>
+          <button
+            class="bg-green-500 text-white font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm border border-green-500 shadow">
+            관심대학
+          </button>
+          <button onclick="UniverNS.navigateTo('record')"
+            class="bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-purple-200">
+            생기부 기초자료
+          </button>
+        </div>
+        <div class="flex items-center gap-2 sm:gap-3">
+          <span id="nav-user-info" class="text-xs sm:text-sm text-gray-600 font-medium"></span>
+          <button onclick="UniverNS.doLogout()"
+            class="bg-red-50 hover:bg-red-100 text-red-600 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-red-200">
+            로그아웃
+          </button>
+        </div>
+      </div>
     </div>
+  </nav>
+
+  <!-- ── 스켈레톤 ── -->
+  <div id="skeleton-ui" class="max-w-5xl mx-auto px-4 py-5">
+    <div class="skeleton skeleton-text mb-6" style="width:28%;height:22px;"></div>
+    <div class="bg-white rounded-xl shadow-sm p-4">
+      <div class="skeleton skeleton-text mb-4" style="width:20%;"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+      <div class="skeleton skeleton-row"></div>
+    </div>
+  </div>
+
+  <!-- ── 메인 콘텐츠 ── -->
+  <div id="main-content" class="hidden max-w-5xl mx-auto px-4 py-5">
+
+    <!-- 타이틀 -->
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-lg sm:text-xl font-bold text-gray-800">🏫 관심대학 조사</h1>
+      <p class="text-xs text-gray-500 hidden sm:block">행을 클릭하면 내용을 입력할 수 있습니다.</p>
+    </div>
+
+    <!-- 선호전형 선택 -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-4">
+      <div class="flex items-center gap-3 flex-wrap">
+        <span class="text-sm font-bold text-gray-700 whitespace-nowrap">📌 선호전형</span>
+        <div class="flex flex-1 min-w-[240px]" id="pref-type-group">
+          <button class="seg-btn" data-value="수시 위주"        onclick="UniverNS.setPrefType(this)">수시 위주</button>
+          <button class="seg-btn" data-value="정시 위주"        onclick="UniverNS.setPrefType(this)">정시 위주</button>
+          <button class="seg-btn" data-value="수시와 정시 모두 준비" onclick="UniverNS.setPrefType(this)">수시·정시 모두</button>
+        </div>
+        <button onclick="UniverNS.savePrefType()"
+          class="bg-green-600 hover:bg-green-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition border border-green-600 whitespace-nowrap">
+          선호전형 저장
+        </button>
+      </div>
+    </div>
+
+    <!-- 관심대학 테이블 -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <!-- 데스크탑 테이블 (md 이상) -->
+      <div class="hidden md:block overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-200">
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-10">순위</th>
+              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">대학명</th>
+              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">전형유형</th>
+              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">전형종류</th>
+              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">지원학과</th>
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16">모집정원</th>
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16">수능최저</th>
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16">선발유형</th>
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-14">면접</th>
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-14">실기</th>
+              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">비고</th>
+            </tr>
+          </thead>
+          <tbody id="univ-table-body">
+          </tbody>
+        </table>
+      </div>
+
+      <!-- 모바일 카드 리스트 (md 미만) -->
+      <div class="md:hidden" id="univ-card-list"></div>
+    </div>
+
+    <p class="text-xs text-gray-400 mt-3 text-center">💡 행을 클릭하면 해당 순위의 대학 정보를 입력할 수 있습니다.</p>
+  </div>
+
+  <!-- ── 입력 모달 ── -->
+  <div id="row-modal" class="modal-bg hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+      <!-- 모달 헤더 -->
+      <div class="flex items-center justify-between px-5 py-4 border-b border-gray-100 sticky top-0 bg-white z-10">
+        <h2 class="text-base font-bold text-gray-800">
+          🏫 관심대학 입력 — <span id="modal-rank-label" class="text-green-600"></span>순위
+        </h2>
+        <button onclick="UniverNS.closeModal()"
+          class="text-gray-400 hover:text-gray-600 text-xl font-bold leading-none transition">✕</button>
+      </div>
+
+      <!-- 모달 바디 -->
+      <div class="px-5 py-4 space-y-4">
+
+        <!-- 순위 -->
+        <div>
+          <div class="field-label">순위</div>
+          <select id="modal-rank" class="field-input">
+            <option value="">선택</option>
+            <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+            <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+            <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+            <option value="10">10</option>
+          </select>
+        </div>
+
+        <!-- 대학명 -->
+        <div>
+          <div class="field-label">대학명</div>
+          <input type="text" id="modal-univ" class="field-input" placeholder="대학명을 입력하세요" />
+        </div>
+
+        <!-- 전형유형 -->
+        <div>
+          <div class="field-label">전형유형</div>
+          <select id="modal-adms-type" class="field-input" onchange="UniverNS.onAdmsTypeChange()">
+            <option value="">선택</option>
+            <option value="학생부위주(교과)">학생부위주(교과)</option>
+            <option value="학생부위주(종합)">학생부위주(종합)</option>
+            <option value="논술위주">논술위주</option>
+            <option value="실기위주">실기위주</option>
+            <option value="기타">기타(직접 입력)</option>
+          </select>
+          <input type="text" id="modal-adms-type-etc" class="field-input mt-1 hidden"
+            placeholder="전형유형을 직접 입력하세요" />
+        </div>
+
+        <!-- 전형종류 -->
+        <div>
+          <div class="field-label">전형종류</div>
+          <select id="modal-adms-kind" class="field-input" onchange="UniverNS.onAdmsKindChange()">
+            <option value="">선택</option>
+            <option value="일반학생">일반학생</option>
+            <option value="지역인재전형">지역인재전형</option>
+            <option value="지역균형전형">지역균형전형</option>
+            <option value="기회균형">기회균형</option>
+            <option value="추천자">추천자</option>
+            <option value="기타">기타(직접 입력)</option>
+          </select>
+          <input type="text" id="modal-adms-kind-etc" class="field-input mt-1 hidden"
+            placeholder="전형종류를 직접 입력하세요" />
+        </div>
+
+        <!-- 지원학과 / 모집정원 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <div class="field-label">지원학과</div>
+            <input type="text" id="modal-dept" class="field-input" placeholder="지원학과" />
+          </div>
+          <div>
+            <div class="field-label">모집정원</div>
+            <input type="text" id="modal-quota" class="field-input" placeholder="모집정원" />
+          </div>
+        </div>
+
+        <!-- 수능최저 -->
+        <div>
+          <div class="field-label">수능최저</div>
+          <div class="flex gap-2 mb-2" id="csat-min-group">
+            <button class="seg-btn" data-value="유" onclick="UniverNS.setCsatMin(this)">유</button>
+            <button class="seg-btn" data-value="무" onclick="UniverNS.setCsatMin(this)">무</button>
+          </div>
+          <input type="text" id="modal-csat-detail" class="field-input hidden"
+            placeholder="예) 3합 10, 탐구 2개 필수, 탐구 2개 평균 반영" />
+        </div>
+
+        <!-- 선발유형 -->
+        <div>
+          <div class="field-label">선발유형</div>
+          <div class="flex" id="sel-type-group">
+            <button class="seg-btn" data-value="일괄형" onclick="UniverNS.setSelType(this)">일괄형</button>
+            <button class="seg-btn" data-value="단계형" onclick="UniverNS.setSelType(this)">단계형</button>
+          </div>
+        </div>
+
+        <!-- 면접유무 / 실기유무 -->
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <div class="field-label">면접유무</div>
+            <div class="flex" id="interview-group">
+              <button class="seg-btn" data-value="유" onclick="UniverNS.setInterview(this)">유</button>
+              <button class="seg-btn" data-value="무" onclick="UniverNS.setInterview(this)">무</button>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">실기유무</div>
+            <div class="flex" id="practical-group">
+              <button class="seg-btn" data-value="유" onclick="UniverNS.setPractical(this)">유</button>
+              <button class="seg-btn" data-value="무" onclick="UniverNS.setPractical(this)">무</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 지원성향판단 -->
+        <div>
+          <div class="field-label">지원성향판단</div>
+          <input type="text" id="modal-tendency" class="field-input" placeholder="지원성향판단" />
+        </div>
+
+        <!-- 비고 -->
+        <div>
+          <div class="field-label">비고</div>
+          <textarea id="modal-remark" class="field-input" rows="2"
+            placeholder="비고 사항을 입력하세요" style="resize:none;"></textarea>
+        </div>
+      </div>
+
+      <!-- 모달 푸터 -->
+      <div class="px-5 py-4 border-t border-gray-100 flex gap-2 sticky bottom-0 bg-white">
+        <button onclick="UniverNS.closeModal()"
+          class="flex-1 border border-gray-300 text-gray-600 hover:bg-gray-50 font-medium py-2.5 rounded-xl transition text-sm">
+          취소
+        </button>
+        <button id="modal-save-btn" onclick="UniverNS.saveRow()"
+          class="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl transition text-sm shadow">
+          💾 저장
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 토스트 ── -->
+  <div id="toast" class="toast"></div>
+
+  <!-- ============================================================ -->
+  <!--  스크립트 (IIFE 네임스페이스: UniverNS) -->
+  <!-- ============================================================ -->
+  <script>
+  var UniverNS = (function () {
+    'use strict';
+
+    var DEPLOY_URL = 'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec';
+    var GITHUB_URL = 'https://blueskyfre.github.io/chphed.github.io';
+
+    var studentId = '';
+    var userName  = '';
+
+    // 10개 행 데이터 (로컬 캐시)
+    var univRows = [];
+    // 현재 모달에서 편집 중인 originalRank
+    var editingOriginalRank = null;
+
+    // ── API 호출 ──────────────────────────────────────────────
+    async function _callGetAPI(action, params) {
+      params = params || {};
+      var url = new URL(DEPLOY_URL);
+      url.searchParams.set('action', action);
+      for (var key in params) {
+        if (params.hasOwnProperty(key)) url.searchParams.set(key, params[key]);
+      }
+      var resp = await fetch(url.toString());
+      if (!resp.ok) throw new Error('서버 응답 오류: ' + resp.status);
+      return await resp.json();
+    }
+
+    async function _callPostAPI(action, payload) {
+      payload = payload || {};
+      payload.action = action;
+      var resp = await fetch(DEPLOY_URL, {
+        method : 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body   : JSON.stringify(payload)
+      });
+      if (!resp.ok) throw new Error('서버 응답 오류: ' + resp.status);
+      return await resp.json();
+    }
+
+    // ── 초기화 ───────────────────────────────────────────────
+    function init() {
+      var params = new URLSearchParams(window.location.search);
+      studentId = params.get('studentId') || '';
+      userName  = params.get('name')      || '';
+
+      var navInfo = document.getElementById('nav-user-info');
+      if (navInfo) navInfo.textContent = userName ? (userName + ' 학생') : '';
+
+      _loadData();
+    }
+
+    // ── 데이터 로드 ──────────────────────────────────────────
+    async function _loadData() {
+      try {
+        var result = await _callGetAPI('univGetStudentData', {
+          studentId: studentId,
+          name     : userName
+        });
+
+        if (result && result.success && result.data && result.data.data) {
+          var d = result.data.data;
+          univRows = d.rows || [];
+          _restorePrefType(d.prefType || '');
+        } else {
+          _showToast('데이터 로드 실패: ' + ((result && result.message) || ''), 'error');
+        }
+      } catch (e) {
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
+
+      _renderAll();
+    }
+
+    // ── 선호전형 복원 ────────────────────────────────────────
+    function _restorePrefType(prefType) {
+      if (!prefType) return;
+      var btns = document.querySelectorAll('#pref-type-group .seg-btn');
+      btns.forEach(function (btn) {
+        btn.classList.toggle('selected', btn.dataset.value === prefType);
+      });
+    }
+
+    // ── 전체 렌더링 ──────────────────────────────────────────
+    function _renderAll() {
+      document.getElementById('skeleton-ui').classList.add('hidden');
+      document.getElementById('main-content').classList.remove('hidden');
+
+      // 순위 기준 정렬
+      var sorted = univRows.slice().sort(function (a, b) { return a.rank - b.rank; });
+
+      _renderTable(sorted);
+      _renderCards(sorted);
+    }
+
+    // ── 데스크탑 테이블 렌더링 ───────────────────────────────
+    function _renderTable(sorted) {
+      var tbody = document.getElementById('univ-table-body');
+      tbody.innerHTML = '';
+      sorted.forEach(function (row, idx) {
+        var tr = document.createElement('tr');
+        tr.className = 'univ-row border-b border-gray-100 ' + (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50');
+        tr.onclick = function () { openModal(row.rank); };
+
+        var csatDisplay = row.csatMin === '유' ? '유' : (row.csatMin || '');
+        if (row.csatMin && row.csatMin.indexOf('|') !== -1) {
+          csatDisplay = '유';
+        }
+
+        tr.innerHTML =
+          '<td class="px-3 py-2.5 text-center"><span class="rank-badge">' + row.rank + '</span></td>' +
+          '<td class="px-3 py-2.5 font-medium text-gray-800">' + _esc(row.univ || '<span class="text-gray-300">미입력</span>') + '</td>' +
+          '<td class="px-3 py-2.5 text-gray-600 text-xs">' + _esc(row.admsType || '') + '</td>' +
+          '<td class="px-3 py-2.5 text-gray-600 text-xs">' + _esc(row.admsKind || '') + '</td>' +
+          '<td class="px-3 py-2.5 text-gray-600 text-xs">' + _esc(row.dept || '') + '</td>' +
+          '<td class="px-3 py-2.5 text-center text-gray-600 text-xs">' + _esc(row.quota || '') + '</td>' +
+          '<td class="px-3 py-2.5 text-center text-xs">' + _csatBadge(row) + '</td>' +
+          '<td class="px-3 py-2.5 text-center text-gray-600 text-xs">' + _esc(row.selType || '') + '</td>' +
+          '<td class="px-3 py-2.5 text-center text-xs">' + _ynBadge(row.interview) + '</td>' +
+          '<td class="px-3 py-2.5 text-center text-xs">' + _ynBadge(row.practical) + '</td>' +
+          '<td class="px-3 py-2.5 text-gray-500 text-xs">' + _esc(row.remark || '') + '</td>';
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // ── 모바일 카드 렌더링 ───────────────────────────────────
+    function _renderCards(sorted) {
+      var container = document.getElementById('univ-card-list');
+      container.innerHTML = '';
+      sorted.forEach(function (row) {
+        var div = document.createElement('div');
+        div.className = 'univ-row border-b border-gray-100 px-4 py-3';
+        div.onclick = function () { openModal(row.rank); };
+
+        var hasData = row.univ || row.admsType || row.dept;
+        div.innerHTML =
+          '<div class="flex items-start gap-3">' +
+            '<span class="rank-badge mt-0.5 flex-shrink-0">' + row.rank + '</span>' +
+            '<div class="flex-1 min-w-0">' +
+              '<p class="font-semibold text-gray-800 text-sm truncate">' +
+                (row.univ ? _esc(row.univ) : '<span class="text-gray-300 font-normal">대학명 미입력</span>') +
+              '</p>' +
+              (hasData ?
+                '<p class="text-xs text-gray-500 mt-0.5 truncate">' +
+                  [row.admsType, row.admsKind, row.dept].filter(Boolean).map(_esc).join(' · ') +
+                '</p>' : '') +
+            '</div>' +
+            '<span class="text-gray-300 text-sm">›</span>' +
+          '</div>';
+
+        container.appendChild(div);
+      });
+    }
+
+    // ── 뱃지 헬퍼 ───────────────────────────────────────────
+    function _csatBadge(row) {
+      var v = row.csatMin || '';
+      if (v.indexOf('유') !== -1 || v.indexOf('|') !== -1) {
+        return '<span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700">유</span>';
+      }
+      if (v === '무') {
+        return '<span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-500">무</span>';
+      }
+      return '';
+    }
+
+    function _ynBadge(v) {
+      if (v === '유') return '<span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700">유</span>';
+      if (v === '무') return '<span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-500">무</span>';
+      return '';
+    }
+
+    function _esc(str) {
+      if (typeof str !== 'string') return str;
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // ── 선호전형 설정 ────────────────────────────────────────
+    function setPrefType(btn) {
+      document.querySelectorAll('#pref-type-group .seg-btn').forEach(function (b) {
+        b.classList.remove('selected');
+      });
+      btn.classList.add('selected');
+    }
+
+    // ── 선호전형 저장 ────────────────────────────────────────
+    async function savePrefType() {
+      var selected = document.querySelector('#pref-type-group .seg-btn.selected');
+      if (!selected) { _showToast('선호전형을 선택해주세요.', 'error'); return; }
+      var prefType = selected.dataset.value;
+
+      try {
+        var result = await _callPostAPI('univSavePrefType', {
+          studentId: studentId,
+          prefType : prefType
+        });
+        if (result && result.success) {
+          _showToast('✅ ' + result.message, 'success');
+        } else {
+          _showToast('저장 실패: ' + (result.message || ''), 'error');
+        }
+      } catch (e) {
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
+    }
+
+    // ── 모달 열기 ────────────────────────────────────────────
+    function openModal(rank) {
+      editingOriginalRank = rank;
+
+      // 해당 rank의 row 찾기
+      var row = null;
+      for (var i = 0; i < univRows.length; i++) {
+        if (univRows[i].rank === rank) { row = univRows[i]; break; }
+      }
+      if (!row) row = { rank: rank, univ: '', admsType: '', admsKind: '', dept: '', quota: '',
+                        csatMin: '', csatDetail: '', selType: '', interview: '', practical: '',
+                        tendency: '', remark: '' };
+
+      // 모달 라벨
+      document.getElementById('modal-rank-label').textContent = rank;
+
+      // 값 채우기
+      document.getElementById('modal-rank').value  = row.rank;
+      document.getElementById('modal-univ').value  = row.univ || '';
+      document.getElementById('modal-dept').value  = row.dept || '';
+      document.getElementById('modal-quota').value = row.quota || '';
+      document.getElementById('modal-tendency').value = row.tendency || '';
+      document.getElementById('modal-remark').value   = row.remark   || '';
+
+      // 전형유형
+      var admsTypeSelect = document.getElementById('modal-adms-type');
+      var admsTypeEtc    = document.getElementById('modal-adms-type-etc');
+      var knownAdmsTypes = ['학생부위주(교과)','학생부위주(종합)','논술위주','실기위주'];
+      if (row.admsType && knownAdmsTypes.indexOf(row.admsType) === -1 && row.admsType) {
+        admsTypeSelect.value = '기타';
+        admsTypeEtc.value    = row.admsType.replace(/^기타\(/, '').replace(/\)$/, '');
+        admsTypeEtc.classList.remove('hidden');
+      } else {
+        admsTypeSelect.value = row.admsType || '';
+        admsTypeEtc.value    = '';
+        admsTypeEtc.classList.add('hidden');
+      }
+
+      // 전형종류
+      var admsKindSelect = document.getElementById('modal-adms-kind');
+      var admsKindEtc    = document.getElementById('modal-adms-kind-etc');
+      var knownAdmsKinds = ['일반학생','지역인재전형','지역균형전형','기회균형','추천자'];
+      if (row.admsKind && knownAdmsKinds.indexOf(row.admsKind) === -1 && row.admsKind) {
+        admsKindSelect.value = '기타';
+        admsKindEtc.value    = row.admsKind.replace(/^기타\(/, '').replace(/\)$/, '');
+        admsKindEtc.classList.remove('hidden');
+      } else {
+        admsKindSelect.value = row.admsKind || '';
+        admsKindEtc.value    = '';
+        admsKindEtc.classList.add('hidden');
+      }
+
+      // 수능최저
+      var csatRaw = row.csatMin || '';
+      var csatVal = '';
+      var csatDetail = '';
+      if (csatRaw.indexOf('|') !== -1) {
+        csatVal    = '유';
+        csatDetail = csatRaw.split('|')[1] || '';
+      } else {
+        csatVal = csatRaw; // '유' or '무' or ''
+      }
+      _setSegBtn('csat-min-group', csatVal);
+      var csatDetailEl = document.getElementById('modal-csat-detail');
+      csatDetailEl.value = csatDetail;
+      csatDetailEl.classList.toggle('hidden', csatVal !== '유');
+
+      // 선발유형, 면접, 실기
+      _setSegBtn('sel-type-group',  row.selType   || '');
+      _setSegBtn('interview-group', row.interview || '');
+      _setSegBtn('practical-group', row.practical || '');
+
+      document.getElementById('row-modal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('row-modal').classList.add('hidden');
+      editingOriginalRank = null;
+    }
+
+    // ── 세그먼트 버튼 그룹 선택 헬퍼 ────────────────────────
+    function _setSegBtn(groupId, value) {
+      var btns = document.querySelectorAll('#' + groupId + ' .seg-btn');
+      btns.forEach(function (b) {
+        b.classList.toggle('selected', b.dataset.value === value);
+      });
+    }
+
+    function _getSegBtn(groupId) {
+      var sel = document.querySelector('#' + groupId + ' .seg-btn.selected');
+      return sel ? sel.dataset.value : '';
+    }
+
+    // ── 모달 내 이벤트 핸들러 ────────────────────────────────
+    function onAdmsTypeChange() {
+      var val = document.getElementById('modal-adms-type').value;
+      document.getElementById('modal-adms-type-etc').classList.toggle('hidden', val !== '기타');
+    }
+
+    function onAdmsKindChange() {
+      var val = document.getElementById('modal-adms-kind').value;
+      document.getElementById('modal-adms-kind-etc').classList.toggle('hidden', val !== '기타');
+    }
+
+    function setCsatMin(btn) {
+      _setSegBtn('csat-min-group', btn.dataset.value);
+      document.getElementById('modal-csat-detail').classList.toggle('hidden', btn.dataset.value !== '유');
+    }
+
+    function setSelType(btn)   { _setSegBtn('sel-type-group',  btn.dataset.value); }
+    function setInterview(btn) { _setSegBtn('interview-group', btn.dataset.value); }
+    function setPractical(btn) { _setSegBtn('practical-group', btn.dataset.value); }
+
+    // ── 행 저장 ──────────────────────────────────────────────
+    async function saveRow() {
+      var newRank = Number(document.getElementById('modal-rank').value);
+      if (!newRank) { _showToast('순위를 선택해주세요.', 'error'); return; }
+
+      // 전형유형 값 결정
+      var admsTypeRaw = document.getElementById('modal-adms-type').value;
+      var admsType = admsTypeRaw;
+      if (admsTypeRaw === '기타') {
+        var etcVal = document.getElementById('modal-adms-type-etc').value.trim();
+        admsType = etcVal ? '기타(' + etcVal + ')' : '기타';
+      }
+
+      // 전형종류 값 결정
+      var admsKindRaw = document.getElementById('modal-adms-kind').value;
+      var admsKind = admsKindRaw;
+      if (admsKindRaw === '기타') {
+        var etcKindVal = document.getElementById('modal-adms-kind-etc').value.trim();
+        admsKind = etcKindVal ? '기타(' + etcKindVal + ')' : '기타';
+      }
+
+      var csatMin    = _getSegBtn('csat-min-group');
+      var csatDetail = document.getElementById('modal-csat-detail').value.trim();
+
+      var payload = {
+        studentId     : studentId,
+        originalRank  : editingOriginalRank,
+        rank          : newRank,
+        univ          : document.getElementById('modal-univ').value.trim(),
+        admsType      : admsType,
+        admsKind      : admsKind,
+        dept          : document.getElementById('modal-dept').value.trim(),
+        quota         : document.getElementById('modal-quota').value.trim(),
+        csatMin       : csatMin,
+        csatDetail    : csatDetail,
+        selType       : _getSegBtn('sel-type-group'),
+        interview     : _getSegBtn('interview-group'),
+        practical     : _getSegBtn('practical-group'),
+        tendency      : document.getElementById('modal-tendency').value.trim(),
+        remark        : document.getElementById('modal-remark').value.trim()
+      };
+
+      var saveBtn = document.getElementById('modal-save-btn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = '⏳ 저장 중...';
+
+      try {
+        var result = await _callPostAPI('univSaveRow', payload);
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 저장';
+
+        if (result && result.success) {
+          // 로컬 캐시 업데이트
+          _updateLocalCache(payload);
+          closeModal();
+          _renderAll();
+          _showToast('✅ ' + result.message, 'success');
+        } else {
+          _showToast('저장 실패: ' + (result.message || ''), 'error');
+        }
+      } catch (e) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = '💾 저장';
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
+    }
+
+    // ── 로컬 캐시 업데이트 ───────────────────────────────────
+    function _updateLocalCache(payload) {
+      var newRank    = Number(payload.rank);
+      var origRank   = Number(payload.originalRank);
+
+      // 순위 교체
+      if (newRank !== origRank) {
+        for (var i = 0; i < univRows.length; i++) {
+          if (univRows[i].rank === newRank) {
+            univRows[i].rank = origRank;
+            break;
+          }
+        }
+      }
+
+      // 대상 행 업데이트 (originalRank → newRank로 교체 후)
+      // saveRow 후 서버 기준으로 맞추기 위해 originalRank를 가진 row를 수정
+      var target = null;
+      for (var j = 0; j < univRows.length; j++) {
+        if (univRows[j].rank === origRank) { target = univRows[j]; break; }
+      }
+      // 순위 교체가 일어났으면 위에서 이미 바뀜. 실제 저장 대상은 newRank를 가진 row
+      // 다시 newRank로 찾기
+      target = null;
+      for (var k = 0; k < univRows.length; k++) {
+        if (univRows[k].rank === newRank) { target = univRows[k]; break; }
+      }
+      // originalRank row가 newRank를 할당받은 경우 (교체 전)
+      if (!target) {
+        for (var m = 0; m < univRows.length; m++) {
+          if (univRows[m].rank === origRank) { target = univRows[m]; break; }
+        }
+      }
+      if (target) {
+        target.rank      = newRank;
+        target.univ      = payload.univ;
+        target.admsType  = payload.admsType;
+        target.admsKind  = payload.admsKind;
+        target.dept      = payload.dept;
+        target.quota     = payload.quota;
+        target.csatMin   = payload.csatMin === '유' && payload.csatDetail
+                            ? '유|' + payload.csatDetail
+                            : payload.csatMin;
+        target.selType   = payload.selType;
+        target.interview = payload.interview;
+        target.practical = payload.practical;
+        target.tendency  = payload.tendency;
+        target.remark    = payload.remark;
+      }
+    }
+
+    // ── 네비게이션 ───────────────────────────────────────────
+    function navigateTo(page) {
+      var params = new URLSearchParams({ studentId: studentId, name: userName });
+      switch (page) {
+        case 'schedule':
+          window.location.href = GITHUB_URL + '/firstpage.html?' + params.toString(); break;
+        case 'suneung':
+          window.location.href = GITHUB_URL + '/susel.html?' + params.toString(); break;
+        case 'record':
+          window.location.href = GITHUB_URL + '/record.html?' + params.toString(); break;
+      }
+    }
+
+    function doLogout() {
+      window.location.href = GITHUB_URL;
+    }
+
+    // ── 토스트 ───────────────────────────────────────────────
+    function _showToast(msg, type) {
+      var toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.className = 'toast ' + (type === 'error' ? 'toast-error' : 'toast-success') + ' show';
+      setTimeout(function () { toast.classList.remove('show'); }, 3000);
+    }
+
+    // ── Public API ───────────────────────────────────────────
+    return {
+      init           : init,
+      setPrefType    : setPrefType,
+      savePrefType   : savePrefType,
+      openModal      : openModal,
+      closeModal     : closeModal,
+      onAdmsTypeChange: onAdmsTypeChange,
+      onAdmsKindChange: onAdmsKindChange,
+      setCsatMin     : setCsatMin,
+      setSelType     : setSelType,
+      setInterview   : setInterview,
+      setPractical   : setPractical,
+      saveRow        : saveRow,
+      navigateTo     : navigateTo,
+      doLogout       : doLogout
+    };
+  })();
+
+  document.addEventListener('DOMContentLoaded', UniverNS.init);
+  </script>
 
 </body>
 </html>
