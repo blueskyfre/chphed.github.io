@@ -57,8 +57,7 @@ var Admin = (function() {
     currentMenu:  '',
     currentArea:  '',
     currentStudentId: '',
-    studentList:  [],
-    univData:     null
+    studentList:  []
   };
  
   // ─── API 호출 (GET) ──────────────────────────────────────────
@@ -184,8 +183,6 @@ var Admin = (function() {
         _state.currentStudentId = s.studentId;
         if (_state.currentMenu === 'gibu_personal') {
           _renderGibuPersonalForStudent(s.studentId);
-        } else if (_state.currentMenu === 'univ') {
-          _renderUnivForStudent(s.studentId);
         }
       });
       ul.appendChild(li);
@@ -214,8 +211,6 @@ var Admin = (function() {
       _loadSuneung();
     } else if (menu === 'univ') {
       _renderStudentList(_state.studentList);
-      _state.univData = null;
-      _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
       _loadUniv();
     }
   }
@@ -223,7 +218,7 @@ var Admin = (function() {
   function _refreshContent() {
     if (!_state.currentMenu) return;
     if (_state.currentMenu === 'suneung')           _loadSuneung();
-    else if (_state.currentMenu === 'univ')         { _state.univData = null; _state.currentStudentId = ''; _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>'); _loadUniv(); }
+    else if (_state.currentMenu === 'univ')         _loadUniv();
     else if (_state.currentMenu === 'gibu_personal') _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
     else if (_state.currentMenu === 'gibu_area')    { _renderAreaButtons(); _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에 있는 생기부 영역을 클릭하여 데이터를 조회하세요.</p></div>'); }
   }
@@ -295,66 +290,37 @@ var Admin = (function() {
  
   // ─── 관심대학 ─────────────────────────────────────────────────
   async function _loadUniv() {
-    // 백그라운드로 전체 데이터 로드 (화면 변경 없이)
+    _showContentSkeleton(10);
     try {
       var res = await _apiGet('adminGetUnivData', {
         adminId:     _state.adminId,
         filterClass: _state.currentClass
       });
-      if (res.success) {
-        _state.univData = res.data;
-        // 이미 학생이 선택된 상태라면 바로 렌더링
-        if (_state.currentStudentId && _state.currentMenu === 'univ') {
-          _renderUnivForStudent(_state.currentStudentId);
-        }
-      }
-    } catch (err) { /* 백그라운드 로드 실패는 조용히 처리, 학생 클릭 시 재시도 안내 */ }
+      if (res.success) _renderUniv(res.data);
+      else _showError(res.message);
+    } catch (err) { _showError(err.message); }
   }
-
-  function _renderUnivForStudent(studentId) {
-    if (!_state.univData) {
-      // 아직 데이터 로드 중
-      _showContentSkeleton(6);
-      // 로드 완료 후 자동 렌더링되므로 대기
-      return;
-    }
-    var found = null;
-    for (var i = 0; i < _state.univData.byStudent.length; i++) {
-      if (_state.univData.byStudent[i].studentId === studentId) {
-        found = _state.univData.byStudent[i];
-        break;
-      }
-    }
-    if (!found || !found.rows || found.rows.length === 0) {
-      _clearContent('<p class="text-gray-400 text-center mt-20">해당 학생의 관심대학 데이터가 없습니다.</p>');
-      return;
-    }
-    var headers = _state.univData.headers;
-    var infoHtml = '<div class="px-4 pt-4 pb-2">'
-      + '<p class="text-base font-bold text-gray-800">'
-      + found.studentId + ' ' + found.name
-      + ' 학생 : <span class="text-emerald-700">' + (found.preferType || '-') + '</span></p>'
-      + '</div>';
-    var tableHtml = '<div class="overflow-x-auto px-4 pb-4">'
-      + '<table class="min-w-full text-sm border-collapse">'
-      + '<thead><tr class="bg-emerald-700 text-white">';
-    headers.forEach(function(h) {
-      tableHtml += '<th class="px-3 py-2 border border-emerald-600 whitespace-nowrap">' + h + '</th>';
-    });
-    tableHtml += '</tr></thead><tbody>';
-    found.rows.forEach(function(row, idx) {
-      tableHtml += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50') + ' hover:bg-yellow-50">';
-      row.forEach(function(v) {
-        tableHtml += '<td class="px-3 py-1.5 border border-gray-200 whitespace-nowrap">' + (v || '-') + '</td>';
-      });
-      tableHtml += '</tr>';
-    });
-    tableHtml += '</tbody></table></div>';
-    document.getElementById('content-area').innerHTML = infoHtml + tableHtml;
-  }
-
+ 
   function _renderUniv(data) {
-    // 하위 호환용 (직접 호출되지 않음)
+    if (!data || !data.rows || data.rows.length === 0) {
+      _clearContent('<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>');
+      return;
+    }
+    var html = '<div class="overflow-x-auto p-2"><table class="min-w-full text-sm border-collapse">'
+             + '<thead><tr class="bg-emerald-700 text-white">';
+    data.headers.forEach(function(h) {
+      html += '<th class="px-3 py-2 border border-emerald-600 whitespace-nowrap">' + h + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    data.rows.forEach(function(row, idx) {
+      html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50') + ' hover:bg-yellow-50">';
+      row.values.forEach(function(v) {
+        html += '<td class="px-3 py-1.5 border border-gray-200 whitespace-nowrap">' + (v || '-') + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div>';
+    document.getElementById('content-area').innerHTML = html;
   }
  
   // ─── 생기부(개인별) ───────────────────────────────────────────
@@ -461,16 +427,6 @@ var Admin = (function() {
       alert('먼저 상단 메뉴를 클릭하여 데이터를 조회하세요.');
       return;
     }
-    // 관심대학: 전체 데이터 기준으로 판단
-    if (menu === 'univ') {
-      if (!_state.univData || !_state.univData.byStudent || _state.univData.byStudent.length === 0) {
-        alert('저장할 데이터가 없습니다.');
-        return;
-      }
-      document.getElementById('download-filename').value = '관심대학';
-      document.getElementById('download-modal').classList.remove('hidden');
-      return;
-    }
     var contentArea = document.getElementById('content-area');
     var hasTable = contentArea.querySelector('table');
     var hasCard  = contentArea.querySelector('.bg-white.border.border-gray-200.rounded-lg');
@@ -498,27 +454,8 @@ var Admin = (function() {
     var contentArea = document.getElementById('content-area');
     var table = contentArea.querySelector('table');
 
-    // ── 관심대학: 전체 데이터(_state.univData) 기준으로 저장 ──
-    if (_state.currentMenu === 'univ' && _state.univData) {
-      var univRows = [];
-      var headers = _state.univData.headers;
-      univRows.push(['학번', '이름', '선호전형'].concat(headers));
-      _state.univData.byStudent.forEach(function(student) {
-        student.rows.forEach(function(row) {
-          univRows.push([student.studentId, student.name, student.preferType].concat(row));
-        });
-      });
-      var ws = XLSX.utils.aoa_to_sheet(univRows);
-      var colWidths = univRows[0].map(function() { return { wch: 16 }; });
-      ws['!cols'] = colWidths;
-      XLSX.utils.book_append_sheet(wb, ws, '관심대학');
-      XLSX.writeFile(wb, filename);
-      _closeDownloadModal();
-      return;
-    }
-
     if (table) {
-      // ── 테이블 형태 (수능선택) ──
+      // ── 테이블 형태 (수능선택, 관심대학) ──
       var ws = XLSX.utils.table_to_sheet(table);
       // 열 너비 자동 조정
       var range = XLSX.utils.decode_range(ws['!ref']);
