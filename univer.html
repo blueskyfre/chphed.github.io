@@ -160,12 +160,12 @@
             <tr class="bg-gray-50 border-b border-gray-200">
               <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-10">순위</th>
               <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">대학명</th>
-              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">전형유형</th>
+              <th class="px-3 py-2.5 text-left text-xs font-bold text-gray-600 w-24">전형유형</th>
               <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">전형종류</th>
               <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">지원학과</th>
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16">모집정원</th>
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16 whitespace-nowrap">모집정원</th>
               <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16">수능최저</th>
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16">선발유형</th>
+              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16 whitespace-nowrap">선발유형</th>
               <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-14">면접</th>
               <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-14">실기</th>
               <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">비고</th>
@@ -300,7 +300,14 @@
         <!-- 지원성향판단 -->
         <div>
           <div class="field-label">지원성향판단</div>
-          <input type="text" id="modal-tendency" class="field-input" placeholder="지원성향판단" />
+          <select id="modal-tendency" class="field-input">
+            <option value="">선택</option>
+            <option value="과도한 상향">과도한 상향</option>
+            <option value="상향">상향</option>
+            <option value="적정">적정</option>
+            <option value="하향">하향</option>
+            <option value="확실한 안정">확실한 안정</option>
+          </select>
         </div>
 
         <!-- 비고 -->
@@ -489,11 +496,11 @@
     // ── 뱃지 헬퍼 ───────────────────────────────────────────
     function _csatBadge(row) {
       var v = row.csatMin || '';
-      if (v.indexOf('유') !== -1 || v.indexOf('|') !== -1) {
-        return '<span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700">유</span>';
-      }
       if (v === '무') {
         return '<span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-gray-100 text-gray-500">무</span>';
+      }
+      if (v && v !== '무') {
+        return '<span class="inline-block px-1.5 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700">' + _esc(v) + '</span>';
       }
       return '';
     }
@@ -684,8 +691,7 @@
         admsKind      : admsKind,
         dept          : document.getElementById('modal-dept').value.trim(),
         quota         : document.getElementById('modal-quota').value.trim(),
-        csatMin       : csatMin,
-        csatDetail    : csatDetail,
+        csatMin       : csatMin === '유' ? (csatDetail || '') : csatMin,
         selType       : _getSegBtn('sel-type-group'),
         interview     : _getSegBtn('interview-group'),
         practical     : _getSegBtn('practical-group'),
