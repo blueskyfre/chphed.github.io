@@ -183,6 +183,8 @@ var Admin = (function() {
         _state.currentStudentId = s.studentId;
         if (_state.currentMenu === 'gibu_personal') {
           _renderGibuPersonalForStudent(s.studentId);
+        } else if (_state.currentMenu === 'univ') {
+          _renderUnivForStudent(s);
         }
       });
       ul.appendChild(li);
@@ -211,14 +213,14 @@ var Admin = (function() {
       _loadSuneung();
     } else if (menu === 'univ') {
       _renderStudentList(_state.studentList);
-      _loadUniv();
+      _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
     }
   }
  
   function _refreshContent() {
     if (!_state.currentMenu) return;
     if (_state.currentMenu === 'suneung')           _loadSuneung();
-    else if (_state.currentMenu === 'univ')         _loadUniv();
+    else if (_state.currentMenu === 'univ')         { _state.currentStudentId = ''; _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>'); }
     else if (_state.currentMenu === 'gibu_personal') _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
     else if (_state.currentMenu === 'gibu_area')    { _renderAreaButtons(); _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에 있는 생기부 영역을 클릭하여 데이터를 조회하세요.</p></div>'); }
   }
@@ -288,39 +290,109 @@ var Admin = (function() {
     document.getElementById('content-area').innerHTML = html;
   }
  
-  // ─── 관심대학 ─────────────────────────────────────────────────
-  async function _loadUniv() {
+  // ─── 관심대학 (학생 개별 조회) ───────────────────────────────
+  async function _renderUnivForStudent(student) {
     _showContentSkeleton(10);
     try {
-      var res = await _apiGet('adminGetUnivData', {
-        adminId:     _state.adminId,
-        filterClass: _state.currentClass
+      var res = await _apiGet('adminGetUnivByStudent', {
+        adminId:   _state.adminId,
+        studentId: student.studentId
       });
-      if (res.success) _renderUniv(res.data);
-      else _showError(res.message);
+      if (!res.success) { _showError(res.message); return; }
+
+      var data = res.data;
+      // 표시할 헤더: 순위, 대학명, 전형유형, 전형종류, 지원학과, 모집정원, 수능최저, 선발유형, 면접유무, 실기유무, 지원성향판단, 비고
+      var displayHeaders = ['순위', '대학명', '전형유형', '전형종류', '지원학과', '모집정원', '수능최저', '선발유형', '면접유무', '실기유무', '지원성향판단', '비고'];
+
+      var html = '<div class="p-4">'
+               + '<div class="mb-3 text-base font-bold text-gray-800">'
+               + student.studentId + ' ' + student.name + ' 학생 : ' + (data.prefType || '-')
+               + '</div>'
+               + '<div class="overflow-x-auto"><table class="min-w-full text-sm border-collapse">'
+               + '<thead><tr class="bg-emerald-700 text-white">';
+
+      displayHeaders.forEach(function(h) {
+        html += '<th class="px-3 py-2 border border-emerald-600 whitespace-nowrap">' + h + '</th>';
+      });
+      html += '</tr></thead><tbody>';
+
+      var allHeadersRef = ['연번', '반', '학번', '이름', '선호전형', '순위', '대학명', '전형유형', '전형종류', '지원학과', '모집정원', '수능최저', '선발유형', '면접유무', '실기유무', '지원성향판단', '비고'];
+      // 표시 컬럼 인덱스 (allHeadersRef 기준)
+      var displayColNames = ['순위', '대학명', '전형유형', '전형종류', '지원학과', '모집정원', '수능최저', '선발유형', '면접유무', '실기유무', '지원성향판단', '비고'];
+
+      if (!data.rows || data.rows.length === 0) {
+        html += '<tr><td colspan="' + displayHeaders.length + '" class="text-center py-4 text-gray-400">데이터가 없습니다.</td></tr>';
+      } else {
+        data.rows.forEach(function(row, idx) {
+          html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50') + ' hover:bg-yellow-50">';
+          displayColNames.forEach(function(colName) {
+            var val = row[colName] !== undefined ? row[colName] : '-';
+            // 순위 셀은 편집 가능하게 표시 (더블클릭 편집)
+            if (colName === '순위') {
+              html += '<td class="px-3 py-1.5 border border-gray-200 text-center whitespace-nowrap font-semibold text-emerald-700 cursor-pointer univ-rank-cell"'
+                    + ' data-studentid="' + student.studentId + '"'
+                    + ' data-rowindex="' + row._rowIndex + '"'
+                    + ' data-current="' + val + '"'
+                    + ' ondblclick="Admin.editUnivRank(this)">'
+                    + (val || '-')
+                    + '</td>';
+            } else {
+              html += '<td class="px-3 py-1.5 border border-gray-200 whitespace-nowrap">' + (val || '-') + '</td>';
+            }
+          });
+          html += '</tr>';
+        });
+      }
+
+      html += '</tbody></table></div></div>';
+      document.getElementById('content-area').innerHTML = html;
     } catch (err) { _showError(err.message); }
   }
- 
-  function _renderUniv(data) {
-    if (!data || !data.rows || data.rows.length === 0) {
-      _clearContent('<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>');
-      return;
-    }
-    var html = '<div class="overflow-x-auto p-2"><table class="min-w-full text-sm border-collapse">'
-             + '<thead><tr class="bg-emerald-700 text-white">';
-    data.headers.forEach(function(h) {
-      html += '<th class="px-3 py-2 border border-emerald-600 whitespace-nowrap">' + h + '</th>';
-    });
-    html += '</tr></thead><tbody>';
-    data.rows.forEach(function(row, idx) {
-      html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50') + ' hover:bg-yellow-50">';
-      row.values.forEach(function(v) {
-        html += '<td class="px-3 py-1.5 border border-gray-200 whitespace-nowrap">' + (v || '-') + '</td>';
+
+  // ─── 관심대학 순위 편집 ────────────────────────────────────
+  function _editUnivRank(cell) {
+    var currentVal = cell.dataset.current || '';
+    var input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentVal;
+    input.className = 'w-12 text-center border border-emerald-400 rounded px-1 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400';
+    input.style.width = '50px';
+
+    function _commit() {
+      var newVal = input.value.trim();
+      if (newVal === currentVal) { cell.textContent = currentVal || '-'; return; }
+      var studentId = cell.dataset.studentid;
+      var rowIndex  = cell.dataset.rowindex;
+      cell.textContent = '저장 중...';
+      _apiGet('adminSaveUnivRank', {
+        adminId:   _state.adminId,
+        studentId: studentId,
+        rowIndex:  rowIndex,
+        newRank:   newVal
+      }).then(function(res) {
+        if (res.success) {
+          cell.textContent = newVal || '-';
+          cell.dataset.current = newVal;
+        } else {
+          alert('저장 실패: ' + res.message);
+          cell.textContent = currentVal || '-';
+        }
+      }).catch(function(err) {
+        alert('오류: ' + err.message);
+        cell.textContent = currentVal || '-';
       });
-      html += '</tr>';
+    }
+
+    input.addEventListener('blur', _commit);
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') { input.blur(); }
+      if (e.key === 'Escape') { input.removeEventListener('blur', _commit); cell.textContent = currentVal || '-'; }
     });
-    html += '</tbody></table></div>';
-    document.getElementById('content-area').innerHTML = html;
+
+    cell.textContent = '';
+    cell.appendChild(input);
+    input.focus();
+    input.select();
   }
  
   // ─── 생기부(개인별) ───────────────────────────────────────────
@@ -562,7 +634,8 @@ var Admin = (function() {
     cancelLogout:        _cancelLogout,
     openDownloadModal:   _openDownloadModal,
     closeDownloadModal:  _closeDownloadModal,
-    confirmDownload:     _confirmDownload
+    confirmDownload:     _confirmDownload,
+    editUnivRank:        _editUnivRank
   };
  
 })();
