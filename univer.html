@@ -332,6 +332,19 @@
     </div>
   </div>
 
+  <!-- ── 선호전형 초기 설정 모달 ── -->
+  <div id="pref-type-modal" class="modal-bg hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+      <h2 class="text-base font-bold text-gray-800 mb-1">📌 선호전형 설정</h2>
+      <p class="text-xs text-gray-500 mb-5">선호하는 전형 방식을 선택해주세요.</p>
+      <div class="flex flex-col gap-3">
+        <button class="pref-modal-btn w-full py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition" data-value="수시 위주">수시 위주</button>
+        <button class="pref-modal-btn w-full py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition" data-value="정시 위주">정시 위주</button>
+        <button class="pref-modal-btn w-full py-3 rounded-xl border-2 border-gray-200 text-sm font-semibold text-gray-700 hover:border-blue-400 hover:bg-blue-50 transition" data-value="수시와 정시 모두 준비">수시·정시 모두</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── 토스트 ── -->
   <div id="toast" class="toast"></div>
 
@@ -402,6 +415,7 @@
           var d = result.data.data;
           univRows = d.rows || [];
           _restorePrefType(d.prefType || '');
+          if (!d.prefType) { _openPrefTypeModal(); }
         } else {
           _showToast('데이터 로드 실패: ' + ((result && result.message) || ''), 'error');
         }
@@ -537,6 +551,35 @@
         });
         if (result && result.success) {
           _showToast('✅ ' + result.message, 'success');
+        } else {
+          _showToast('저장 실패: ' + (result.message || ''), 'error');
+        }
+      } catch (e) {
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
+    }
+
+    // ── 선호전형 초기 모달 열기 ─────────────────────────────
+    function _openPrefTypeModal() {
+      var modal = document.getElementById('pref-type-modal');
+      modal.classList.remove('hidden');
+      var btns = modal.querySelectorAll('.pref-modal-btn');
+      btns.forEach(function (btn) {
+        btn.onclick = function () { _savePrefTypeFromModal(btn.dataset.value); };
+      });
+    }
+
+    // ── 선호전형 초기 모달에서 선택 후 저장 ─────────────────
+    async function _savePrefTypeFromModal(prefType) {
+      document.getElementById('pref-type-modal').classList.add('hidden');
+      _restorePrefType(prefType);
+      try {
+        var result = await _callPostAPI('univSavePrefType', {
+          studentId: studentId,
+          prefType : prefType
+        });
+        if (result && result.success) {
+          _showToast('✅ 선호전형이 저장되었습니다.', 'success');
         } else {
           _showToast('저장 실패: ' + (result.message || ''), 'error');
         }
