@@ -333,24 +333,6 @@
   </div>
 
   <!-- ── 토스트 ── -->
-
-<div id="pref-init-modal" class="modal-bg hidden">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6 text-center">
-      <h2 class="text-lg font-bold text-gray-800 mb-2">🎯 선호전형 선택</h2>
-      <p class="text-sm text-gray-500 mb-6">원활한 상담을 위해<br>가장 선호하는 전형을 선택해주세요.</p>
-      
-      <div class="flex flex-col gap-2 mb-6">
-        <button onclick="UniverNS.pickInitPref('수시 위주')" 
-          class="w-full py-3 border border-blue-200 rounded-xl hover:bg-blue-50 text-blue-700 font-medium transition">수시 위주</button>
-        <button onclick="UniverNS.pickInitPref('정시 위주')" 
-          class="w-full py-3 border border-blue-200 rounded-xl hover:bg-blue-50 text-blue-700 font-medium transition">정시 위주</button>
-        <button onclick="UniverNS.pickInitPref('수시와 정시 모두 준비')" 
-          class="w-full py-3 border border-blue-200 rounded-xl hover:bg-blue-50 text-blue-700 font-medium transition">수시·정시 모두</button>
-      </div>
-      <p class="text-xs text-gray-400">선택 후 상단의 '선호전형 저장' 버튼으로 변경 가능합니다.</p>
-    </div>
-  </div>
-
   <div id="toast" class="toast"></div>
 
   <!-- ============================================================ -->
@@ -420,10 +402,6 @@
           var d = result.data.data;
           univRows = d.rows || [];
           _restorePrefType(d.prefType || '');
-          // 추가: 선호전형이 없으면 모달 띄우기
-          if (!d.prefType) {
-            document.getElementById('pref-init-modal').classList.remove('hidden');
-          }
         } else {
           _showToast('데이터 로드 실패: ' + ((result && result.message) || ''), 'error');
         }
@@ -839,20 +817,7 @@
       setPractical   : setPractical,
       saveRow        : saveRow,
       navigateTo     : navigateTo,
-      doLogout       : doLogout,
-
-
-      pickInitPref   : async function (val) {
-        const btns = document.querySelectorAll('#pref-type-group .seg-btn');
-        btns.forEach(function (btn) {
-          btn.classList.toggle('selected', btn.dataset.value === val);
-        });
-        await this.savePrefType(); // 기존 저장 함수 실행
-        document.getElementById('pref-init-modal').classList.add('hidden');
-      }
-
-
-
+      doLogout       : doLogout
     };
   })();
 
