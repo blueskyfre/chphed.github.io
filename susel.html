@@ -7,6 +7,7 @@
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="navi.js"></script>
 
   <style>
     * { box-sizing: border-box; }
@@ -163,43 +164,7 @@
   <!-- ============================================================ -->
   <!--  상단 네비게이션 바 (공통 디자인) -->
   <!-- ============================================================ -->
-  <nav class="bg-white shadow-sm sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-3">
-      <div class="flex items-center justify-between">
-        <!-- 좌측: 링크 버튼들 (4개) -->
-        <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
-          <button onclick="SuselNS.navigateTo('schedule')"
-            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-200">
-            일정
-          </button>
-          <button onclick="SuselNS.navigateTo('suneung')"
-            class="bg-blue-500 text-white font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-500 shadow">
-            수능과목선택
-          </button>
-          <button onclick="SuselNS.navigateTo('university')"
-            class="bg-green-50 hover:bg-green-100 text-green-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-green-200">
-            관심대학
-          </button>
-          <button onclick="SuselNS.navigateTo('record')"
-            class="bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-purple-200">
-            생기부 기초자료
-          </button>
-        </div>
-        <!-- 우측: 사용자 정보 & 저장 & 로그아웃 -->
-        <div class="flex items-center gap-2 sm:gap-3">
-          <span id="nav-user-info" class="text-xs sm:text-sm text-gray-600 font-medium"></span>
-          <button onclick="SuselNS.doSave()"
-            class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-blue-600 font-medium">
-            💾 저장
-          </button>
-          <button onclick="SuselNS.doLogout()"
-            class="bg-red-50 hover:bg-red-100 text-red-600 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-red-200">
-            로그아웃
-          </button>
-        </div>
-      </div>
-    </div>
-  </nav>
+ <div id="shared-nav"></div>
 
   <!-- ============================================================ -->
   <!--  스켈레톤 로딩 UI -->
@@ -1024,7 +989,16 @@
   })();
 
   // ── 페이지 로드 시 초기화 ──
-  document.addEventListener('DOMContentLoaded', SuselNS.init);
+    document.addEventListener('DOMContentLoaded', function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    NaviComponent.init({
+      activePage: 'suneung',
+      userName:   urlParams.get('name')      || '',
+      studentId:  urlParams.get('studentId') || '',
+      onLogout: function() { SuselNS.doLogout(); }
+    });
+    SuselNS.init();
+  });
   </script>
 
 </body>
