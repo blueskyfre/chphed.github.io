@@ -691,7 +691,7 @@
         admsKind      : admsKind,
         dept          : document.getElementById('modal-dept').value.trim(),
         quota         : document.getElementById('modal-quota').value.trim(),
-        csatMin       : csatMin === '유' ? (csatDetail || '') : csatMin,
+        csatMin       : (csatMin === '유' && csatDetail) ? csatDetail : csatMin,
         selType       : _getSegBtn('sel-type-group'),
         interview     : _getSegBtn('interview-group'),
         practical     : _getSegBtn('practical-group'),
