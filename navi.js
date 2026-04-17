@@ -53,16 +53,16 @@ var NaviComponent = (function () {
     record    : 'record.html'
   };
 
-  /* ── 색상 클래스 맵 ── */
+  /* ── 색상 클래스 맵 (애플 다크모드) ── */
   var COLOR_INACTIVE = {
-    blue  : 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200',
-    green : 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200',
-    purple: 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200'
+    blue  : 'bg-gray-800/60 hover:bg-gray-700/80 text-blue-400 border border-gray-700/50 backdrop-blur-sm',
+    green : 'bg-gray-800/60 hover:bg-gray-700/80 text-green-400 border border-gray-700/50 backdrop-blur-sm',
+    purple: 'bg-gray-800/60 hover:bg-gray-700/80 text-purple-400 border border-gray-700/50 backdrop-blur-sm'
   };
   var COLOR_ACTIVE = {
-    blue  : 'bg-blue-500 text-white border-blue-500 shadow',
-    green : 'bg-green-500 text-white border-green-500 shadow',
-    purple: 'bg-purple-500 text-white border-purple-500 shadow'
+    blue  : 'bg-blue-600/90 text-white border border-blue-500/50 shadow-lg shadow-blue-500/20',
+    green : 'bg-green-600/90 text-white border border-green-500/50 shadow-lg shadow-green-500/20',
+    purple: 'bg-purple-600/90 text-white border border-purple-500/50 shadow-lg shadow-purple-500/20'
   };
 
   /* ── 현재 설정값 ── */
@@ -119,7 +119,7 @@ var NaviComponent = (function () {
 
       return '<button'
         + ' onclick="NaviComponent._onNavClick(\'' + item.key + '\')"'
-        + ' class="font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border ' + colorCls + '"'
+        + ' class="font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition text-xs sm:text-sm border ' + colorCls + '"'
         + '>'
         + item.label
         + '</button>';
@@ -128,14 +128,14 @@ var NaviComponent = (function () {
     /* ── 우측 버튼 HTML ── */
     var saveHTML = _cfg.onSave
       ? '<button onclick="NaviComponent._onSave()"'
-      +   ' class="bg-blue-600 hover:bg-blue-700 text-white text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-blue-600 font-medium">'
-      +   '💾 저장'
+      +   ' class="bg-gray-700 hover:bg-gray-600 text-white text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition border border-gray-600 font-medium shadow-md hover:shadow-lg">'
+      +   '저장'
       + '</button>'
       : '';
 
     var logoutHTML = _cfg.onLogout
       ? '<button onclick="NaviComponent._onLogout()"'
-      +   ' class="bg-red-50 hover:bg-red-100 text-red-600 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-red-200">'
+      +   ' class="bg-transparent hover:bg-red-900/30 text-red-400 hover:text-red-300 text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition border border-red-800/50">'
       +   '로그아웃'
       + '</button>'
       : '';
@@ -144,7 +144,7 @@ var NaviComponent = (function () {
 
     /* ── 최종 nav HTML ── */
     container.innerHTML =
-      '<nav class="bg-white shadow-sm sticky top-0 z-50">'
+      '<nav class="bg-gray-900/95 backdrop-blur-md shadow-lg shadow-black/20 sticky top-0 z-50 border-b border-gray-800">'
     + '  <div class="max-w-6xl mx-auto px-4 py-3">'
     + '    <div class="flex items-center justify-between">'
 
@@ -155,7 +155,7 @@ var NaviComponent = (function () {
 
     /* 우측: 사용자 + 저장 + 로그아웃 */
     + '      <div class="flex items-center gap-2 sm:gap-3">'
-    + '        <span id="nav-user-info" class="text-xs sm:text-sm text-gray-600 font-medium">' + userName + '</span>'
+    + '        <span id="nav-user-info" class="text-xs sm:text-sm text-gray-400 font-medium">' + userName + '</span>'
     +          saveHTML
     +          logoutHTML
     + '      </div>'
