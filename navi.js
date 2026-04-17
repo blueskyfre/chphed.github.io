@@ -53,20 +53,103 @@ var NaviComponent = (function () {
     record    : 'record.html'
   };
 
-  /* ── 색상 클래스 맵 (애플 다크모드) ── */
-  var COLOR_INACTIVE = {
-    blue  : 'bg-gray-800/60 hover:bg-gray-700/80 text-blue-400 border border-gray-700/50 backdrop-blur-sm',
-    green : 'bg-gray-800/60 hover:bg-gray-700/80 text-green-400 border border-gray-700/50 backdrop-blur-sm',
-    purple: 'bg-gray-800/60 hover:bg-gray-700/80 text-purple-400 border border-gray-700/50 backdrop-blur-sm'
+  /* ── 언더라인 색상 맵 (활성/비활성 hover용) ── */
+  var UNDERLINE_COLOR = {
+    blue  : '#3b82f6',
+    green : '#22c55e',
+    purple: '#a855f7'
   };
-  var COLOR_ACTIVE = {
-    blue  : 'bg-blue-600/90 text-white border border-blue-500/50 shadow-lg shadow-blue-500/20',
-    green : 'bg-green-600/90 text-white border border-green-500/50 shadow-lg shadow-green-500/20',
-    purple: 'bg-purple-600/90 text-white border border-purple-500/50 shadow-lg shadow-purple-500/20'
+
+  /* ── 활성 텍스트 색상 맵 ── */
+  var ACTIVE_TEXT_COLOR = {
+    blue  : '#2563eb',
+    green : '#16a34a',
+    purple: '#9333ea'
   };
 
   /* ── 현재 설정값 ── */
   var _cfg = {};
+
+  /* ── 공통 스타일 주입 (한 번만) ── */
+  var _styleInjected = false;
+  function _injectStyle() {
+    if (_styleInjected) return;
+    _styleInjected = true;
+    var style = document.createElement('style');
+    style.textContent = [
+      '.navi-btn {',
+      '  position: relative;',
+      '  background: none;',
+      '  border: none;',
+      '  outline: none;',
+      '  cursor: pointer;',
+      '  padding: 6px 2px 4px;',
+      '  font-size: 0.8rem;',
+      '  font-weight: 500;',
+      '  color: #6b7280;',
+      '  letter-spacing: 0.01em;',
+      '  transition: color 0.2s;',
+      '}',
+      '@media (min-width: 640px) {',
+      '  .navi-btn { font-size: 0.875rem; padding: 6px 4px 4px; }',
+      '}',
+      '.navi-btn::after {',
+      '  content: "";',
+      '  position: absolute;',
+      '  left: 0;',
+      '  bottom: 0;',
+      '  width: 100%;',
+      '  height: 2px;',
+      '  border-radius: 1px;',
+      '  transform: scaleX(0);',
+      '  transform-origin: left center;',
+      '  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);',
+      '}',
+      '.navi-btn:hover::after, .navi-btn.navi-active::after {',
+      '  transform: scaleX(1);',
+      '}',
+      '.navi-btn-blue::after  { background: #3b82f6; }',
+      '.navi-btn-green::after { background: #22c55e; }',
+      '.navi-btn-purple::after{ background: #a855f7; }',
+      '.navi-btn-blue:hover,  .navi-btn-blue.navi-active  { color: #2563eb; }',
+      '.navi-btn-green:hover, .navi-btn-green.navi-active { color: #16a34a; }',
+      '.navi-btn-purple:hover,.navi-btn-purple.navi-active{ color: #9333ea; }',
+      '.navi-btn-action {',
+      '  position: relative;',
+      '  background: none;',
+      '  border: none;',
+      '  outline: none;',
+      '  cursor: pointer;',
+      '  padding: 6px 2px 4px;',
+      '  font-size: 0.75rem;',
+      '  font-weight: 500;',
+      '  color: #6b7280;',
+      '  letter-spacing: 0.01em;',
+      '  transition: color 0.2s;',
+      '}',
+      '@media (min-width: 640px) {',
+      '  .navi-btn-action { font-size: 0.8rem; }',
+      '}',
+      '.navi-btn-action::after {',
+      '  content: "";',
+      '  position: absolute;',
+      '  left: 0;',
+      '  bottom: 0;',
+      '  width: 100%;',
+      '  height: 2px;',
+      '  border-radius: 1px;',
+      '  transform: scaleX(0);',
+      '  transform-origin: left center;',
+      '  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);',
+      '}',
+      '.navi-btn-action:hover::after { transform: scaleX(1); }',
+      '.navi-btn-save::after  { background: #3b82f6; }',
+      '.navi-btn-logout::after{ background: #ef4444; }',
+      '.navi-btn-save:hover   { color: #2563eb; }',
+      '.navi-btn-logout:hover { color: #dc2626; }'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
 
   /* ════════════════════════════════════════════════════════════════
      공개 API: init
@@ -110,16 +193,16 @@ var NaviComponent = (function () {
       return;
     }
 
+    _injectStyle();
+
     /* ── 버튼 HTML 생성 ── */
     var btnHTML = NAV_ITEMS.map(function (item) {
       var isActive = (item.key === _cfg.activePage);
-      var colorCls = isActive
-        ? (COLOR_ACTIVE[item.color]   || COLOR_ACTIVE.blue)
-        : (COLOR_INACTIVE[item.color] || COLOR_INACTIVE.blue);
+      var activeClass = isActive ? ' navi-active' : '';
 
       return '<button'
         + ' onclick="NaviComponent._onNavClick(\'' + item.key + '\')"'
-        + ' class="font-medium px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition text-xs sm:text-sm border ' + colorCls + '"'
+        + ' class="navi-btn navi-btn-' + item.color + activeClass + '"'
         + '>'
         + item.label
         + '</button>';
@@ -128,14 +211,14 @@ var NaviComponent = (function () {
     /* ── 우측 버튼 HTML ── */
     var saveHTML = _cfg.onSave
       ? '<button onclick="NaviComponent._onSave()"'
-      +   ' class="bg-gray-700 hover:bg-gray-600 text-white text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition border border-gray-600 font-medium shadow-md hover:shadow-lg">'
-      +   '저장'
+      +   ' class="navi-btn-action navi-btn-save">'
+      +   '💾 저장'
       + '</button>'
       : '';
 
     var logoutHTML = _cfg.onLogout
       ? '<button onclick="NaviComponent._onLogout()"'
-      +   ' class="bg-transparent hover:bg-red-900/30 text-red-400 hover:text-red-300 text-xs sm:text-sm px-3 py-1.5 sm:px-4 sm:py-2 rounded-full transition border border-red-800/50">'
+      +   ' class="navi-btn-action navi-btn-logout">'
       +   '로그아웃'
       + '</button>'
       : '';
@@ -144,7 +227,7 @@ var NaviComponent = (function () {
 
     /* ── 최종 nav HTML ── */
     container.innerHTML =
-      '<nav class="bg-gray-900/95 backdrop-blur-md shadow-lg shadow-black/20 sticky top-0 z-50 border-b border-gray-800">'
+      '<nav class="bg-white shadow-sm sticky top-0 z-50">'
     + '  <div class="max-w-6xl mx-auto px-4 py-3">'
     + '    <div class="flex items-center justify-between">'
 
@@ -155,7 +238,7 @@ var NaviComponent = (function () {
 
     /* 우측: 사용자 + 저장 + 로그아웃 */
     + '      <div class="flex items-center gap-2 sm:gap-3">'
-    + '        <span id="nav-user-info" class="text-xs sm:text-sm text-gray-400 font-medium">' + userName + '</span>'
+    + '        <span id="nav-user-info" class="text-xs sm:text-sm text-gray-600 font-medium">' + userName + '</span>'
     +          saveHTML
     +          logoutHTML
     + '      </div>'
