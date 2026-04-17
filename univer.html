@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>관심대학 조사</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="navi.js"></script>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
@@ -80,38 +81,8 @@
 </head>
 <body class="bg-gray-50 min-h-screen">
 
-  <!-- ── 네비게이션 ── -->
-  <nav class="bg-white shadow-sm sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto px-4 py-3">
-      <div class="flex items-center justify-between">
-        <div class="flex items-center gap-1 sm:gap-2 flex-wrap">
-          <button onclick="UniverNS.navigateTo('schedule')"
-            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-200">
-            일정
-          </button>
-          <button onclick="UniverNS.navigateTo('suneung')"
-            class="bg-blue-50 hover:bg-blue-100 text-blue-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-blue-200">
-            수능과목선택
-          </button>
-          <button
-            class="bg-green-500 text-white font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg text-xs sm:text-sm border border-green-500 shadow">
-            관심대학
-          </button>
-          <button onclick="UniverNS.navigateTo('record')"
-            class="bg-purple-50 hover:bg-purple-100 text-purple-700 font-medium px-2 py-1.5 sm:px-4 sm:py-2 rounded-lg transition text-xs sm:text-sm border border-purple-200">
-            생기부 기초자료
-          </button>
-        </div>
-        <div class="flex items-center gap-2 sm:gap-3">
-          <span id="nav-user-info" class="text-xs sm:text-sm text-gray-600 font-medium"></span>
-          <button onclick="UniverNS.doLogout()"
-            class="bg-red-50 hover:bg-red-100 text-red-600 text-xs sm:text-sm px-2 py-1.5 sm:px-3 sm:py-2 rounded-lg transition border border-red-200">
-            로그아웃
-          </button>
-        </div>
-      </div>
-    </div>
-  </nav>
+  <!-- 공통 네비게이션 -->
+  <div id="shared-nav"></div>
 
   <!-- ── 스켈레톤 ── -->
   <div id="skeleton-ui" class="max-w-5xl mx-auto px-4 py-5">
@@ -864,7 +835,17 @@
     };
   })();
 
-  document.addEventListener('DOMContentLoaded', UniverNS.init);
+  document.addEventListener('DOMContentLoaded', function() {
+    var urlParams = new URLSearchParams(window.location.search);
+    NaviComponent.init({
+      activePage: 'university',
+      userName:   urlParams.get('name')      || '',
+      studentId:  urlParams.get('studentId') || '',
+      onLogout: function() { UniverNS.doLogout(); }
+    });
+    UniverNS.init();
+  });
+    
   </script>
 
 </body>
