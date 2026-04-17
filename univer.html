@@ -691,7 +691,7 @@
         admsKind      : admsKind,
         dept          : document.getElementById('modal-dept').value.trim(),
         quota         : document.getElementById('modal-quota').value.trim(),
-        csatMin       : (csatMin === '유' && csatDetail) ? csatDetail : csatMin,
+        csatMin       : csatMin === '유' ? csatDetail : csatMin,
         selType       : _getSegBtn('sel-type-group'),
         interview     : _getSegBtn('interview-group'),
         practical     : _getSegBtn('practical-group'),
@@ -764,9 +764,7 @@
         target.admsKind  = payload.admsKind;
         target.dept      = payload.dept;
         target.quota     = payload.quota;
-        target.csatMin   = payload.csatMin === '유' && payload.csatDetail
-                            ? '유|' + payload.csatDetail
-                            : payload.csatMin;
+        target.csatMin   = payload.csatMin;
         target.selType   = payload.selType;
         target.interview = payload.interview;
         target.practical = payload.practical;
