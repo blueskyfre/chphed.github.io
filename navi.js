@@ -41,8 +41,8 @@ var NaviComponent = (function () {
   var NAV_ITEMS = [
     { key: 'schedule',   label: '일정',        color: 'blue' },
     { key: 'suneung',    label: '수능과목선택', color: 'blue' },
-    { key: 'university', label: '관심대학',     color: 'green' },
-    { key: 'record',     label: '생기부 기초자료', color: 'purple' }
+    { key: 'university', label: '관심대학',     color: 'blue' },
+    { key: 'record',     label: '생기부 기초자료', color: 'blue' }
   ];
 
   /* ── 페이지 URL 맵 ── */
