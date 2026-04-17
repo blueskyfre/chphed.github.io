@@ -601,12 +601,16 @@
       var csatRaw = row.csatMin || '';
       var csatVal = '';
       var csatDetail = '';
-      if (csatRaw.indexOf('|') !== -1) {
-        csatVal    = '유';
-        csatDetail = csatRaw.split('|')[1] || '';
+      
+      if (csatRaw === '무' || csatRaw === '') {
+        csatVal = csatRaw;
+        csatDetail = '';
       } else {
-        csatVal = csatRaw; // '유' or '무' or ''
+        // '무'나 빈값이 아니면 모두 '유'로 간주하고 내용을 상세칸에 표시
+        csatVal = '유';
+        csatDetail = csatRaw; 
       }
+     
       _setSegBtn('csat-min-group', csatVal);
       var csatDetailEl = document.getElementById('modal-csat-detail');
       csatDetailEl.value = csatDetail;
