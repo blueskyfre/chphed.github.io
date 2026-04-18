@@ -536,7 +536,27 @@
       _renderAll();
     }
 
-    // ── 선호전형 복원 ────────────────────────────────────────
+    // ── 저장 후 재로드 (모달 재표시 없이) ───────────────────
+    async function _reloadData() {
+      try {
+        var result = await _callGetAPI('univGetStudentData', {
+          studentId: studentId,
+          name     : userName
+        });
+        if (result && result.success && result.data && result.data.data) {
+          var d = result.data.data;
+          univRows = d.rows || [];
+          _restorePrefType(d.prefType || '');
+          eligibleTypeValue = d.eligibleType || '';
+          _renderEligibleTypeDisplay();
+        }
+      } catch (e) {
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
+      _renderAll();
+    }
+
+    // ── 선호전형 복원 ─────────────────────────────────────────
     function _restorePrefType(prefType) {
       if (!prefType) return;
       var btns = document.querySelectorAll('#pref-type-group .seg-btn');
@@ -990,11 +1010,10 @@
         saveBtn.textContent = '💾 저장';
 
         if (result && result.success) {
-          // 로컬 캐시 업데이트
-          _updateLocalCache(payload);
           closeModal();
-          _renderAll();
           _showToast('✅ ' + result.message, 'success');
+          // 서버에서 최신 데이터를 다시 불러와 화면 갱신
+          await _reloadData();
         } else {
           _showToast('저장 실패: ' + (result.message || ''), 'error');
         }
