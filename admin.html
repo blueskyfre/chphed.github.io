@@ -21,38 +21,90 @@
     ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
     .student-item.active { background-color: #eff6ff; border-left: 3px solid #3b82f6; }
     .area-btn.active { background-color: #1d4ed8; color: #fff; }
+
+    /* ── 헤더 공통 ── */
+    .site-header {
+      background: #fff;
+      border-bottom: 1px solid #e5e9f0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .site-header-inner {
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 0 24px;
+    }
+
+    /* ── 인사 영역 ── */
+    .header-greeting {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: #1e293b;
+      white-space: nowrap;
+    }
+    .header-auth {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.75rem;
+      color: #94a3b8;
+    }
+
+    /* ── 메뉴 탭 버튼 ── */
     .menu-btn {
       position: relative;
-      padding: 6px 14px;
-      font-size: 0.8rem;
+      padding: 0 4px;
+      height: 56px;
+      font-size: 0.835rem;
       font-weight: 500;
-      color: rgba(255,255,255,0.75);
+      color: #64748b;
       background: transparent;
       border: none;
-      border-radius: 6px;
       cursor: pointer;
       letter-spacing: 0.01em;
-      transition: color 0.2s, background 0.2s;
+      transition: color 0.2s ease;
+      white-space: nowrap;
     }
-    .menu-btn:hover {
-      color: #fff;
-      background: rgba(255,255,255,0.1);
-    }
-    .menu-btn.active {
-      color: #fff;
-      background: rgba(255,255,255,0.15);
-      font-weight: 600;
-    }
-    .menu-btn.active::after {
+    .menu-btn::after {
       content: '';
       position: absolute;
       bottom: 0;
-      left: 14px;
-      right: 14px;
+      left: 0;
+      right: 0;
       height: 2px;
-      background: #93c5fd;
-      border-radius: 2px;
+      background: #2563eb;
+      border-radius: 2px 2px 0 0;
+      transform: scaleX(0);
+      transform-origin: center;
+      transition: transform 0.25s ease;
     }
+    .menu-btn:hover {
+      color: #2563eb;
+    }
+    .menu-btn:hover::after {
+      transform: scaleX(1);
+    }
+    .menu-btn.active {
+      color: #2563eb;
+      font-weight: 600;
+    }
+    .menu-btn.active::after {
+      transform: scaleX(1);
+    }
+
+    /* ── 메뉴 버튼 사이 간격 ── */
+    .header-nav {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      height: 56px;
+    }
+
+    /* ── 액션 버튼 ── */
     .header-action-btn {
       display: inline-flex;
       align-items: center;
@@ -60,32 +112,55 @@
       padding: 6px 14px;
       font-size: 0.78rem;
       font-weight: 500;
-      border-radius: 6px;
+      border-radius: 7px;
       cursor: pointer;
-      transition: background 0.2s, opacity 0.2s;
-      border: none;
+      transition: background 0.18s ease, color 0.18s ease;
+      border: 1px solid transparent;
       letter-spacing: 0.01em;
+      white-space: nowrap;
     }
     .btn-download {
-      background: rgba(255,255,255,0.12);
-      color: rgba(255,255,255,0.85);
+      background: #f1f5f9;
+      color: #475569;
+      border-color: #e2e8f0;
     }
     .btn-download:hover {
-      background: rgba(255,255,255,0.2);
-      color: #fff;
+      background: #e0f2fe;
+      color: #0369a1;
+      border-color: #bae6fd;
     }
     .btn-logout {
-      background: rgba(255,255,255,0.08);
-      color: rgba(255,255,255,0.6);
+      background: #fff;
+      color: #94a3b8;
+      border-color: #e2e8f0;
     }
     .btn-logout:hover {
-      background: rgba(255,255,255,0.14);
-      color: rgba(255,255,255,0.85);
+      background: #fef2f2;
+      color: #dc2626;
+      border-color: #fecaca;
     }
     .header-divider {
       width: 1px;
-      height: 16px;
-      background: rgba(255,255,255,0.2);
+      height: 18px;
+      background: #e2e8f0;
+      margin: 0 2px;
+    }
+
+    /* ── 드롭다운 select ── */
+    #class-dropdown {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #334155;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 3px 8px;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.18s;
+    }
+    #class-dropdown:focus {
+      border-color: #93c5fd;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -169,8 +244,6 @@ var Admin = (function() {
       wrapper.innerHTML = '';
       var select = document.createElement('select');
       select.id = 'class-dropdown';
-      select.className = 'text-xs border-0 rounded px-2 py-0.5 focus:outline-none focus:ring-1 focus:ring-blue-300' ;
-      select.style.cssText = 'background:rgba(255,255,255,0.12); color:rgba(255,255,255,0.8); cursor:pointer;';
       var optAll = document.createElement('option');
       optAll.value = '전체'; optAll.textContent = '전체';
       select.appendChild(optAll);
@@ -189,7 +262,7 @@ var Admin = (function() {
     } else {
       document.getElementById('auth-label').textContent = '권한 : ';
       document.getElementById('class-select-wrapper').innerHTML =
-        '<span style="font-size:0.78rem;font-weight:600;color:rgba(255,255,255,0.7);">' + _state.adminClass + '반</span>';
+        '<span style="font-size:0.78rem;font-weight:600;color:#475569;">' + _state.adminClass + '반</span>';
     }
   }
  
@@ -712,25 +785,25 @@ var Admin = (function() {
      ============================================================ -->
  
 <!-- 상단 헤더 -->
-<header style="background: #1e3a5f; border-bottom: 1px solid rgba(255,255,255,0.08);">
-  <div class="max-w-screen-2xl mx-auto px-5" style="height:52px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+<header class="site-header">
+  <div class="site-header-inner max-w-screen-2xl mx-auto">
     <!-- 좌측: 인사 + 권한 -->
-    <div style="display:flex; align-items:center; gap:12px; flex-shrink:0;">
-      <span style="font-size:0.875rem; font-weight:600; color:#fff;" id="admin-greeting">로딩 중...</span>
-      <div style="display:flex; align-items:center; gap:4px; font-size:0.78rem; color:rgba(255,255,255,0.5);">
+    <div style="display:flex; align-items:center; gap:10px; flex-shrink:0;">
+      <span class="header-greeting" id="admin-greeting">로딩 중...</span>
+      <div class="header-auth">
         <span id="auth-label"></span>
         <span id="class-select-wrapper"></span>
       </div>
     </div>
-    <!-- 가운데: 메뉴 버튼 -->
-    <nav style="display:flex; align-items:center; gap:2px;">
+    <!-- 가운데: 메뉴 탭 -->
+    <nav class="header-nav">
       <button id="btn-suneung" class="menu-btn" onclick="Admin.onMenuClick('suneung')">수능선택</button>
       <button id="btn-univ" class="menu-btn" onclick="Admin.onMenuClick('univ')">관심대학</button>
       <button id="btn-gibu_personal" class="menu-btn" onclick="Admin.onMenuClick('gibu_personal')">생기부(개인별)</button>
       <button id="btn-gibu_area" class="menu-btn" onclick="Admin.onMenuClick('gibu_area')">생기부(영역별)</button>
     </nav>
     <!-- 우측: 액션 버튼 -->
-    <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+    <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
       <button class="header-action-btn btn-download" onclick="Admin.openDownloadModal()">
         <svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
