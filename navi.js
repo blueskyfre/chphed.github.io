@@ -331,15 +331,15 @@ var NaviComponent = (function () {
      공개 API
      ════════════════════════════════════════════════════════════════ */
   return {
-    init       : init,
-    update     : update,
+    init        : init,
+    update      : update,
     /* 내부 핸들러 (onclick 에서 호출됨) */
-    _onNavClick: _onNavClick,
-    _onSave    : _onSave,
-    _onLogout  : _onLogout,
+    _onNavClick : _onNavClick,
+    _onSave     : _onSave,
+    _onLogout   : _onLogout,
     /* 로딩 스피너 */
-    showLoading: showLoading,
-    hideLoading: hideLoading
+    showLoading : showLoading,
+    hideLoading : hideLoading
   };
 
 })();
