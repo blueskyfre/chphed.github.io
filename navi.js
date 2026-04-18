@@ -274,21 +274,6 @@ var NaviComponent = (function () {
   }
 
   /* ════════════════════════════════════════════════════════════════
-     공개 API
-     ════════════════════════════════════════════════════════════════ */
-  return {
-    init       : init,
-    update     : update,
-    /* 내부 핸들러 (onclick 에서 호출됨) */
-    _onNavClick: _onNavClick,
-    _onSave    : _onSave,
-    _onLogout  : _onLogout
-    showLoading : showLoading,
-    hideLoading : hideLoading
-  };
-
-  
-  /* ════════════════════════════════════════════════════════════════
      로딩 스피너 (공통)
      ════════════════════════════════════════════════════════════════ */
   function _injectSpinnerStyle() {
@@ -341,5 +326,20 @@ var NaviComponent = (function () {
     var el = document.getElementById('navi-loading-overlay');
     if (el) el.classList.remove('navi-loading-show');
   }
-  
+
+  /* ════════════════════════════════════════════════════════════════
+     공개 API
+     ════════════════════════════════════════════════════════════════ */
+  return {
+    init       : init,
+    update     : update,
+    /* 내부 핸들러 (onclick 에서 호출됨) */
+    _onNavClick: _onNavClick,
+    _onSave    : _onSave,
+    _onLogout  : _onLogout,
+    /* 로딩 스피너 */
+    showLoading: showLoading,
+    hideLoading: hideLoading
+  };
+
 })();
