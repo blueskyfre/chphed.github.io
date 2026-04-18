@@ -283,6 +283,63 @@ var NaviComponent = (function () {
     _onNavClick: _onNavClick,
     _onSave    : _onSave,
     _onLogout  : _onLogout
+    showLoading : showLoading,
+    hideLoading : hideLoading
   };
 
+  
+  /* ════════════════════════════════════════════════════════════════
+     로딩 스피너 (공통)
+     ════════════════════════════════════════════════════════════════ */
+  function _injectSpinnerStyle() {
+    if (document.getElementById('navi-spinner-style')) return;
+    var style = document.createElement('style');
+    style.id = 'navi-spinner-style';
+    style.textContent = [
+      '#navi-loading-overlay {',
+      '  display: none;',
+      '  position: fixed;',
+      '  inset: 0;',
+      '  background: rgba(0,0,0,0.35);',
+      '  z-index: 9999;',
+      '  align-items: center;',
+      '  justify-content: center;',
+      '}',
+      '#navi-loading-overlay.navi-loading-show {',
+      '  display: flex;',
+      '}',
+      '.navi-spinner {',
+      '  width: 52px;',
+      '  height: 52px;',
+      '  border: 5px solid #e5e7eb;',
+      '  border-top-color: #3b82f6;',
+      '  border-radius: 50%;',
+      '  animation: navi-spin 0.75s linear infinite;',
+      '}',
+      '@keyframes navi-spin {',
+      '  to { transform: rotate(360deg); }',
+      '}'
+    ].join('\n');
+    document.head.appendChild(style);
+  }
+
+  function _ensureOverlay() {
+    if (document.getElementById('navi-loading-overlay')) return;
+    var div = document.createElement('div');
+    div.id = 'navi-loading-overlay';
+    div.innerHTML = '<div class="navi-spinner"></div>';
+    document.body.appendChild(div);
+  }
+
+  function showLoading() {
+    _injectSpinnerStyle();
+    _ensureOverlay();
+    document.getElementById('navi-loading-overlay').classList.add('navi-loading-show');
+  }
+
+  function hideLoading() {
+    var el = document.getElementById('navi-loading-overlay');
+    if (el) el.classList.remove('navi-loading-show');
+  }
+  
 })();
