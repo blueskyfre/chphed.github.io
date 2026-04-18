@@ -78,7 +78,9 @@
     .field-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
     select.field-input { background: #fff; cursor: pointer; }
 
-
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -382,6 +384,14 @@
           닫기
         </button>
       </div>
+    </div>
+  </div>
+
+  <!-- ── 로딩 스피너 오버레이 ── -->
+  <div id="save-loading-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:99999;">
+    <div style="background:#fff;border-radius:1rem;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
+      <div style="width:48px;height:48px;border:5px solid #e0e7ff;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <p style="font-size:0.95rem;font-weight:600;color:#374151;">저장 중...</p>
     </div>
   </div>
 
@@ -919,10 +929,12 @@
 
     // ── 로딩 오버레이 ───────────────────────────────────────
     function _showSaveLoading() {
-      NaviComponent.showLoading();
+      var el = document.getElementById('save-loading-overlay');
+      el.style.display = 'flex';
     }
     function _hideSaveLoading() {
-      NaviComponent.hideLoading();
+      var el = document.getElementById('save-loading-overlay');
+      el.style.display = 'none';
     }
 
     // ── 행 저장 ──────────────────────────────────────────────
