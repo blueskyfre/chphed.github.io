@@ -1000,6 +1000,7 @@
         saveBtn.textContent = '💾 저장';
 
         if (result && result.success) {
+          closeModal();
           _showToast('✅ ' + result.message, 'success');
           // 서버에서 최신 데이터를 다시 불러와 화면 갱신
           await _reloadData();
