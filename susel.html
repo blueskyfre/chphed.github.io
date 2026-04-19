@@ -349,7 +349,7 @@
               <div class="card-body note-wrapper">
                 <textarea id="note-textarea"
                   class="w-full border border-gray-300 rounded-lg p-3 text-sm focus:ring-2 focus:ring-blue-300 focus:border-blue-400 outline-none resize-none"
-                  rows="4" placeholder="선택 이유나 참고내용을 입력하세요..."></textarea>
+                  rows="4" placeholder="선택 이유나 참고내용을 입력하세요..." oninput="NaviComponent.setDirty(true)"></textarea>
               </div>
             </div>
           </div>
@@ -639,6 +639,7 @@
           _highlightSuneungBtn(label);
           _updateSubjectSection();
           _updateGlobalSummary();
+          NaviComponent.setDirty(true);
         });
         container.appendChild(btn);
       });
@@ -699,6 +700,7 @@
         btn.dataset.value = label;
         btn.addEventListener('click', function () {
           _onSubjClick(key, label);
+            NaviComponent.setDirty(true);
         });
         container.appendChild(btn);
       });
@@ -717,7 +719,8 @@
     /* ── 영역별 응시/미응시 토글 (Public) ── */
     function toggleArea(key, isYes) {
       areaExam[key] = isYes;
-      _applyAreaToggle(key, isYes);
+        _applyAreaToggle(key, isYes);
+        NaviComponent.setDirty(true);
       if (!isYes) {
         selections[key] = '미응시';
         _highlightSubjBtn(key, '');
@@ -910,6 +913,7 @@
         var result = await _callPostAPI('suselSaveSelections', payload);
         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '💾 저장하기'; }
         if (result && result.success) {
+          NaviComponent.setDirty(false);
           _showToast('✅ ' + result.message, 'success');
         } else {
           _showToast('저장에 실패했습니다: ' + (result.message || ''), 'error');
