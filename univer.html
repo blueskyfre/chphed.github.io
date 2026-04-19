@@ -882,7 +882,7 @@
     }
 
     function closeModal() {
-      document.getElementById('row-modal').style.opacity = '';
+      document.getElementById('row-modal').style.background = '';
       document.getElementById('row-modal').style.pointerEvents = '';
       document.getElementById('row-modal').classList.add('hidden');
       editingOriginalRank = null;
@@ -989,7 +989,7 @@
       var saveBtn = document.getElementById('modal-save-btn');
       saveBtn.disabled = true;
       saveBtn.textContent = '⏳ 저장 중...';
-      document.getElementById('row-modal').style.opacity = '0.4';
+      document.getElementById('row-modal').style.background = 'rgba(0,0,0,0.1)';
       document.getElementById('row-modal').style.pointerEvents = 'none';
       NaviComponent.showLoading();
 
