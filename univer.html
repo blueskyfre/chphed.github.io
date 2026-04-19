@@ -753,13 +753,13 @@
       if (selected.indexOf('일반전형(기본)') === -1) selected.unshift('일반전형(기본)');
 
       var value = selected.join(', ');
-
       try {
         var result = await _callPostAPI('univSaveEligibleType', {
           studentId   : studentId,
           eligibleType: value
         });
         if (result && result.success) {
+          NaviComponent.hideLoading();
           eligibleTypeValue = value;
           _renderEligibleTypeDisplay();
           closeEligibleTypeModal();
@@ -768,6 +768,7 @@
           _showToast('저장 실패: ' + (result.message || ''), 'error');
         }
       } catch (e) {
+        NaviComponent.hideLoading();
         _showToast('❌ 오류: ' + e.message, 'error');
       }
     }
