@@ -745,33 +745,37 @@
     }
 
     // ── 지원가능전형 저장 ────────────────────────────────────
-    async function saveEligibleType() {
-      var checkboxes = document.querySelectorAll('#eligible-type-options input[type=checkbox]:checked');
-      var selected = [];
-      checkboxes.forEach(function(cb) { selected.push(cb.value); });
-      // 일반전형이 빠졌을 경우 보장
-      if (selected.indexOf('일반전형(기본)') === -1) selected.unshift('일반전형(기본)');
-
-      var value = selected.join(', ');
-      try {
-        var result = await _callPostAPI('univSaveEligibleType', {
-          studentId   : studentId,
-          eligibleType: value
-        });
-        if (result && result.success) {
-          NaviComponent.hideLoading();
-          eligibleTypeValue = value;
-          _renderEligibleTypeDisplay();
-          closeEligibleTypeModal();
-          _showToast('✅ ' + result.message, 'success');
-        } else {
-          _showToast('저장 실패: ' + (result.message || ''), 'error');
-        }
-      } catch (e) {
-        NaviComponent.hideLoading();
-        _showToast('❌ 오류: ' + e.message, 'error');
-      }
+async function saveEligibleType() {
+  var checkboxes = document.querySelectorAll('#eligible-type-options input[type=checkbox]:checked');
+  var selected = [];
+  checkboxes.forEach(function(cb) { selected.push(cb.value); });
+  if (selected.indexOf('일반전형(기본)') === -1) selected.unshift('일반전형(기본)');
+  var value = selected.join(', ');
+  // ✨ 추가: API 호출 전 스피너 표시
+  NaviComponent.showLoading(); 
+  try {
+    var result = await _callPostAPI('univSaveEligibleType', {
+      studentId   : studentId,
+      eligibleType: value
+    });
+    // 종료 후 스피너 숨김 (성공 시)
+    NaviComponent.hideLoading(); 
+    if (result && result.success) {
+      eligibleTypeValue = value;
+      _renderEligibleTypeDisplay();
+      closeEligibleTypeModal();
+      _showToast('✅ ' + result.message, 'success');
+    } else {
+      _showToast('저장 실패: ' + (result.message || ''), 'error');
     }
+  } catch (e) {
+    // 종료 후 스피너 숨김 (실패 시)
+    NaviComponent.hideLoading(); 
+    _showToast('❌ 오류: ' + e.message, 'error');
+  }
+}
+
+    
 
     // ── 선호전형 초기 모달 열기 ─────────────────────────────
     function _openPrefTypeModal() {
