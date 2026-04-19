@@ -78,9 +78,7 @@
     .field-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
     select.field-input { background: #fff; cursor: pointer; }
 
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
+
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -387,13 +385,6 @@
     </div>
   </div>
 
-  <!-- ── 로딩 스피너 오버레이 ── -->
-  <div id="save-loading-overlay" style="position:fixed;inset:0;background:rgba(0,0,0,0.45);display:none;align-items:center;justify-content:center;z-index:99999;">
-    <div style="background:#fff;border-radius:1rem;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:1rem;box-shadow:0 8px 32px rgba(0,0,0,0.18);">
-      <div style="width:48px;height:48px;border:5px solid #e0e7ff;border-top-color:#4f46e5;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
-      <p style="font-size:0.95rem;font-weight:600;color:#374151;">저장 중...</p>
-    </div>
-  </div>
 
   <!-- ── 토스트 ── -->
   <div id="toast" class="toast"></div>
@@ -674,14 +665,15 @@
   if (!selected) { _showToast('선호전형을 선택해주세요.', 'error'); return; }
   var prefType = selected.dataset.value;
 
-  NaviComponent.showLoading();  // ← 추가: API 호출 전 스피너 표시
-  try {
+   try {
+    NaviComponent.showLoading();    // ← 추가: API 호출 전 스피너 표시
     var result = await _callPostAPI('univSavePrefType', {
       studentId: studentId,
       prefType : prefType
     });
-    NaviComponent.hideLoading();  // ← 추가: 성공 시 스피너 숨김
+    
     if (result && result.success) {
+      NaviComponent.hideLoading();    // ← 추가: 성공 시 스피너 숨김
       _showToast('✅ ' + result.message, 'success');
     } else {
       _showToast('저장 실패: ' + (result.message || ''), 'error');
@@ -950,17 +942,7 @@
       document.getElementById('eligible-desc-modal').classList.add('hidden');
     }
 
-    // ── 로딩 오버레이 ───────────────────────────────────────
-    function _showSaveLoading() {
-      var el = document.getElementById('save-loading-overlay');
-      el.style.display = 'flex';
-    }
-    function _hideSaveLoading() {
-      var el = document.getElementById('save-loading-overlay');
-      el.style.display = 'none';
-    }
-
-    // ── 행 저장 ──────────────────────────────────────────────
+        // ── 행 저장 ──────────────────────────────────────────────
     async function saveRow() {
       var newRank = Number(document.getElementById('modal-rank').value);
       if (!newRank) { _showToast('순위를 선택해주세요.', 'error'); return; }
@@ -1004,11 +986,11 @@
       var saveBtn = document.getElementById('modal-save-btn');
       saveBtn.disabled = true;
       saveBtn.textContent = '⏳ 저장 중...';
-      _showSaveLoading();
+      NaviComponent.showLoading();
 
       try {
         var result = await _callPostAPI('univSaveRow', payload);
-        _hideSaveLoading();
+        NaviComponent.hideLoading();
         saveBtn.disabled = false;
         saveBtn.textContent = '💾 저장';
 
@@ -1021,7 +1003,7 @@
           _showToast('저장 실패: ' + (result.message || ''), 'error');
         }
       } catch (e) {
-        _hideSaveLoading();
+        NaviComponent.hideLoading();
         saveBtn.disabled = false;
         saveBtn.textContent = '💾 저장';
         _showToast('❌ 오류: ' + e.message, 'error');
