@@ -286,7 +286,7 @@ var NaviComponent = (function () {
       '  position: fixed;',
       '  inset: 0;',
       '  background: rgba(0,0,0,0.35);',
-      '  z-index: 9999;',
+      '  z-index: 99999;',
       '  align-items: center;',
       '  justify-content: center;',
       '}',
