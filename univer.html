@@ -670,24 +670,27 @@
 
     // ── 선호전형 저장 ────────────────────────────────────────
     async function savePrefType() {
-      var selected = document.querySelector('#pref-type-group .seg-btn.selected');
-      if (!selected) { _showToast('선호전형을 선택해주세요.', 'error'); return; }
-      var prefType = selected.dataset.value;
+  var selected = document.querySelector('#pref-type-group .seg-btn.selected');
+  if (!selected) { _showToast('선호전형을 선택해주세요.', 'error'); return; }
+  var prefType = selected.dataset.value;
 
-      try {
-        var result = await _callPostAPI('univSavePrefType', {
-          studentId: studentId,
-          prefType : prefType
-        });
-        if (result && result.success) {
-          _showToast('✅ ' + result.message, 'success');
-        } else {
-          _showToast('저장 실패: ' + (result.message || ''), 'error');
-        }
-      } catch (e) {
-        _showToast('❌ 오류: ' + e.message, 'error');
-      }
+  NaviComponent.showLoading();  // ← 추가: API 호출 전 스피너 표시
+  try {
+    var result = await _callPostAPI('univSavePrefType', {
+      studentId: studentId,
+      prefType : prefType
+    });
+    NaviComponent.hideLoading();  // ← 추가: 성공 시 스피너 숨김
+    if (result && result.success) {
+      _showToast('✅ ' + result.message, 'success');
+    } else {
+      _showToast('저장 실패: ' + (result.message || ''), 'error');
     }
+  } catch (e) {
+    NaviComponent.hideLoading();  // ← 추가: 오류 시에도 스피너 숨김
+    _showToast('❌ 오류: ' + e.message, 'error');
+  }
+}
 
     // ── 지원가능전형 표시 렌더링 ─────────────────────────────
     function _renderEligibleTypeDisplay() {
