@@ -301,9 +301,27 @@ var NaviComponent = (function () {
       '  border-radius: 50%;',
       '  animation: navi-spin 0.75s linear infinite;',
       '}',
+      '.navi-loading-box {',
+      '  display: flex;',
+      '  flex-direction: column;',
+      '  align-items: center;',
+      '  gap: 16px;',
+      '}',
+      '.navi-loading-text {',
+      '  color: #ffffff;',
+      '  font-size: 0.95rem;',
+      '  font-weight: 500;',
+      '  letter-spacing: 0.03em;',
+      '  animation: navi-pulse-text 1.4s ease-in-out infinite;',
+      '}',
+      '@keyframes navi-pulse-text {',
+      '  0%, 100% { opacity: 1; }',
+      '  50%       { opacity: 0.35; }',
+      '}',
       '@keyframes navi-spin {',
       '  to { transform: rotate(360deg); }',
       '}'
+      
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -312,7 +330,7 @@ var NaviComponent = (function () {
     if (document.getElementById('navi-loading-overlay')) return;
     var div = document.createElement('div');
     div.id = 'navi-loading-overlay';
-    div.innerHTML = '<div class="navi-spinner"></div>';
+    div.innerHTML = '<div class="navi-loading-box"><div class="navi-spinner"></div><p class="navi-loading-text">저장 중입니다.<br>잠시만 기다려주세요.</p></div>';
     document.body.appendChild(div);
   }
 
