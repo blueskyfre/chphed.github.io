@@ -123,18 +123,20 @@
         </button>
       </div>
       <!-- 지원가능전형 표시 -->
-      <div class="flex items-center gap-3 flex-wrap mt-3 pt-3 border-t border-gray-100">
-        <span class="text-sm font-bold text-gray-700 whitespace-nowrap">🎯 지원가능전형</span>
-        <span id="eligible-type-display" class="flex-1 text-sm text-gray-600 min-w-0 break-words"></span>
-        <button onclick="UniverNS.openEligibleTypeModal()"
-          id="eligible-type-change-btn"
-          class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition border border-blue-600 whitespace-nowrap">
-          변경
-        </button>
-        <button onclick="UniverNS.openEligibleDescModal()"
-          class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition border border-indigo-300 whitespace-nowrap">
-          📋 전형 설명
-        </button>
+      <div class="flex flex-col gap-2 mt-3 pt-3 border-t border-gray-100">
+        <div class="flex items-center gap-2">
+          <span class="text-sm font-bold text-gray-700 whitespace-nowrap">🎯 지원가능전형</span>
+          <button onclick="UniverNS.openEligibleTypeModal()"
+            id="eligible-type-change-btn"
+            class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition border border-blue-600 whitespace-nowrap">
+            변경
+          </button>
+          <button onclick="UniverNS.openEligibleDescModal()"
+            class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold px-3 py-1.5 rounded-lg transition border border-indigo-300 whitespace-nowrap">
+            📋 전형 설명
+          </button>
+        </div>
+        <span id="eligible-type-display" class="text-sm text-gray-600 break-words"></span>
       </div>
     </div>
 
