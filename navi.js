@@ -253,10 +253,7 @@ var NaviComponent = (function () {
      내부: 이벤트 핸들러
      (onclick 에서 직접 참조하므로 반드시 공개(return) 해야 함)
      ════════════════════════════════════════════════════════════════ */
-  function _onNavClick(pageKey) {
-    if (pageKey === _cfg.activePage) return; // 현재 페이지면 무시
-    if (_isDirty && !window.confirm('저장하지 않은 내용이 있습니다.\n저장 후 이동하려면 취소를 누르고 저장해 주세요.\n저장하지 않고 이동하시겠습니까?')) return;
-
+  function _doNavTo(pageKey) {
     var params = new URLSearchParams({
       studentId : _cfg.studentId,
       name      : _cfg.userName
@@ -266,13 +263,21 @@ var NaviComponent = (function () {
       window.location.href = _cfg.githubUrl + '/' + fileName + '?' + params.toString();
     }
   }
+  
+  
+  function _onNavClick(pageKey) {
+    if (pageKey === _cfg.activePage) return; // 현재 페이지면 무시
+    if (_isDirty) { _showConfirm(function() { if (typeof _cfg.onLogout === 'function') _cfg.onLogout(); }); return; }
+
+    _doNavTo(pageKey);    
+  }
 
   function _onSave() {
     if (typeof _cfg.onSave === 'function') _cfg.onSave();
   }
 
   function _onLogout() {
-    if (_isDirty && !window.confirm('저장하지 않은 내용이 있습니다.\n저장하지 않고 로그아웃하시겠습니까?')) return;
+    if (_isDirty) { _showConfirm(function() { _doNavTo(pageKey); }); return; }
     if (typeof _cfg.onLogout === 'function') _cfg.onLogout();
   }
 
@@ -284,6 +289,80 @@ var NaviComponent = (function () {
     var style = document.createElement('style');
     style.id = 'navi-spinner-style';
     style.textContent = [
+
+  /* ════════════════════════════════════════════════════════════════
+     저장하지 않고 이동시 경고 모달창 디자인 (공통)
+     ════════════════════════════════════════════════════════════════ */
+#navi-confirm-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 99999;
+  align-items: center;
+  justify-content: center;
+}
+#navi-confirm-overlay.navi-confirm-show {
+  display: flex;
+}
+.navi-confirm-box {
+  background: #ffffff;
+  border-radius: 1rem;
+  padding: 2rem 1.75rem 1.5rem;
+  max-width: 360px;
+  width: 90%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.18);
+  text-align: center;
+}
+.navi-confirm-icon {
+  font-size: 2rem;
+  margin-bottom: 0.75rem;
+}
+.navi-confirm-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+}
+.navi-confirm-desc {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-bottom: 1.5rem;
+  line-height: 1.6;
+}
+.navi-confirm-btns {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+}
+.navi-confirm-btn-leave {
+  flex: 1;
+  padding: 0.6rem 0;
+  border-radius: 0.5rem;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.navi-confirm-btn-leave:hover { background: #f3f4f6; }
+.navi-confirm-btn-stay {
+  flex: 1;
+  padding: 0.6rem 0;
+  border-radius: 0.5rem;
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.navi-confirm-btn-stay:hover { background: #1d4ed8; }
+
+      
       '#navi-loading-overlay {',
       '  display: none;',
       '  position: fixed;',
@@ -336,6 +415,39 @@ var NaviComponent = (function () {
     div.innerHTML = '<div class="navi-loading-box"><div class="navi-spinner"></div><p class="navi-loading-text">저장 중입니다.<br>잠시만 기다려주세요.</p></div>';
     document.body.appendChild(div);
   }
+
+function _ensureConfirmModal() {
+    if (document.getElementById('navi-confirm-overlay')) return;
+    var div = document.createElement('div');
+    div.id = 'navi-confirm-overlay';
+    div.innerHTML = [
+      '<div class="navi-confirm-box">',
+      '  <div class="navi-confirm-icon">💾</div>',
+      '  <div class="navi-confirm-title">저장하지 않은 내용이 있습니다</div>',
+      '  <div class="navi-confirm-desc">이 페이지를 떠나면 작성한 내용이<br>사라집니다. 정말 이동하시겠습니까?</div>',
+      '  <div class="navi-confirm-btns">',
+      '    <button class="navi-confirm-btn-leave" id="navi-confirm-leave">저장 안 하고 이동</button>',
+      '    <button class="navi-confirm-btn-stay" id="navi-confirm-stay">계속 작성하기</button>',
+      '  </div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(div);
+  }
+
+  function _showConfirm(onLeave) {
+    _ensureConfirmModal();
+    var overlay = document.getElementById('navi-confirm-overlay');
+    overlay.classList.add('navi-confirm-show');
+    document.getElementById('navi-confirm-stay').onclick = function() {
+      overlay.classList.remove('navi-confirm-show');
+    };
+    document.getElementById('navi-confirm-leave').onclick = function() {
+      overlay.classList.remove('navi-confirm-show');
+      _isDirty = false;
+      onLeave();
+    };
+  }
+
 
   function showLoading() {
     _injectSpinnerStyle();
