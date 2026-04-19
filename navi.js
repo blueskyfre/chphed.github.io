@@ -69,6 +69,7 @@ var NaviComponent = (function () {
 
   /* ── 현재 설정값 ── */
   var _cfg = {};
+  var _isDirty = false;
 
   /* ── 공통 스타일 주입 (한 번만) ── */
   var _styleInjected = false;
@@ -254,6 +255,7 @@ var NaviComponent = (function () {
      ════════════════════════════════════════════════════════════════ */
   function _onNavClick(pageKey) {
     if (pageKey === _cfg.activePage) return; // 현재 페이지면 무시
+    if (_isDirty && !window.confirm('저장하지 않은 내용이 있습니다.\n저장 후 이동하려면 취소를 누르고 저장해 주세요.\n저장하지 않고 이동하시겠습니까?')) return;
 
     var params = new URLSearchParams({
       studentId : _cfg.studentId,
@@ -270,6 +272,7 @@ var NaviComponent = (function () {
   }
 
   function _onLogout() {
+    if (_isDirty && !window.confirm('저장하지 않은 내용이 있습니다.\n저장하지 않고 로그아웃하시겠습니까?')) return;
     if (typeof _cfg.onLogout === 'function') _cfg.onLogout();
   }
 
@@ -357,7 +360,8 @@ var NaviComponent = (function () {
     _onLogout   : _onLogout,
     /* 로딩 스피너 */
     showLoading : showLoading,
-    hideLoading : hideLoading
+    hideLoading : hideLoading,
+    setDirty    : function(val) { _isDirty = !!val; }
   };
 
 })();
