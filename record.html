@@ -988,17 +988,33 @@
         } else {
           var html = '';
           entries.forEach(function(e, idx) {
-            // 날짜 포맷: 활동명(시작날짜-종료날짜)
+            // 화면 표시용 날짜 포맷: YYYY-MM-DD 그대로
             var dateRange = '';
             if (e.활동시작날짜 || e.활동종료날짜) {
               var s = e.활동시작날짜 || '';
               var en = e.활동종료날짜 || '';
               dateRange = s === en || !en ? '(' + s + ')' : '(' + s + '-' + en + ')';
             }
+            // compileToDone 과 동일한 날짜 형식(YYYY.M.D.)으로 글자수 계산용 prefix 구성
+            function _toFmt(d) {
+              if (!d) return '';
+              var parts = d.split('-');
+              if (parts.length !== 3) return d;
+              return parts[0] + '.' + parseInt(parts[1], 10) + '.' + parseInt(parts[2], 10) + '.';
+            }
+            var fs = _toFmt(e.활동시작날짜);
+            var fe = _toFmt(e.활동종료날짜);
+            var dateRangeFmt = '';
+            if (fs || fe) {
+              dateRangeFmt = (!fe || fs === fe) ? '(' + fs + ')' : '(' + fs + '-' + fe + ')';
+            }
+            // 글자수 계산용 prefix: 활동명(날짜) + 공백 (compileToDone 형식과 동일)
+            var prefix = e.활동명 + dateRangeFmt + (dateRangeFmt ? ' ' : '');
+
             // 활동명과 날짜 동일한 크기·색상(text-gray-700, font-semibold)
             var headerText = _escapeHtml(e.활동명) + (dateRange ? ' ' + _escapeHtml(dateRange) : '');
-            // 활동별 초기 글자수
-            var initBytes = _calcBytes(e.생기부내용);
+            // 활동별 초기 글자수 (prefix + 생기부내용)
+            var initBytes = _calcBytes(prefix + e.생기부내용);
 
             html += '<div class="border border-gray-200 rounded-lg overflow-hidden">';
             // 활동명(날짜) 헤더 - 수정 불가, 오른쪽에 글자수 표시
@@ -1006,12 +1022,13 @@
             html += '    <span>' + headerText + '</span>';
             html += '    <span id="view-item-bytes-' + idx + '" class="text-xs font-normal text-gray-500 ml-2 flex-shrink-0">(입력한 글자수: ' + initBytes + ' byte)</span>';
             html += '  </div>';
-            // 생기부내용 - 편집 가능
+            // 생기부내용 - 편집 가능, data-prefix에 글자수 계산용 prefix 저장
             html += '  <textarea'
                  +  '    id="view-edit-' + idx + '"'
                  +  '    data-view-idx="' + idx + '"'
                  +  '    data-activity-code="' + _escapeHtml(e.활동코드) + '"'
                  +  '    data-area="' + _escapeHtml(e.생기부영역) + '"'
+                 +  '    data-prefix="' + _escapeHtml(prefix) + '"'
                  +  '    oninput="Record.onViewModalInput(this, ' + idx + ')"'
                  +  '    class="w-full p-3 text-sm text-gray-700 leading-relaxed resize-vertical focus:outline-none focus:ring-2 focus:ring-purple-400 min-h-[80px]"'
                  +  '    style="border:none;"'
@@ -1032,13 +1049,15 @@
         var area  = _viewArea;
         var limit = _BYTE_LIMIT[area] || 1500;
 
-        // 모든 textarea 값을 합산
+        // 각 항목의 (prefix + 생기부내용)을 공백으로 이어붙여 계산
+        // (compileToDone의 parts.join(' ') 와 동일한 방식)
         var textareas = document.getElementById('view-modal-body').querySelectorAll('textarea');
-        var combined  = '';
-        textareas.forEach(function(ta) { combined += ta.value; });
-
-        // compileToDone이 공백 하나로 이어붙이므로 동일하게 계산
-        // (정확히는 parts.join(' ') 이지만 단순 합산으로 근사)
+        var parts = [];
+        textareas.forEach(function(ta) {
+          var prefix = ta.getAttribute('data-prefix') || '';
+          parts.push(prefix + ta.value);
+        });
+        var combined = parts.join(' ');
         var bytes = _calcBytes(combined);
 
         var byteEl = document.getElementById('view-byte-info');
@@ -1049,9 +1068,10 @@
 
       // textarea 입력 시 실시간 글자수 갱신 (public - oninput에서 호출)
       function _onViewModalInput(ta, idx) {
-        // 활동별 글자수 갱신
+        // 활동별 글자수 갱신 (활동명+날짜 prefix + 생기부내용)
         if (ta && idx !== undefined) {
-          var itemBytes = _calcBytes(ta.value);
+          var prefix    = ta.getAttribute('data-prefix') || '';
+          var itemBytes = _calcBytes(prefix + ta.value);
           var itemEl = document.getElementById('view-item-bytes-' + idx);
           if (itemEl) itemEl.textContent = '(입력한 글자수: ' + itemBytes + ' byte)';
         }
