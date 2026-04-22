@@ -38,8 +38,7 @@
 var NaviComponent = (function () {
   'use strict';
 
-  /* ── 기본 GitHub URL (각 페이지에서 덮어쓸 수 있음) ── */
-  var GITHUB_BASE = (typeof Config !== 'undefined') ? Config.GITHUB : 'https://기본주소';
+  /* ── 기본 GitHub URL : init() 호출 시점에 Config에서 지연 평가 ── */
 
   /* ── 네비게이션 메뉴 정의 ── */
   var NAV_ITEMS = [
@@ -162,12 +161,15 @@ var NaviComponent = (function () {
      공개 API: init
      ════════════════════════════════════════════════════════════════ */
   function init(options) {
-    options   = options || {};
+    options = options || {};
+    var defaultGithub = (typeof Config !== 'undefined' && Config.GITHUB)
+      ? Config.GITHUB
+      : 'https://blueskyfre.github.io/chphed.github.io';
     _cfg = {
       activePage : options.activePage  || '',
       userName   : options.userName    || '',
       studentId  : options.studentId   || '',
-      githubUrl  : options.githubUrl   || DEFAULT_GITHUB_URL,
+      githubUrl  : options.githubUrl   || defaultGithub,
       onSave     : options.onSave      || null,
       onLogout   : options.onLogout    || null
     };
