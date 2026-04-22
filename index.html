@@ -19,7 +19,7 @@
       100% { background-position: 200% 0; }
     }
     .skeleton-box {
-      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background: linear-gradient(90deg, #dbeafe 25%, #eff6ff 50%, #dbeafe 75%);
       background-size: 200% 100%;
       animation: skeleton-shimmer 1.5s ease-in-out infinite;
       border-radius: 0.5rem;
@@ -46,22 +46,61 @@
        ============================================================ */
     *, *::before, *::after { box-sizing: border-box; }
 
+    /* 배경 래퍼 */
     body {
       font-family: 'Noto Sans KR', sans-serif;
-      background-color: #f5f5f7;
-      background-image:
-        radial-gradient(circle at 20% 20%, rgba(99,102,241,0.06) 0%, transparent 50%),
-        radial-gradient(circle at 80% 80%, rgba(139,92,246,0.05) 0%, transparent 50%);
       min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* 배경 이미지 레이어 */
+    #bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background-color: #eef4fb;
+      background-image: none; /* JS로 설정 */
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: cover;
+    }
+    /* 배경 위 은은한 오버레이 */
+    #bg-layer::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        rgba(219,234,254,0.55) 0%,
+        rgba(239,246,255,0.40) 50%,
+        rgba(207,226,255,0.50) 100%
+      );
+    }
+
+    /* 콘텐츠 레이어 (배경 위) */
+    #content-layer {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
 
     /* 카드 */
     .card {
-      background: #ffffff;
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
       border-radius: 20px;
+      border: 1px solid rgba(186,220,255,0.55);
       box-shadow:
-        0 1px 3px rgba(0,0,0,0.06),
-        0 8px 32px rgba(0,0,0,0.08);
+        0 2px 8px rgba(59,130,246,0.07),
+        0 12px 40px rgba(59,130,246,0.10);
       padding: 2.5rem 2rem;
     }
     @media (min-width: 640px) {
@@ -72,7 +111,7 @@
     .page-title {
       font-size: 1.35rem;
       font-weight: 600;
-      color: #111827;
+      color: #1e3a5f;
       letter-spacing: -0.02em;
     }
     @media (min-width: 640px) {
@@ -83,7 +122,7 @@
     .divider {
       width: 2rem;
       height: 2px;
-      background: #6366f1;
+      background: linear-gradient(90deg, #3b82f6, #93c5fd);
       border-radius: 2px;
       margin: 0.6rem auto 0;
     }
@@ -93,7 +132,7 @@
       display: block;
       font-size: 0.75rem;
       font-weight: 500;
-      color: #6b7280;
+      color: #4b7ab8;
       margin-bottom: 0.4rem;
       letter-spacing: 0.01em;
     }
@@ -102,27 +141,27 @@
     .field-input {
       width: 100%;
       padding: 0.75rem 1rem;
-      border: 1.5px solid #e5e7eb;
+      border: 1.5px solid #bfdbfe;
       border-radius: 10px;
       font-size: 0.9rem;
       font-family: 'Noto Sans KR', sans-serif;
-      color: #111827;
-      background: #fafafa;
+      color: #1e3a5f;
+      background: rgba(239,246,255,0.7);
       outline: none;
       transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
     }
-    .field-input::placeholder { color: #c4c9d4; }
+    .field-input::placeholder { color: #a8c4e0; }
     .field-input:focus {
-      border-color: #6366f1;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+      border-color: #3b82f6;
+      background: rgba(255,255,255,0.95);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.12);
     }
 
     /* 버튼 - 기본(주요 액션) */
     .btn-primary {
       width: 100%;
       padding: 0.8rem 1rem;
-      background: #111827;
+      background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
       color: #fff;
       font-size: 0.9rem;
       font-weight: 500;
@@ -130,10 +169,14 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      transition: background 0.18s, transform 0.12s;
+      transition: filter 0.18s, transform 0.12s, box-shadow 0.18s;
       letter-spacing: 0.01em;
+      box-shadow: 0 2px 8px rgba(37,99,235,0.18);
     }
-    .btn-primary:hover { background: #1f2937; }
+    .btn-primary:hover {
+      filter: brightness(1.08);
+      box-shadow: 0 4px 14px rgba(37,99,235,0.28);
+    }
     .btn-primary:active { transform: scale(0.98); }
 
     /* 버튼 - 보조(텍스트형) */
@@ -141,19 +184,19 @@
       width: 100%;
       padding: 0.7rem 1rem;
       background: transparent;
-      color: #6b7280;
+      color: #3b82f6;
       font-size: 0.85rem;
       font-weight: 400;
       font-family: 'Noto Sans KR', sans-serif;
-      border: 1.5px solid #e5e7eb;
+      border: 1.5px solid #bfdbfe;
       border-radius: 10px;
       cursor: pointer;
       transition: border-color 0.18s, color 0.18s, background 0.18s;
     }
     .btn-ghost:hover {
-      border-color: #d1d5db;
-      color: #374151;
-      background: #f9fafb;
+      border-color: #93c5fd;
+      color: #1d4ed8;
+      background: rgba(219,234,254,0.45);
     }
 
     /* 버튼 그룹 - 두 개 나란히 */
@@ -166,13 +209,13 @@
     /* 작은 힌트 텍스트 */
     .field-hint {
       font-size: 0.72rem;
-      color: #9ca3af;
+      color: #7db0d8;
       margin-top: 0.3rem;
     }
 
     /* 스켈레톤 내 버튼 shimmer */
     .skeleton-btn {
-      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background: linear-gradient(90deg, #dbeafe 25%, #eff6ff 50%, #dbeafe 75%);
       background-size: 200% 100%;
       animation: skeleton-shimmer 1.5s ease-in-out infinite;
       border-radius: 10px;
@@ -182,21 +225,21 @@
     .dot-bounce {
       width: 6px;
       height: 6px;
-      background: #6366f1;
+      background: #3b82f6;
       border-radius: 50%;
     }
 
     /* 공지 항목 */
     .notice-item {
-      background: #f8faff;
-      border: 1px solid #e0e7ff;
+      background: #f0f7ff;
+      border: 1px solid #bfdbfe;
       border-radius: 10px;
       padding: 1rem;
     }
     .notice-tag {
       font-size: 0.75rem;
       font-weight: 600;
-      color: #6366f1;
+      color: #2563eb;
       margin-bottom: 0.4rem;
     }
 
@@ -208,48 +251,63 @@
     .status-title {
       font-size: 1.2rem;
       font-weight: 600;
-      color: #111827;
+      color: #1e3a5f;
       margin-bottom: 0.5rem;
     }
     .status-msg {
       font-size: 0.88rem;
-      color: #9ca3af;
+      color: #7db0d8;
       line-height: 1.6;
     }
 
     /* 모달 알림창 */
     .alert-box {
-      background: #fff;
+      background: rgba(255,255,255,0.96);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-radius: 18px;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.14);
+      border: 1px solid #bfdbfe;
+      box-shadow: 0 20px 60px rgba(37,99,235,0.13);
       width: 100%;
       max-width: 22rem;
       padding: 2rem 1.75rem;
     }
 
     /* 모달 알림 버튼 (type별) */
-    .alert-btn-success { background: #111827; color: #fff; }
-    .alert-btn-success:hover { background: #1f2937; }
+    .alert-btn-success { background: linear-gradient(135deg,#2563eb,#3b82f6); color: #fff; }
+    .alert-btn-success:hover { filter: brightness(1.08); }
     .alert-btn-error   { background: #ef4444; color: #fff; }
     .alert-btn-error:hover   { background: #dc2626; }
-    .alert-btn-info    { background: #6366f1; color: #fff; }
-    .alert-btn-info:hover    { background: #4f46e5; }
+    .alert-btn-info    { background: linear-gradient(135deg,#2563eb,#60a5fa); color: #fff; }
+    .alert-btn-info:hover    { filter: brightness(1.08); }
     .alert-btn-warning { background: #f59e0b; color: #fff; }
     .alert-btn-warning:hover { background: #d97706; }
 
     /* 로딩 오버레이 카드 */
     .loading-card {
-      background: #fff;
+      background: rgba(255,255,255,0.94);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
       border-radius: 14px;
+      border: 1px solid #bfdbfe;
       padding: 1.5rem 2rem;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 32px rgba(37,99,235,0.12);
     }
 
     /* 필드 스페이싱 */
     .fields { display: flex; flex-direction: column; gap: 1.1rem; }
+
+    /* 서브 타이틀 색상 */
+    #sub-title { color: #5a8fc4; }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body>
+
+  <!-- 배경 이미지 레이어 -->
+  <div id="bg-layer"></div>
+
+  <!-- 콘텐츠 래퍼 -->
+  <div id="content-layer">
 
   <!-- ============================================================ -->
   <!-- ⚙️ 설정 변수 -->
@@ -506,6 +564,44 @@
       <p id="loading-text" class="text-sm text-gray-500">처리 중...</p>
     </div>
   </div>
+
+  </div><!-- /#content-layer -->
+
+  <!-- 배경 이미지 설정 (config.js의 BACKGROUND_IMG 사용) -->
+  <script>
+    (function() {
+      var bgLayer = document.getElementById('bg-layer');
+      if (typeof Config !== 'undefined' && Config.BACKGROUND_IMG) {
+        // 이미지를 미리 로드한 후 부드럽게 표시
+        var img = new Image();
+        img.onload = function() {
+          bgLayer.style.backgroundImage = 'url(' + Config.BACKGROUND_IMG + ')';
+          bgLayer.style.opacity = '0';
+          bgLayer.style.transition = 'opacity 0.8s ease';
+          requestAnimationFrame(function() {
+            bgLayer.style.opacity = '1';
+          });
+        };
+        img.onerror = function() {
+          // 이미지 로드 실패 시 기본 그라디언트 배경 유지
+        };
+        img.src = Config.BACKGROUND_IMG;
+      }
+
+      // 반응형: 모바일에서는 배경을 center top으로 조정
+      function adjustBg() {
+        if (window.innerWidth < 640) {
+          bgLayer.style.backgroundPosition = 'center top';
+          bgLayer.style.backgroundSize = 'cover';
+        } else {
+          bgLayer.style.backgroundPosition = 'center center';
+          bgLayer.style.backgroundSize = 'cover';
+        }
+      }
+      adjustBg();
+      window.addEventListener('resize', adjustBg);
+    })();
+  </script>
 
   <!-- ============================================================ -->
   <!-- 📜 JavaScript - IIFE 네임스페이스: Index -->
