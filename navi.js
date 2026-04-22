@@ -39,7 +39,7 @@ var NaviComponent = (function () {
   'use strict';
 
   /* ── 기본 GitHub URL (각 페이지에서 덮어쓸 수 있음) ── */
-  var DEFAULT_GITHUB_URL = 'https://blueskyfre.github.io/chphed.github.io';
+  var GITHUB_BASE = (typeof Config !== 'undefined') ? Config.GITHUB : 'https://기본주소';
 
   /* ── 네비게이션 메뉴 정의 ── */
   var NAV_ITEMS = [
