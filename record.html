@@ -412,7 +412,8 @@
 
       function _formatDisplay(dateStr) {
         if (!dateStr) return '-';
-        var parts = dateStr.split('-');
+        var normalized = dateStr.replace(/\./g, '-').replace(/-$/, '');
+        var parts = normalized.split('-');
         if (parts.length < 3) return dateStr;
         var d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
         var dayNames = ['일','월','화','수','목','금','토'];
@@ -428,7 +429,7 @@
       /** 날짜 문자열 → 정렬용 숫자, 날짜 없으면 Infinity */
       function _dateToSortKey(dateStr) {
         if (!dateStr || dateStr.trim() === '' || dateStr === '-') return Infinity;
-        return parseInt(dateStr.replace(/-/g, ''), 10) || Infinity;
+        return parseInt(dateStr.replace(/[.\-]/g, ''), 10) || Infinity;
       }
 
       function _showLoading(msg) {
@@ -598,13 +599,15 @@
         if (extraEntry) {
           document.getElementById('extra-activity-name').value = extraEntry.활동명 || '';
           document.getElementById('extra-content-input').value = extraEntry.생기부내용 || '';
-          // 시작일 파싱
-          var sd = (extraEntry.활동시작날짜 || '').split('-');
+          // 시작일 파싱 (YYYY.MM.DD. 또는 YYYY-MM-DD 형식 모두 처리)
+          var sdRaw = (extraEntry.활동시작날짜 || '').replace(/\./g, '-').replace(/-$/, '');
+          var sd = sdRaw.split('-');
           document.getElementById('extra-start-year').value  = sd[0] || '';
           document.getElementById('extra-start-month').value = sd[1] ? String(parseInt(sd[1],10)) : '';
           document.getElementById('extra-start-day').value   = sd[2] ? String(parseInt(sd[2],10)) : '';
-          // 종료일 파싱
-          var ed = (extraEntry.활동종료날짜 || '').split('-');
+          // 종료일 파싱 (YYYY.MM.DD. 또는 YYYY-MM-DD 형식 모두 처리)
+          var edRaw = (extraEntry.활동종료날짜 || '').replace(/\./g, '-').replace(/-$/, '');
+          var ed = edRaw.split('-');
           document.getElementById('extra-end-year').value  = ed[0] || '';
           document.getElementById('extra-end-month').value = ed[1] ? String(parseInt(ed[1],10)) : '';
           document.getElementById('extra-end-day').value   = ed[2] ? String(parseInt(ed[2],10)) : '';
@@ -942,7 +945,7 @@
           var m = document.getElementById(prefix + '-month').value.trim();
           var d = document.getElementById(prefix + '-day').value.trim();
           if (!y || !m || !d) return '';
-          return y + '-' + String(m).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+          return y + '.' + String(m).padStart(2,'0') + '.' + String(d).padStart(2,'0') + '.';
         }
         var startDate = _buildDate('extra-start');
         var endDate   = _buildDate('extra-end');
@@ -1005,7 +1008,9 @@
             // compileToDone 과 동일한 날짜 형식(YYYY.M.D.)으로 글자수 계산용 prefix 구성
             function _toFmt(d) {
               if (!d) return '';
-              var parts = d.split('-');
+              // 이미 YYYY.MM.DD. 형식이면 그대로 반환
+              if (/^\d{4}\.\d{2}\.\d{2}\.$/.test(d)) return d;
+              var parts = d.replace(/\./g, '-').replace(/-$/, '').split('-');
               if (parts.length !== 3) return d;
               return parts[0] + '.' + parseInt(parts[1], 10) + '.' + parseInt(parts[2], 10) + '.';
             }
