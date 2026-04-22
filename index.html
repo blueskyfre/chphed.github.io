@@ -90,7 +90,12 @@
       justify-content: flex-end;
       padding: 1rem 15rem 1rem 1rem;     /* 두번째 rem 숫자를 변경하면 로그인창의 위치를 우측으로 부터 거리 조절 가능 */
     }
-
+    @media (max-width: 639px) {
+    #content-layer {
+      justify-content: center;
+      padding: 1rem;
+    }
+      
     /* 카드 */
     .card {
       background: rgba(255,255,255,0.88);
