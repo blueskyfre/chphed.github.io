@@ -882,6 +882,13 @@
       }
 
       function _closeActivityModal() {
+        if (NaviComponent.getDirty()) {
+          NaviComponent.showConfirm(function() {
+            document.getElementById('activity-modal').classList.add('hidden');
+            _modalActivity = null;
+          });
+          return;
+        }
         document.getElementById('activity-modal').classList.add('hidden');
         _modalActivity = null;
       }
@@ -1141,6 +1148,10 @@
       }
 
       function _closeViewModal() {
+        if (NaviComponent.getDirty()) {
+          NaviComponent.showConfirm(function() { document.getElementById('view-modal').classList.add('hidden'); });
+          return;
+        }
         document.getElementById('view-modal').classList.add('hidden');
       }
 
