@@ -472,7 +472,9 @@ var NaviComponent = (function () {
     showLoading : showLoading,
     hideLoading : hideLoading,
     /* 미저장 상태 관리 */
-    setDirty    : function(val) { _isDirty = !!val; }
+    setDirty    : function(val) { _isDirty = !!val; },
+    getDirty    : function() { return _isDirty; },
+    showConfirm : _showConfirm
   };
 
 })();
