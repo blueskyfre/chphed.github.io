@@ -164,7 +164,10 @@ var NaviComponent = (function () {
     options = options || {};
     var defaultGithub = (typeof Config !== 'undefined' && Config.GITHUB)
       ? Config.GITHUB
-      : 'https://blueskyfre.github.io/chphed.github.io';
+      : '';
+    if (!defaultGithub) {
+      console.error('[NaviComponent] 잘못된 주소를 참조했습니다.');
+    }
     _cfg = {
       activePage : options.activePage  || '',
       userName   : options.userName    || '',
