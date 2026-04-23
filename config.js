@@ -10,7 +10,7 @@ var Config = (function() {
     SS_ID          : '1QUUKQpDxTkJIp53UAptP3Zq6PrOSwJURYPAKV-E4Ti8',
     DEPLOY         : 'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec',
     GITHUB         : 'https://blueskyfre.github.io/chphed.github.io',
-    BACKGROUND_IMG : 'https://raw.githubusercontent.com/blueskyfre/chphed.github.io/main/back.png'
+    BACKGROUND_IMG : 'https://blueskyfre.github.io/chphed.github.io/back.png'
   };
 })();
 
