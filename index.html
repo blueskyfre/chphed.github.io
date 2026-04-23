@@ -81,20 +81,28 @@
     }
 
     /* 콘텐츠 레이어 (배경 위) */
+    /*모바일: 중앙 정렬 */
     #content-layer {
       position: relative;
       z-index: 1;
       min-height: 100vh;
       display: flex;
       align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    /* PC: 우측 정렬 */
+    @media (min-width: 640px) {
+    #content-layer {
       justify-content: flex-end;
-      padding: 1rem 10% 1rem 1rem;     /* 두번째 % 숫자를 변경하면 로그인창의 위치를 우측으로 부터 거리 조절 가능 */
+      padding: 1rem 5% 1rem 1rem;
+    }
     }
     @media (max-width: 639px) {
     #content-layer {
       justify-content: center;
       padding: 1rem;
-      }
+    }
     }
     /* 카드 */
     .card {
