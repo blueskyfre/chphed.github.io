@@ -591,6 +591,7 @@
           bgLayer.style.backgroundImage = 'url(' + Config.BACKGROUND_IMG + ')';
           bgLayer.style.opacity = '0';
           bgLayer.style.transition = 'opacity 0.8s ease';
+          adjustBg();   // ← 이미지 설정 후 즉시 호출
           requestAnimationFrame(function() {
             requestAnimationFrame(function() {
             bgLayer.style.opacity = '1';
