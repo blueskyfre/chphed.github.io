@@ -584,7 +584,9 @@
           bgLayer.style.opacity = '0';
           bgLayer.style.transition = 'opacity 0.8s ease';
           requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
             bgLayer.style.opacity = '1';
+            });
           });
         };
         img.onerror = function() {
