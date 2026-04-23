@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2026학년도 주요 일정</title>
+  <script src="config.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="navi.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif; }
+    /* ============================================================
+       ✅ 공통 재사용 스타일 - 스켈레톤 UI & 모달 알림
+       ============================================================ */
+
+    /* 스켈레톤 애니메이션 */
+    @keyframes shimmer {
+      0%   { background-position: -400px 0; }
+      100% { background-position: 400px 0; }
+    }
+    .skeleton {
+      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background-size: 800px 100%;
+      animation: shimmer 1.5s infinite linear;
+      border-radius: 0.375rem;
+    }
+    .skeleton-text {
+      height: 1rem;
+      margin-bottom: 0.5rem;
+    }
+    .skeleton-title {
+      height: 1.5rem;
+      width: 60%;
+      margin-bottom: 1rem;
+    }
+    .skeleton-row {
+      height: 2.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    /* 모달 오버레이 */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 1000;
+    }
+
+    /* 로딩 오버레이 */
+    .loading-overlay {
+      position: fixed; inset: 0;
+      background: rgba(255,255,255,0.7);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+  <!-- 공통 네비게이션 -->
+  <div id="shared-nav"></div>
+
+  <!-- ============================================================ -->
+  <!--  로딩 오버레이 -->
+  <!-- ============================================================ -->
+  <div id="loading-overlay" class="loading-overlay hidden">
+    <div class="flex space-x-2 mb-3">
+      <div class="w-3 h-3 bg-blue-500 rounded-full animate-bounce"></div>
+      <div class="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.1s;"></div>
+      <div class="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style="animation-delay: 0.3s;"></div>
+    </div>
+    <p class="text-sm text-gray-600">처리 중...</p>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--  모달 알림 -->
+  <!-- ============================================================ -->
+  <div id="modal-alert" class="modal-overlay hidden">
+    <div class="bg-white rounded-xl shadow-xl p-6 mx-4 max-w-sm w-full text-center">
+      <p id="modal-message" class="text-gray-800 text-base mb-5"></p>
+      <button onclick="Firstpage.closeModal()"
+        class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-8 rounded-lg transition text-sm">
+        확인
+      </button>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!--  메인 콘텐츠 -->
+  <!-- ============================================================ -->
+  <main class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- 환영 메시지 -->
+    <div class="mb-6">
+      <h1 class="text-xl sm:text-2xl font-bold text-gray-800">
+        📅 2026학년도 주요 일정
+      </h1>
+      <p id="welcome-text" class="text-sm text-gray-500 mt-1"></p>
+    </div>
+
+    <!-- ============================================================ -->
+    <!--  📌 가장 가까운 마감 일정 (글상자) -->
+    <!-- ============================================================ -->
+    <section id="upcoming-section" class="mb-8">
+      <h2 class="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        🔔 <span>다가오는 일정</span>
+      </h2>
+
+      <!-- 스켈레톤 UI -->
+      <div id="upcoming-skeleton" class="bg-white rounded-xl shadow-md border border-orange-200 p-5">
+        <div class="skeleton skeleton-title"></div>
+        <div class="skeleton skeleton-text w-full"></div>
+        <div class="skeleton skeleton-text w-4/5"></div>
+        <div class="skeleton skeleton-text w-3/5 mt-3"></div>
+        <div class="skeleton skeleton-text w-full"></div>
+      </div>
+
+      <!-- 실제 데이터 -->
+      <div id="upcoming-box" class="hidden">
+        <!-- JS에서 동적으로 생성 -->
+      </div>
+
+      <!-- 데이터 없음 -->
+      <div id="upcoming-empty" class="hidden bg-white rounded-xl shadow-md border border-gray-200 p-5 text-center text-gray-400">
+        현재 다가오는 일정이 없습니다.
+      </div>
+    </section>
+
+    <!-- ============================================================ -->
+    <!--  📋 전체 일정 목록 -->
+    <!-- ============================================================ -->
+    <section id="all-schedule-section">
+      <h2 class="text-lg font-semibold text-gray-700 mb-3 flex items-center gap-2">
+        📋 <span>전체 일정</span>
+      </h2>
+
+      <!-- 스켈레톤 UI -->
+      <div id="table-skeleton" class="bg-white rounded-xl shadow-md p-5 space-y-2">
+        <div class="skeleton skeleton-row w-full"></div>
+        <div class="skeleton skeleton-row w-full"></div>
+        <div class="skeleton skeleton-row w-full"></div>
+        <div class="skeleton skeleton-row w-full"></div>
+        <div class="skeleton skeleton-row w-full"></div>
+        <div class="skeleton skeleton-row w-full"></div>
+      </div>
+
+      <!-- 실제 테이블 (PC) -->
+      <div id="schedule-table-wrap" class="hidden">
+        <div class="bg-white rounded-xl shadow-md overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-sm">
+              <thead>
+                <tr class="bg-gray-100 text-gray-600">
+                  <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">일정</th>
+                  <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">시작날짜</th>
+                  <th class="px-4 py-3 text-center font-semibold whitespace-nowrap">마감날짜</th>
+                  <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">내용</th>
+                  <th class="px-4 py-3 text-left font-semibold whitespace-nowrap">비고</th>
+                </tr>
+              </thead>
+              <tbody id="schedule-tbody">
+                <!-- JS에서 동적으로 생성 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- 실제 카드 (모바일) -->
+      <div id="schedule-cards-wrap" class="hidden space-y-3">
+        <!-- JS에서 동적으로 생성 -->
+      </div>
+
+      <!-- 데이터 없음 -->
+      <div id="table-empty" class="hidden bg-white rounded-xl shadow-md p-5 text-center text-gray-400">
+        등록된 일정이 없습니다.
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============================================================ -->
+  <!--  📜 JavaScript - IIFE 네임스페이스: Firstpage -->
+  <!-- ============================================================ -->
+  <script>
+    // ============================================================
+    // 🔒 IIFE 네임스페이스 - Firstpage
+    //    IIFE 밖에는 어떤 변수나 함수도 선언하지 않는다
+    // ============================================================
+    var Firstpage = (function() {
+
+      // ============================================================
+      // ⚙️ 내부 설정 변수 (private)
+      // ============================================================
+      var _API_BASE        = Config.DEPLOY;
+      var _GITHUB_PAGE_URL = Config.GITHUB;
+
+      // ============================================================
+      // 🔧 URL 파라미터에서 사용자 정보 가져오기 (private)
+      // ============================================================
+      var _urlParams = new URLSearchParams(window.location.search);
+      var _studentId = _urlParams.get('studentId') || '';
+      var _userName  = _urlParams.get('name') || '';
+
+      // ============================================================
+      // 📡 API 호출 공통 함수 (private)
+      // ============================================================
+      async function _callAPI(action, params) {
+        params = params || {};
+        var url = new URL(_API_BASE);
+        url.searchParams.set('action', action);
+        for (var key in params) {
+          if (params.hasOwnProperty(key)) {
+            url.searchParams.set(key, params[key]);
+          }
+        }
+        var resp = await fetch(url.toString());
+        if (!resp.ok) throw new Error('서버 응답 오류: ' + resp.status);
+        return await resp.json();
+      }
+
+      // ============================================================
+      // 🚀 일정 데이터 로드 (private → 내부 호출)
+      // ============================================================
+      async function _loadSchedules() {
+        try {
+          var result = await _callAPI('getSchedule');
+
+          if (!result.success) {
+            _showModal(result.message || '일정 데이터를 불러올 수 없습니다.');
+            _hideAllSkeletons();
+            return;
+          }
+
+          var schedules = result.data || [];
+          _renderUpcoming(schedules);
+          _renderAllSchedules(schedules);
+
+        } catch (e) {
+          console.error('일정 로드 오류:', e);
+          _showModal('일정 데이터를 불러오는 중 오류가 발생했습니다.');
+          _hideAllSkeletons();
+        }
+      }
+
+      // ============================================================
+      // 📌 다가오는 일정 렌더링 (private)
+      // ============================================================
+      function _renderUpcoming(schedules) {
+        var skeletonEl = document.getElementById('upcoming-skeleton');
+        var boxEl      = document.getElementById('upcoming-box');
+        var emptyEl    = document.getElementById('upcoming-empty');
+
+        // 오늘 날짜 (시간 제거, 날짜만 비교)
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var todayStr = _formatDateStr(today);
+
+        // 1) 마감날짜가 오늘 이후인 일정만 필터링
+        var futureSchedules = schedules.filter(function(s) {
+          if (!s.endDate) return false;
+          return s.endDate >= todayStr;
+        });
+
+        if (futureSchedules.length === 0) {
+          skeletonEl.classList.add('hidden');
+          emptyEl.classList.remove('hidden');
+          return;
+        }
+
+        // 2) 마감날짜가 가장 빠른(최근) 날짜 찾기
+        futureSchedules.sort(function(a, b) { return a.endDate.localeCompare(b.endDate); });
+        var nearestEndDate = futureSchedules[0].endDate;
+
+        // 3) 동일한 마감날짜를 가진 일정 모두 추출
+        var nearestItems = futureSchedules.filter(function(s) { return s.endDate === nearestEndDate; });
+
+        // 4) 글상자 렌더링 (가변 크기)
+        var html = '<div class="bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl shadow-md border border-orange-200 divide-y divide-orange-100">';
+
+        nearestItems.forEach(function(item, idx) {
+          // D-day 계산 (시작날짜 기준 + 진행 중 표시)
+          var startDateObj = _parseDate(item.startDate);
+          var endDateObj = _parseDate(item.endDate);
+          var diffTimeStart = startDateObj.getTime() - today.getTime();
+          var diffDaysStart = Math.ceil(diffTimeStart / (1000 * 60 * 60 * 24));
+          var isOngoing = (today >= startDateObj && today <= endDateObj);
+          var dDayText = '';
+          if (isOngoing) dDayText = '일정 진행 중';
+          else if (diffDaysStart === 0) dDayText = 'D-Day';
+          else if (diffDaysStart > 0) dDayText = 'D-' + diffDaysStart;
+
+          var dDayColor = isOngoing ? 'bg-green-500' : diffDaysStart <= 3 ? 'bg-red-500' : diffDaysStart <= 7 ? 'bg-orange-500' : 'bg-blue-500';
+          html += '<div class="p-4 sm:p-5">';
+          html += '  <div class="flex items-start justify-between gap-3">';
+          html += '    <div class="flex-1 min-w-0">';
+          html += '      <div class="flex items-center gap-2 mb-1 flex-wrap">';
+          html += '        <span class="' + dDayColor + ' text-white text-xs font-bold px-2 py-0.5 rounded-full">' + dDayText + '</span>';
+          html += '        <h3 class="font-bold text-gray-800 text-sm sm:text-base truncate">' + _escapeHtml(item.schedule) + '</h3>';
+          html += '      </div>';
+          html += '      <p class="text-xs sm:text-sm text-gray-500 mb-1">';
+          html += '        📅 ' + _formatDisplay(item.startDate) + ' ~ ' + _formatDisplay(item.endDate);
+          html += '      </p>';
+          if (item.content) {
+            html += '    <p class="text-sm text-gray-700 mt-1">📝 ' + _escapeHtml(item.content) + '</p>';
+          }
+          if (item.remark) {
+            html += '    <p class="text-xs text-gray-400 mt-1">💡 ' + _escapeHtml(item.remark) + '</p>';
+          }
+          html += '    </div>';
+          html += '  </div>';
+          html += '</div>';
+        });
+
+        html += '</div>';
+
+        boxEl.innerHTML = html;
+        skeletonEl.classList.add('hidden');
+        boxEl.classList.remove('hidden');
+      }
+
+      // ============================================================
+      // 📋 전체 일정 렌더링 (private)
+      // ============================================================
+      function _renderAllSchedules(schedules) {
+        var skeletonEl   = document.getElementById('table-skeleton');
+        var tableWrapEl  = document.getElementById('schedule-table-wrap');
+        var cardsWrapEl  = document.getElementById('schedule-cards-wrap');
+        var emptyEl      = document.getElementById('table-empty');
+
+        if (schedules.length === 0) {
+          skeletonEl.classList.add('hidden');
+          emptyEl.classList.remove('hidden');
+          return;
+        }
+
+        // 오늘 날짜
+        var today = new Date();
+        today.setHours(0, 0, 0, 0);
+        var todayStr = _formatDateStr(today);
+
+        // ---- PC 테이블 ----
+        var tbody = document.getElementById('schedule-tbody');
+        var tbodyHtml = '';
+        schedules.forEach(function(item) {
+          var isPast = item.endDate && item.endDate < todayStr;
+          var rowClass = isPast ? 'bg-gray-50 text-gray-400' : 'hover:bg-blue-50';
+          var textClass = isPast ? 'line-through' : '';
+
+          tbodyHtml += '<tr class="border-t border-gray-100 ' + rowClass + '">';
+          tbodyHtml += '  <td class="px-4 py-3 font-medium ' + textClass + ' whitespace-nowrap">' + _escapeHtml(item.schedule) + '</td>';
+          tbodyHtml += '  <td class="px-4 py-3 text-center whitespace-nowrap">' + _formatDisplay(item.startDate) + '</td>';
+          tbodyHtml += '  <td class="px-4 py-3 text-center whitespace-nowrap">' + _formatDisplay(item.endDate) + '</td>';
+          tbodyHtml += '  <td class="px-4 py-3 ' + textClass + '">' + _escapeHtml(item.content) + '</td>';
+          tbodyHtml += '  <td class="px-4 py-3 text-gray-500 ' + textClass + '">' + _escapeHtml(item.remark) + '</td>';
+          tbodyHtml += '</tr>';
+        });
+        tbody.innerHTML = tbodyHtml;
+
+        // ---- 모바일 카드 ----
+        var cardsHtml = '';
+        schedules.forEach(function(item) {
+          var isPast = item.endDate && item.endDate < todayStr;
+          var cardBorder = isPast ? 'border-gray-200 opacity-60' : 'border-blue-200';
+          var textClass = isPast ? 'line-through text-gray-400' : 'text-gray-800';
+
+          cardsHtml += '<div class="bg-white rounded-lg shadow-sm border ' + cardBorder + ' p-4">';
+          cardsHtml += '  <h3 class="font-bold text-sm ' + textClass + ' mb-2">' + _escapeHtml(item.schedule) + '</h3>';
+          cardsHtml += '  <div class="grid grid-cols-2 gap-1 text-xs text-gray-500 mb-2">';
+          cardsHtml += '    <span>📅 시작: ' + _formatDisplay(item.startDate) + '</span>';
+          cardsHtml += '    <span>📅 마감: ' + _formatDisplay(item.endDate) + '</span>';
+          cardsHtml += '  </div>';
+          if (item.content) {
+            cardsHtml += '  <p class="text-xs ' + (isPast ? 'text-gray-400 line-through' : 'text-gray-600') + '">📝 ' + _escapeHtml(item.content) + '</p>';
+          }
+          if (item.remark) {
+            cardsHtml += '  <p class="text-xs text-gray-400 mt-1">💡 ' + _escapeHtml(item.remark) + '</p>';
+          }
+          cardsHtml += '</div>';
+        });
+        cardsWrapEl.innerHTML = cardsHtml;
+
+        // 표시 전환 (PC: 테이블 / 모바일: 카드)
+        skeletonEl.classList.add('hidden');
+        tableWrapEl.classList.remove('hidden');
+        tableWrapEl.classList.add('hidden', 'sm:block');
+        cardsWrapEl.classList.remove('hidden');
+        cardsWrapEl.classList.add('block', 'sm:hidden');
+      }
+
+      // ============================================================
+      // 🔧 유틸리티 함수 (private)
+      // ============================================================
+
+      function _formatDateStr(dateObj) {
+        var y = dateObj.getFullYear();
+        var m = String(dateObj.getMonth() + 1).padStart(2, '0');
+        var d = String(dateObj.getDate()).padStart(2, '0');
+        return y + '-' + m + '-' + d;
+      }
+
+      function _parseDate(str) {
+        var parts = str.split('-');
+        return new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
+      }
+
+      function _formatDisplay(dateStr) {
+        if (!dateStr) return '-';
+        // "2026-04-09" → "4/9(목)" 형태로 표시
+        var d = _parseDate(dateStr);
+        var dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+        return (d.getMonth() + 1) + '/' + d.getDate() + '(' + dayNames[d.getDay()] + ')';
+      }
+
+      function _escapeHtml(str) {
+        if (!str) return '';
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+                  .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+      }
+
+      function _hideAllSkeletons() {
+        document.getElementById('upcoming-skeleton').classList.add('hidden');
+        document.getElementById('table-skeleton').classList.add('hidden');
+        document.getElementById('upcoming-empty').classList.remove('hidden');
+        document.getElementById('table-empty').classList.remove('hidden');
+      }
+
+      // ============================================================
+      // 🧭 네비게이션 (public)
+      // ============================================================
+      function _navigateTo(page) {
+        var params = new URLSearchParams({ studentId: _studentId, name: _userName });
+        switch (page) {
+           case 'suneung':
+              window.location.href =
+              _GITHUB_PAGE_URL + 'susel.html?' + params.toString();
+            break;
+
+            
+          case 'university':
+            _showModal('응시희망대학 페이지는 준비 중입니다.');
+            break;
+          case 'record':
+            window.location.href =
+            _GITHUB_PAGE_URL + '/record.html?' + params.toString();
+          break;
+        }
+      }
+
+      function _doLogout() {
+        window.location.href = _GITHUB_PAGE_URL + '/index.html';
+      }
+
+      // ============================================================
+      // 💬 모달 알림 (public)
+      // ============================================================
+      function _showModal(msg) {
+        document.getElementById('modal-message').textContent = msg;
+        document.getElementById('modal-alert').classList.remove('hidden');
+      }
+
+      function _closeModal() {
+        document.getElementById('modal-alert').classList.add('hidden');
+      }
+
+      // ============================================================
+      // 🏁 DOMContentLoaded 이벤트 등록 (내부 자동 실행)
+      // ============================================================
+      document.addEventListener('DOMContentLoaded', function() {
+        // 공통 네비게이션 초기화
+        NaviComponent.init({
+          activePage: 'schedule',
+          userName: _userName,
+          studentId: _studentId,
+          onLogout: function() { Firstpage.doLogout(); }
+        });
+
+        // 환영 메시지 세팅
+        document.getElementById('welcome-text').textContent =
+          _userName ? _userName + ' 학생, 환영합니다!' : '';
+        // 일정 데이터 로드
+        _loadSchedules();
+      });
+
+      // ============================================================
+      // 🔓 공개 API (return)
+      // ============================================================
+      return {
+        // 네비게이션
+        navigateTo:  _navigateTo,
+        doLogout:    _doLogout,
+
+        // 모달
+        showModal:   _showModal,
+        closeModal:  _closeModal
+      };
+
+    })();
+  </script>
+
+</body>
+</html>
