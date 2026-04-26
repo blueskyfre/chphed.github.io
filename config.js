@@ -9,7 +9,7 @@ var Config = (function() {
   return {
     SS_ID          : '1QUUKQpDxTkJIp53UAptP3Zq6PrOSwJURYPAKV-E4Ti8',
     DEPLOY         : 'https://script.google.com/macros/s/AKfycbzJQQTEhSSGAilKc2KBk1n56jPOJE1H4Qbm72cN0vF8WoOCibp59WgPSHXo26Y_8NeZnw/exec',
-    GITHUB         : 'https://blueskyfre.github.io/consult3gra/',
+    GITHUB         : 'https://blueskyfre.github.io/chphed.github.io',
     BACKGROUND_IMG : 'https://blueskyfre.github.io/consult3gra/back.png'
   };
 })();
