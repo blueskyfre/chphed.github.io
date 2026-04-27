@@ -425,25 +425,25 @@
       <div class="fields">
         <div>
           <label class="field-label">학번</label>
-          <input type="text" id="reg-studentId" placeholder="예시) 3901" class="field-input" />
+          <input type="text" id="reg-studentId" placeholder="예시) 3901" class="field-input" autocomplete="off" />
         </div>
         <div>
           <label class="field-label">이름</label>
-          <input type="text" id="reg-name" placeholder="홍길동 (반드시 한글로 입력하세요)" class="field-input" />
+          <input type="text" id="reg-name" placeholder="홍길동 (반드시 한글로 입력하세요)" class="field-input" autocomplete="off" />
         </div>
         <div>
           <label class="field-label">아이디 (이메일)</label>
-          <input type="email" id="reg-email" placeholder="example@email.com" class="field-input" />
+          <input type="email" id="reg-email" placeholder="example@email.com" class="field-input" autocomplete="off" />
           <p class="field-hint">※ 비밀번호 분실 시 이 이메일로 비밀번호를 발송합니다.</p>
         </div>
         <div>
           <label class="field-label">비밀번호</label>
-          <input type="password" id="reg-password" placeholder="비밀번호를 입력하세요" class="field-input" />
+          <input type="password" id="reg-password" placeholder="비밀번호를 입력하세요" class="field-input" autocomplete="new-password" />
         </div>
         <!-- ✅ [추가] 비밀번호 확인 입력 -->
         <div>
           <label class="field-label">비밀번호 확인</label>
-          <input type="password" id="reg-password-confirm" placeholder="비밀번호를 다시 입력하세요" class="field-input" />
+          <input type="password" id="reg-password-confirm" placeholder="비밀번호를 다시 입력하세요" class="field-input" autocomplete="new-password" />
           <p id="reg-pw-match-msg" class="text-xs mt-1 hidden"></p>
         </div>
         <button onclick="Index.doRegister()" class="btn-primary">가입하기</button>
@@ -880,6 +880,14 @@
           });
 
           if (result.success) {
+            // ✅ 입력 필드 초기화
+            document.getElementById('reg-studentId').value = '';
+            document.getElementById('reg-name').value = '';
+            document.getElementById('reg-email').value = '';
+            document.getElementById('reg-password').value = '';
+            document.getElementById('reg-password-confirm').value = '';
+            document.getElementById('reg-pw-match-msg').classList.add('hidden');
+
             _showAlert(result.message, 'success', function() {
               _showScreen('screen-login');
             });
