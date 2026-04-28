@@ -153,6 +153,110 @@
   </div>
 
   <!-- ============================================================ -->
+  <!--  개인 추가 활동 모달 -->
+  <!-- ============================================================ -->
+  <div id="personal-activity-modal" class="modal-overlay hidden">
+    <div class="bg-white rounded-xl shadow-xl p-5 mx-4 max-w-lg w-full max-h-screen overflow-y-auto">
+      <h3 class="text-base font-bold text-gray-800 mb-1">✏️ 개인 추가 활동</h3>
+      <p id="personal-modal-area-label" class="text-xs text-gray-400 mb-4"></p>
+
+      <!-- 참여 여부 -->
+      <div class="mb-4">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">참여 여부</label>
+        <div class="flex gap-3">
+          <button id="personal-btn-yes"
+            onclick="Record.personalSetParticipated(true)"
+            class="flex-1 py-2 rounded-lg border-2 border-gray-200 text-sm font-medium transition">참여</button>
+          <button id="personal-btn-no"
+            onclick="Record.personalSetParticipated(false)"
+            class="flex-1 py-2 rounded-lg border-2 border-gray-200 text-sm font-medium transition">불참</button>
+        </div>
+      </div>
+
+      <!-- 불참 경고 -->
+      <div id="personal-section-no-warning" class="hidden mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+        <p class="text-sm text-red-600 font-medium">⚠️ 불참(삭제)으로 저장하면 개인 추가 활동 내용이 삭제됩니다.</p>
+        <p class="text-xs text-red-400 mt-1">저장을 클릭하면 기존 내용이 삭제됩니다.</p>
+      </div>
+
+      <!-- 활동명 -->
+      <div id="personal-section-name" class="mb-4 hidden">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">활동명</label>
+        <input id="personal-activity-name" type="text" placeholder="활동명을 입력하세요"
+          class="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+          oninput="NaviComponent.setDirty(true)">
+      </div>
+
+      <!-- 활동 수행 기간 -->
+      <div id="personal-section-dates" class="mb-4 hidden">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">활동 수행 기간</label>
+        <div class="flex flex-wrap gap-4">
+          <div>
+            <label class="block text-xs text-gray-500 font-semibold mb-1">활동 시작일</label>
+            <div class="flex items-center gap-1">
+              <input id="personal-start-year"  type="number" placeholder="년" min="2000" max="2099" value="2026"
+                class="w-16 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+                oninput="NaviComponent.setDirty(true)">
+              <span class="text-xs text-gray-400">년</span>
+              <input id="personal-start-month" type="number" placeholder="월" min="1" max="12"
+                class="w-12 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+                oninput="NaviComponent.setDirty(true)">
+              <span class="text-xs text-gray-400">월</span>
+              <input id="personal-start-day"   type="number" placeholder="일" min="1" max="31"
+                class="w-12 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+                oninput="NaviComponent.setDirty(true)">
+              <span class="text-xs text-gray-400">일</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs text-gray-500 font-semibold mb-1">활동 종료일</label>
+            <div class="flex items-center gap-1">
+              <input id="personal-end-year"  type="number" placeholder="년" min="2000" max="2099" value="2026"
+                class="w-16 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+                oninput="NaviComponent.setDirty(true)">
+              <span class="text-xs text-gray-400">년</span>
+              <input id="personal-end-month" type="number" placeholder="월" min="1" max="12"
+                class="w-12 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+                oninput="NaviComponent.setDirty(true)">
+              <span class="text-xs text-gray-400">월</span>
+              <input id="personal-end-day"   type="number" placeholder="일" min="1" max="31"
+                class="w-12 border border-gray-300 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-purple-400"
+                oninput="NaviComponent.setDirty(true)">
+              <span class="text-xs text-gray-400">일</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 중점역량 선택 -->
+      <div id="personal-section-competency" class="mb-4 hidden">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">중점역량</label>
+        <div class="flex gap-2 flex-wrap" id="personal-competency-buttons">
+          <!-- JS에서 생성 -->
+        </div>
+      </div>
+
+      <!-- 활동내용 입력 -->
+      <div id="personal-section-content" class="mb-5 hidden">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">활동 내용 입력</label>
+        <textarea id="personal-content-input"
+          class="content-textarea w-full border border-gray-300 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
+          oninput="NaviComponent.setDirty(true)"
+          placeholder="개인적으로 수행한 활동 내용을 입력하세요..."></textarea>
+      </div>
+
+      <!-- 버튼 -->
+      <div class="flex gap-2">
+        <button onclick="Record.closePersonalModal()"
+          class="flex-1 py-2 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition">취소</button>
+        <button id="personal-btn-save"
+          onclick="Record.savePersonalActivity()"
+          class="flex-1 py-2 rounded-lg bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold transition hidden">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
   <!--  전체 내용 편집 모달 -->
   <!-- ============================================================ -->
   <div id="view-modal" class="modal-overlay hidden">
@@ -198,10 +302,10 @@
   <!-- ============================================================ -->
   <main class="max-w-6xl mx-auto px-4 py-6">
 
-    <!-- 환영 메시지 -->
+    <!-- 제목 + 역량 카운트 -->
     <div class="mb-5">
       <h1 class="text-xl sm:text-2xl font-bold text-gray-800">📝 생기부 기초자료 작성</h1>
-      <p id="welcome-text" class="text-sm text-gray-500 mt-1"></p>
+      <p id="competency-count-text" class="text-sm text-gray-500 mt-1"></p>
     </div>
 
     <!-- ============================================================ -->
@@ -251,75 +355,6 @@
       <div id="done-content-box"
         class="bg-white border border-gray-200 rounded-xl p-4 text-sm leading-relaxed mb-4 min-h-[56px] shadow-sm overflow-hidden"
         style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;">
-      </div>
-
-      <!-- ── 개인 추가 활동 입력 폼 (접기/펼치기) ── -->
-      <div class="bg-blue-50 border border-blue-200 rounded-xl mb-6 overflow-hidden">
-        <!-- 클릭하면 펼치기/접기 -->
-        <div class="flex items-center justify-between px-4 py-3 cursor-pointer select-none"
-             onclick="Record.toggleExtraForm()">
-          <span class="text-sm font-bold text-blue-700">✏️ 개인 추가 활동 입력</span>
-          <span id="extra-form-chevron" class="text-blue-400 text-xs font-bold ml-2">▼</span>
-        </div>
-        <!-- 활동명 (항상 보임) -->
-        <div class="px-4 pb-3 border-t border-blue-100">
-          <label class="block text-xs text-blue-600 font-semibold mb-1 mt-2">활동명 <span class="text-blue-300 font-normal">(클릭하면 상세 입력 펼쳐짐)</span></label>
-          <input id="extra-activity-name" type="text" placeholder="활동명을 입력하세요"
-            class="w-full border border-blue-200 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
-            onfocus="Record.openExtraForm()"
-            oninput="NaviComponent.setDirty(true)"
-            onclick="event.stopPropagation()">
-        </div>
-        <!-- 펼쳐지는 상세 입력 영역 -->
-        <div id="extra-form-detail" class="hidden px-4 pb-4">
-          <label class="block text-xs text-blue-600 font-semibold mb-1 mt-2">활동 내용</label>
-          <textarea id="extra-content-input"
-            class="w-full border border-blue-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white mb-3"
-            rows="3"
-            oninput="NaviComponent.setDirty(true)"
-            placeholder="공식 행사 외 개인적으로 수행한 활동을 입력하세요..."></textarea>
-          <!-- 날짜 입력 -->
-          <div class="flex flex-wrap gap-4 mb-3">
-            <div>
-              <label class="block text-xs text-blue-600 font-semibold mb-1">활동 시작일</label>
-              <div class="flex items-center gap-1">
-                <input id="extra-start-year"  type="number" placeholder="년" min="2000" max="2099"
-                  class="w-16 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                <span class="text-xs text-gray-400">년</span>
-                <input id="extra-start-month" type="number" placeholder="월" min="1" max="12"
-                  class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                <span class="text-xs text-gray-400">월</span>
-                <input id="extra-start-day"   type="number" placeholder="일" min="1" max="31"
-                  class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                <span class="text-xs text-gray-400">일</span>
-              </div>
-            </div>
-            <div>
-              <label class="block text-xs text-blue-600 font-semibold mb-1">활동 종료일</label>
-              <div class="flex items-center gap-1">
-                <input id="extra-end-year"  type="number" placeholder="년" min="2000" max="2099"
-                  class="w-16 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                <span class="text-xs text-gray-400">년</span>
-                <input id="extra-end-month" type="number" placeholder="월" min="1" max="12"
-                  class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                <span class="text-xs text-gray-400">월</span>
-                <input id="extra-end-day"   type="number" placeholder="일" min="1" max="31"
-                  class="w-12 border border-blue-200 rounded-lg p-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white">
-                <span class="text-xs text-gray-400">일</span>
-              </div>
-            </div>
-          </div>
-          <div class="flex gap-2">
-            <button onclick="Record.saveExtraActivity()"
-              class="bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
-              저장
-            </button>
-            <button id="btn-delete-extra" onclick="Record.openDeleteExtraModal()"
-              class="hidden bg-red-500 hover:bg-red-600 text-white text-sm font-semibold px-6 py-2 rounded-lg transition">
-              삭제
-            </button>
-          </div>
-        </div>
       </div>
 
       <!-- ── 이 영역에 배치된 행사 (보라색) ── -->
@@ -592,53 +627,38 @@
         byteEl.className = 'ml-auto text-sm font-semibold px-3 py-1.5 rounded-lg ' + byteColor;
         byteEl.textContent = bytes + ' / ' + limit + ' bytes';
 
-        // 개인 추가 활동 입력 폼: 기존 데이터 있으면 채우기, 없으면 초기화
-        var extraEntry = _inProgressData.find(function(e) {
-          return e.활동코드 === 'P' && e.생기부영역 === area;
-        });
-        if (extraEntry) {
-          document.getElementById('extra-activity-name').value = extraEntry.활동명 || '';
-          document.getElementById('extra-content-input').value = extraEntry.생기부내용 || '';
-          // 시작일 파싱 (YYYY.MM.DD. 또는 YYYY-MM-DD 형식 모두 처리)
-          var sdRaw = (extraEntry.활동시작날짜 || '').replace(/\./g, '-').replace(/-$/, '');
-          var sd = sdRaw.split('-');
-          document.getElementById('extra-start-year').value  = sd[0] || '';
-          document.getElementById('extra-start-month').value = sd[1] ? String(parseInt(sd[1],10)) : '';
-          document.getElementById('extra-start-day').value   = sd[2] ? String(parseInt(sd[2],10)) : '';
-          // 종료일 파싱 (YYYY.MM.DD. 또는 YYYY-MM-DD 형식 모두 처리)
-          var edRaw = (extraEntry.활동종료날짜 || '').replace(/\./g, '-').replace(/-$/, '');
-          var ed = edRaw.split('-');
-          document.getElementById('extra-end-year').value  = ed[0] || '';
-          document.getElementById('extra-end-month').value = ed[1] ? String(parseInt(ed[1],10)) : '';
-          document.getElementById('extra-end-day').value   = ed[2] ? String(parseInt(ed[2],10)) : '';
-          // 개인 추가 활동 입력 폼 항상 접힌 상태 유지
-          document.getElementById('extra-form-detail').classList.add('hidden');
-          document.getElementById('extra-form-chevron').textContent = '▼';
-          // 삭제 버튼 표시
-          document.getElementById('btn-delete-extra').classList.remove('hidden');
-        } else {
-          document.getElementById('extra-activity-name').value = '';
-          document.getElementById('extra-content-input').value = '';
-          ['extra-start-year','extra-start-month','extra-start-day',
-           'extra-end-year','extra-end-month','extra-end-day'].forEach(function(id) {
-            document.getElementById(id).value = '';
-          });
-          document.getElementById('extra-form-detail').classList.add('hidden');
-          document.getElementById('extra-form-chevron').textContent = '▼';
-          // 삭제 버튼 숨기기
-          document.getElementById('btn-delete-extra').classList.add('hidden');
-        }
-
         // ── 이 영역에 배치된 행사 (보라색 배경) ──
         var areaList  = document.getElementById('area-events-list');
         var myEntries = _inProgressData.filter(function(e) {
           return e.생기부영역 === area && e.활동코드 && !e.활동코드.startsWith('EXTRA_');
         });
-        if (myEntries.length === 0) {
+
+        // 개인 추가 활동 (P+area 코드) 항목 분리
+        var personalEntry = myEntries.find(function(e) { return e.활동코드 === ('P' + area); });
+        var officialEntries = myEntries.filter(function(e) { return e.활동코드 !== ('P' + area); });
+
+        if (!personalEntry && officialEntries.length === 0) {
           areaList.innerHTML = '<p class="text-xs text-gray-400 py-2 pl-1">이 영역에 배치된 공식 행사가 없습니다.</p>';
         } else {
           var h2 = '';
-          myEntries.forEach(function(e) {
+          // 개인 추가 활동 카드 맨 위에
+          if (personalEntry) {
+            h2 += '<div class="bg-blue-50 border border-blue-300 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:border-blue-500 transition"'
+               + ' onclick="Record.openPersonalModal()">';
+            h2 += '  <div class="flex-1 min-w-0">';
+            h2 += '    <div class="flex items-center gap-2 mb-0.5">';
+            h2 += '      <span class="text-xs text-blue-400 font-mono">P' + _escapeHtml(area) + '</span>';
+            h2 += '      <span class="text-xs bg-blue-100 text-blue-600 px-2 py-0.5 rounded-full font-medium">개인추가</span>';
+            h2 += '    </div>';
+            h2 += '    <p class="font-semibold text-sm text-blue-800 truncate">✏️ ' + _escapeHtml(personalEntry.활동명 || '개인 추가 활동') + '</p>';
+            h2 += '    <p class="text-xs text-blue-400 mt-0.5">'
+               + _escapeHtml(personalEntry.중점역량 || '') + (personalEntry.중점역량 ? ' · ' : '')
+               + _formatDisplay(personalEntry.활동시작날짜) + ' ~ ' + _formatDisplay(personalEntry.활동종료날짜) + '</p>';
+            h2 += '  </div>';
+            h2 += '  <span class="text-xs text-blue-500 font-medium">편집 ›</span>';
+            h2 += '</div>';
+          }
+          officialEntries.forEach(function(e) {
             h2 += '<div class="bg-purple-50 border border-purple-300 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:border-purple-500 transition"'
                + ' onclick="Record.openActivityModal(\'' + _escapeHtml(e.활동코드) + '\')">';
             h2 += '  <div class="flex-1 min-w-0">';
@@ -658,10 +678,34 @@
         var unenteredActs = _officialActivities.filter(function(act) {
           return !_findInProgress(act['활동코드']);
         });
-        if (unenteredActs.length === 0) {
+
+        // 개인 추가 활동 카드 (맨 위)
+        var extraEntry = _inProgressData.find(function(e) {
+          return e.활동코드 === ('P' + area) && e.생기부영역 === area;
+        });
+        var personalCardHtml = '';
+        if (extraEntry) {
+          // 이미 입력됨 → "이 영역에 배치된 행사" 섹션에 표시 (아래에서 처리)
+        } else {
+          // 미입력 → 카드 표시
+          personalCardHtml = '<div class="bg-gray-50 border border-dashed border-blue-300 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:border-blue-500 transition mb-2"'
+            + ' onclick="Record.openPersonalModal()">';
+          personalCardHtml += '  <div class="flex-1 min-w-0">';
+          personalCardHtml += '    <div class="flex items-center gap-2 mb-0.5">';
+          personalCardHtml += '      <span class="text-xs text-blue-400 font-mono">P' + _escapeHtml(area) + '</span>';
+          personalCardHtml += '      <span class="text-xs bg-blue-50 text-blue-500 px-2 py-0.5 rounded-full">개인추가</span>';
+          personalCardHtml += '    </div>';
+          personalCardHtml += '    <p class="font-medium text-sm text-blue-700 truncate">✏️ 개인 추가 활동</p>';
+          personalCardHtml += '    <p class="text-xs text-gray-400 mt-0.5">클릭하여 개인 추가 활동을 입력하세요</p>';
+          personalCardHtml += '  </div>';
+          personalCardHtml += '  <span class="text-blue-400 text-lg">›</span>';
+          personalCardHtml += '</div>';
+        }
+
+        if (unenteredActs.length === 0 && !personalCardHtml) {
           allList.innerHTML = '<p class="text-xs text-gray-400 py-2 pl-1">추가할 수 있는 미입력 행사가 없습니다.</p>';
         } else {
-          var h3 = '';
+          var h3 = personalCardHtml;
           unenteredActs.forEach(function(act) {
             h3 += '<div class="bg-gray-50 border border-gray-200 rounded-lg p-3 flex items-center gap-3 cursor-pointer hover:border-purple-300 transition"'
                + ' onclick="Record.openActivityModal(\'' + _escapeHtml(act['활동코드']) + '\')">';
@@ -677,7 +721,7 @@
             h3 += '  <span class="text-gray-400 text-lg">›</span>';
             h3 += '</div>';
           });
-          allList.innerHTML = h3;
+          allList.innerHTML = h3 || '<p class="text-xs text-gray-400 py-2 pl-1">추가할 수 있는 미입력 행사가 없습니다.</p>';
         }
       }
 
@@ -931,44 +975,11 @@
       }
 
       // ============================================================
-      // 💾 개인 추가 활동 저장 (public)
+      // 💾 개인 추가 활동 저장 (legacy - 더 이상 UI에서 직접 호출되지 않음)
       // ============================================================
       async function _saveExtraActivity() {
-        var area         = _currentTab;
-        var activityName = document.getElementById('extra-activity-name').value.trim();
-        var content      = document.getElementById('extra-content-input').value.trim();
-        if (!activityName) { _showModal('활동명을 입력하세요.'); return; }
-        if (!content)      { _showModal('활동 내용을 입력하세요.'); return; }
-
-        function _buildDate(prefix) {
-          var y = document.getElementById(prefix + '-year').value.trim();
-          var m = document.getElementById(prefix + '-month').value.trim();
-          var d = document.getElementById(prefix + '-day').value.trim();
-          if (!y || !m || !d) return '';
-          return y + '.' + String(m).padStart(2,'0') + '.' + String(d).padStart(2,'0') + '.';
-        }
-        var startDate = _buildDate('extra-start');
-        var endDate   = _buildDate('extra-end');
-
-        _showLoading('개인 활동 저장 중...');
-        try {
-          var result = await _callAPI('saveInProgress', {
-            studentId: _studentId, name: _userName,
-            activityCode: 'P',
-            activityName: activityName,
-            startDate: startDate, endDate: endDate,
-            area: area, competency: '', content: content
-          });
-          if (!result.success) throw new Error(result.message);
-          await _callAPI('compileToDone', { studentId: _studentId });
-          await _reloadStudentData();
-          NaviComponent.setDirty(false);
-          _switchTab(_currentTab);
-        } catch(e) {
-          _showModal('저장 실패: ' + e.message);
-        } finally {
-          _hideLoading();
-        }
+        // 새 방식(_savePersonalActivity)으로 대체됨. 안전하게 무시.
+        _showModal('이 기능은 새 개인 추가 활동 입력 방식으로 대체되었습니다.');
       }
 
       // ============================================================
@@ -1110,7 +1121,13 @@
 
             // inProgress에서 해당 항목 찾기
             var entry;
-            if (actCode === 'P') {
+            if (actCode && actCode.startsWith('P') && actCode.length > 1) {
+              // 개인 추가 활동 (P+area 형식)
+              entry = _inProgressData.find(function(e) {
+                return e.활동코드 === actCode && e.생기부영역 === taArea;
+              });
+            } else if (actCode === 'P') {
+              // 구 방식 호환
               entry = _inProgressData.find(function(e) {
                 return e.활동코드 === 'P' && e.생기부영역 === taArea;
               });
@@ -1161,27 +1178,10 @@
       }
 
       // ============================================================
-      // 🔽 개인 추가 활동 폼 접기/펼치기 (public)
+      // 🔽 개인 추가 활동 폼 접기/펼치기 (legacy - UI 제거됨, 안전하게 무시)
       // ============================================================
-      function _toggleExtraForm() {
-        var detail  = document.getElementById('extra-form-detail');
-        var chevron = document.getElementById('extra-form-chevron');
-        var isHidden = detail.classList.contains('hidden');
-        if (isHidden) {
-          detail.classList.remove('hidden');
-          chevron.textContent = '▲';
-        } else {
-          detail.classList.add('hidden');
-          chevron.textContent = '▼';
-        }
-      }
-
-      function _openExtraForm() {
-        var detail  = document.getElementById('extra-form-detail');
-        var chevron = document.getElementById('extra-form-chevron');
-        detail.classList.remove('hidden');
-        chevron.textContent = '▲';
-      }
+      function _toggleExtraForm() { /* 구 파란 박스 폼 제거됨 */ }
+      function _openExtraForm()   { /* 구 파란 박스 폼 제거됨 */ }
 
       // ============================================================
       // 🔃 학생 데이터 재로드 (private)
@@ -1193,14 +1193,29 @@
         ]);
         _inProgressData = (ipResult.success  && ipResult.data)  || [];
         _doneData       = (doneResult.success && doneResult.data) || [];
+        _updateCompetencyCount();
+      }
+
+      // ============================================================
+      // 📊 역량 카운트 갱신 (private)
+      // ============================================================
+      function _updateCompetencyCount() {
+        var counts = { '교과역량': 0, '진로역량': 0, '공동체역량': 0 };
+        _inProgressData.forEach(function(e) {
+          if (e.중점역량 && counts.hasOwnProperty(e.중점역량)) {
+            counts[e.중점역량]++;
+          }
+        });
+        var el = document.getElementById('competency-count-text');
+        if (el) {
+          el.textContent = '교과 역량: ' + counts['교과역량'] + '회  진로 역량: ' + counts['진로역량'] + '회  공동체 역량: ' + counts['공동체역량'] + '회';
+        }
       }
 
       // ============================================================
       // 🚀 초기 데이터 로드 (private)
       // ============================================================
       async function _init() {
-        document.getElementById('welcome-text').textContent =
-          _userName ? _userName + ' 학생, 환영합니다!' : '';
         _renderTabs();
         document.getElementById('panel-events').classList.remove('hidden');
 
@@ -1213,6 +1228,7 @@
           _officialActivities = (actResult.success  && actResult.data)  || [];
           _inProgressData     = (ipResult.success   && ipResult.data)   || [];
           _doneData           = (doneResult.success  && doneResult.data)  || [];
+          _updateCompetencyCount();
           _switchTab('행사목록');
         } catch(e) {
           console.error('초기 로드 오류:', e);
@@ -1238,6 +1254,245 @@
             _showModal('응시희망대학 페이지는 준비 중입니다.');
             break;
         }
+      }
+
+      // ============================================================
+      // 🆕 개인 추가 활동 모달 관련 변수 (private)
+      // ============================================================
+      var _personalParticipated = null;
+      var _personalCompetency   = '';
+      var _personalArea         = '';
+
+      // ============================================================
+      // 📌 개인 추가 활동 모달 열기 (public)
+      // ============================================================
+      function _openPersonalModal() {
+        var area = _currentTab;
+        if (!_AREAS.includes(area)) return;
+        _personalArea         = area;
+        _personalParticipated = null;
+        _personalCompetency   = '';
+
+        document.getElementById('personal-modal-area-label').textContent = area + ' 영역';
+
+        // 기존 데이터 확인 (활동코드: P+area, 생기부영역: area)
+        var existing = _inProgressData.find(function(e) {
+          return e.활동코드 === ('P' + area) && e.생기부영역 === area;
+        }) || null;
+
+        if (existing) {
+          _personalParticipated = true;
+          _personalCompetency   = existing.중점역량 || '';
+          document.getElementById('personal-activity-name').value  = existing.활동명 || '';
+          document.getElementById('personal-content-input').value  = existing.생기부내용 || '';
+
+          // 날짜 파싱 (YYYY.MM.DD. 형식)
+          function _parseDateToInputs(dateStr, prefix) {
+            var raw   = (dateStr || '').replace(/\./g, '-').replace(/-$/, '');
+            var parts = raw.split('-');
+            document.getElementById(prefix + '-year').value  = parts[0] ? parts[0] : '2026';
+            document.getElementById(prefix + '-month').value = parts[1] ? String(parseInt(parts[1], 10)) : '';
+            document.getElementById(prefix + '-day').value   = parts[2] ? String(parseInt(parts[2], 10)) : '';
+          }
+          _parseDateToInputs(existing.활동시작날짜, 'personal-start');
+          _parseDateToInputs(existing.활동종료날짜, 'personal-end');
+        } else {
+          _personalParticipated = null;
+          document.getElementById('personal-activity-name').value  = '';
+          document.getElementById('personal-content-input').value  = '';
+          document.getElementById('personal-start-year').value     = '2026';
+          document.getElementById('personal-start-month').value    = '';
+          document.getElementById('personal-start-day').value      = '';
+          document.getElementById('personal-end-year').value       = '2026';
+          document.getElementById('personal-end-month').value      = '';
+          document.getElementById('personal-end-day').value        = '';
+        }
+
+        // 역량 버튼 렌더링
+        _renderPersonalCompetencyButtons();
+        _updatePersonalModalSections();
+        document.getElementById('personal-activity-modal').classList.remove('hidden');
+      }
+
+      function _renderPersonalCompetencyButtons() {
+        document.getElementById('personal-competency-buttons').innerHTML = _COMPETENCIES.map(function(c) {
+          var cls = (c === _personalCompetency)
+            ? 'border-purple-600 bg-purple-100 text-purple-700'
+            : 'border-gray-200 text-gray-500 hover:border-purple-400';
+          return '<button onclick="Record.personalSelectCompetency(\'' + c + '\')" class="py-1.5 px-4 rounded-lg border-2 text-sm font-medium transition ' + cls + '">' + c + '</button>';
+        }).join('');
+      }
+
+      function _updatePersonalModalSections() {
+        var p = _personalParticipated;
+
+        // 참여 버튼 강조
+        var yesBtn = document.getElementById('personal-btn-yes');
+        var noBtn  = document.getElementById('personal-btn-no');
+        if (p === true) {
+          yesBtn.className = 'flex-1 py-2 rounded-lg border-2 border-purple-600 bg-purple-100 text-purple-700 text-sm font-medium transition';
+          noBtn.className  = 'flex-1 py-2 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-medium transition';
+        } else if (p === false) {
+          yesBtn.className = 'flex-1 py-2 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-medium transition';
+          noBtn.className  = 'flex-1 py-2 rounded-lg border-2 border-red-400 bg-red-50 text-red-600 text-sm font-medium transition';
+        } else {
+          yesBtn.className = 'flex-1 py-2 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-medium transition';
+          noBtn.className  = 'flex-1 py-2 rounded-lg border-2 border-gray-200 text-gray-600 text-sm font-medium transition';
+        }
+
+        var hasComp = !!_personalCompetency;
+
+        _toggleSection('personal-section-no-warning', p === false);
+        _toggleSection('personal-section-name',       p === true);
+        _toggleSection('personal-section-dates',      p === true);
+        _toggleSection('personal-section-competency', p === true);
+        _toggleSection('personal-section-content',    p === true && hasComp);
+
+        // 저장 버튼: 참여+역량 선택 완료 OR 불참(기존 데이터 있을 때만) 시 표시
+        var existingData = _inProgressData.find(function(e) {
+          return e.활동코드 === ('P' + _personalArea) && e.생기부영역 === _personalArea;
+        });
+        var saveVisible = (p === true && hasComp) || (p === false && !!existingData);
+        document.getElementById('personal-btn-save').classList.toggle('hidden', !saveVisible);
+      }
+
+      // 참여 여부 설정 (public)
+      function _personalSetParticipated(val) {
+        _personalParticipated = val;
+        if (!val) { _personalCompetency = ''; }
+        NaviComponent.setDirty(true);
+        _updatePersonalModalSections();
+      }
+
+      // 역량 선택 (public)
+      function _personalSelectCompetency(comp) {
+        _personalCompetency = comp;
+        _renderPersonalCompetencyButtons();
+        NaviComponent.setDirty(true);
+        _updatePersonalModalSections();
+      }
+
+      // 날짜 유효성 검증 함수 (private)
+      function _validatePersonalDates() {
+        var sy = parseInt(document.getElementById('personal-start-year').value.trim(),  10);
+        var sm = parseInt(document.getElementById('personal-start-month').value.trim(), 10);
+        var sd = parseInt(document.getElementById('personal-start-day').value.trim(),   10);
+        var ey = parseInt(document.getElementById('personal-end-year').value.trim(),    10);
+        var em = parseInt(document.getElementById('personal-end-month').value.trim(),   10);
+        var ed = parseInt(document.getElementById('personal-end-day').value.trim(),     10);
+
+        var syStr = document.getElementById('personal-start-year').value.trim();
+        var eyStr = document.getElementById('personal-end-year').value.trim();
+
+        var errors = [];
+
+        // 연도: 4자리 숫자인지 검증
+        if (!syStr || !/^\d{4}$/.test(syStr)) errors.push('활동 시작일의 년도를 4자리 숫자로 입력하세요. (예: 2026)');
+        if (!eyStr || !/^\d{4}$/.test(eyStr)) errors.push('활동 종료일의 년도를 4자리 숫자로 입력하세요. (예: 2026)');
+
+        if (errors.length === 0) {
+          // 월 범위
+          if (isNaN(sm) || sm < 1 || sm > 12) errors.push('활동 시작일의 월은 1~12 범위로 입력하세요.');
+          if (isNaN(em) || em < 1 || em > 12) errors.push('활동 종료일의 월은 1~12 범위로 입력하세요.');
+          // 일 범위
+          if (isNaN(sd) || sd < 1 || sd > 31) errors.push('활동 시작일의 일은 1~31 범위로 입력하세요.');
+          if (isNaN(ed) || ed < 1 || ed > 31) errors.push('활동 종료일의 일은 1~31 범위로 입력하세요.');
+        }
+
+        if (errors.length > 0) return { valid: false, message: errors.join('\n') };
+
+        // 시작일 ≤ 종료일 검증
+        var startNum = sy * 10000 + sm * 100 + sd;
+        var endNum   = ey * 10000 + em * 100 + ed;
+        if (startNum > endNum) {
+          return { valid: false, message: '활동 시작일이 활동 종료일보다 늦습니다.\n시작일과 종료일을 다시 확인하세요.' };
+        }
+
+        // 날짜 문자열 생성 (YYYY.MM.DD. 형식)
+        function _fmt(y, m, d) {
+          return y + '.' + String(m).padStart(2,'0') + '.' + String(d).padStart(2,'0') + '.';
+        }
+        return { valid: true, startDate: _fmt(sy, sm, sd), endDate: _fmt(ey, em, ed) };
+      }
+
+      // 개인 추가 활동 저장 (public)
+      async function _savePersonalActivity() {
+        var area = _personalArea;
+
+        // 불참(삭제) 처리
+        if (_personalParticipated === false) {
+          var existing = _inProgressData.find(function(e) {
+            return e.활동코드 === ('P' + area) && e.생기부영역 === area;
+          });
+          if (!existing) { _closePersonalModal(); return; }
+          _showLoading('개인 추가 활동 삭제 중...');
+          try {
+            var delResult = await _callAPI('deleteInProgress', {
+              studentId: _studentId,
+              activityCode: 'P' + area
+            });
+            if (!delResult.success) throw new Error(delResult.message);
+            await _callAPI('compileToDone', { studentId: _studentId });
+            await _reloadStudentData();
+            NaviComponent.setDirty(false);
+            _closePersonalModal();
+            _switchTab(_currentTab);
+          } catch(e) {
+            _showModal('삭제 실패: ' + e.message);
+          } finally {
+            _hideLoading();
+          }
+          return;
+        }
+
+        // 참여 저장
+        var activityName = document.getElementById('personal-activity-name').value.trim();
+        var content      = document.getElementById('personal-content-input').value.trim();
+        if (!activityName) { _showModal('활동명을 입력하세요.'); return; }
+        if (!content)      { _showModal('활동 내용을 입력하세요.'); return; }
+
+        var dateResult = _validatePersonalDates();
+        if (!dateResult.valid) { _showModal(dateResult.message); return; }
+
+        _showLoading('개인 추가 활동 저장 중...');
+        try {
+          var result = await _callAPI('saveInProgress', {
+            studentId:    _studentId,
+            name:         _userName,
+            activityCode: 'P' + area,
+            activityName: activityName,
+            startDate:    dateResult.startDate,
+            endDate:      dateResult.endDate,
+            area:         area,
+            competency:   _personalCompetency,
+            content:      content
+          });
+          if (!result.success) throw new Error(result.message);
+          await _callAPI('compileToDone', { studentId: _studentId });
+          await _reloadStudentData();
+          NaviComponent.setDirty(false);
+          _closePersonalModal();
+          _switchTab(_currentTab);
+        } catch(e) {
+          _showModal('저장 실패: ' + e.message);
+        } finally {
+          _hideLoading();
+        }
+      }
+
+      // 개인 추가 활동 모달 닫기 (public)
+      function _closePersonalModal() {
+        if (NaviComponent.getDirty()) {
+          NaviComponent.showConfirm(function() {
+            document.getElementById('personal-activity-modal').classList.add('hidden');
+            _personalParticipated = null;
+            _personalCompetency   = '';
+          });
+          return;
+        }
+        document.getElementById('personal-activity-modal').classList.add('hidden');
+        _personalParticipated = null;
+        _personalCompetency   = '';
       }
 
       function _doLogout() {
@@ -1278,12 +1533,17 @@
         openDeleteExtraModal: _openDeleteExtraModal,
         cancelDeleteExtra:  _cancelDeleteExtra,
         confirmDeleteExtra: _confirmDeleteExtra,
-        openViewModal:      _openViewModal,
-        closeViewModal:     _closeViewModal,
-        onViewModalInput:   _onViewModalInput,
-        saveViewModal:      _saveViewModal,
-        toggleExtraForm:    _toggleExtraForm,
-        openExtraForm:      _openExtraForm
+        openViewModal:            _openViewModal,
+        closeViewModal:           _closeViewModal,
+        onViewModalInput:         _onViewModalInput,
+        saveViewModal:            _saveViewModal,
+        toggleExtraForm:          _toggleExtraForm,
+        openExtraForm:            _openExtraForm,
+        openPersonalModal:        _openPersonalModal,
+        closePersonalModal:       _closePersonalModal,
+        personalSetParticipated:  _personalSetParticipated,
+        personalSelectCompetency: _personalSelectCompetency,
+        savePersonalActivity:     _savePersonalActivity
       };
 
     })();
