@@ -793,6 +793,18 @@
         selections[key] = '미응시';
         _highlightSubjBtn(key, '');
         _updateSummaryTag(key, '미응시');
+      } else {
+        // 응시 버튼 클릭 시: 이전 미응시 표시 초기화
+        if (key === 'english') {
+          // 영어는 과목 선택 없이 응시/미응시만 선택하므로 summary에 '응시' 표시
+          selections[key] = '응시';
+          _updateSummaryTag(key, '응시');
+        } else {
+          // 나머지 영역은 과목을 새로 선택해야 하므로 summary 초기화
+          selections[key] = '';
+          _highlightSubjBtn(key, '');
+          _updateSummaryTag(key, '');
+        }
       }
       _updateGlobalSummary();
     }
