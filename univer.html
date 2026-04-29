@@ -1091,57 +1091,106 @@
     function _onDragEnd(evt) {
       if (evt.oldIndex === evt.newIndex) return;
 
-      // 현재 카드 순서 기반으로 새 순위 할당
       var container = document.getElementById('univ-card-sortable');
       var cards = container.querySelectorAll('.univ-card');
-      var newRankMap = {}; // originalRank -> newRank
 
+      // 드래그 전 순위 보존: newRank(idx+1) -> oldRank(dataset.rank)
+      var oldRankMap = {};
       cards.forEach(function(card, idx) {
-        var originalRank = parseInt(card.dataset.rank, 10);
-        newRankMap[originalRank] = idx + 1;
+        oldRankMap[idx + 1] = parseInt(card.dataset.rank, 10);
       });
 
-      // 로컬 univRows 업데이트
+      // oldRank -> newRank 역방향 맵으로 univRows 업데이트
+      var newRankMap = {};
+      cards.forEach(function(card, idx) {
+        newRankMap[parseInt(card.dataset.rank, 10)] = idx + 1;
+      });
+
       univRows.forEach(function(row) {
         if (newRankMap.hasOwnProperty(row.rank)) {
           row.rank = newRankMap[row.rank];
         }
       });
 
-      // card의 dataset.rank 및 표시 업데이트 (시각적 반영)
+      // card dataset 업데이트
       cards.forEach(function(card, idx) {
         card.dataset.rank = idx + 1;
       });
 
-      // 서버에 순위 변경 저장
-      _saveDragOrder();
+      // 서버 저장 (oldRankMap 전달)
+      _saveDragOrder(oldRankMap);
     }
 
-    // ── 드래그 순위 서버 저장 ────────────────────────────────
-    async function _saveDragOrder() {
-      var rankData = univRows.map(function(r) { return { originalRank: r._origRank || r.rank, rank: r.rank }; });
-      // 실제로는 univRows 전체를 payload로 전송
-      // 서버 univSaveDragOrder action 또는 각 행을 업데이트
-      // 여기서는 전체 rows를 일괄 저장하는 방식으로 처리
+    // ── 드래그 순위 서버 저장 (univSaveRow 순차 호출) ───────
+    async function _saveDragOrder(oldRankMap) {
+      // oldRankMap: { newRank: oldRank } — 드래그 전 원래 순위를 기억
+      // univRows는 이미 새 rank로 업데이트된 상태
+      // 데이터가 있는 행만 저장 (univ 값이 있거나 어떤 데이터라도 있는 행)
+      var rowsToSave = univRows.filter(function(r) {
+        return r.univ || r.admsType || r.dept || r.admsKind;
+      });
+
+      if (rowsToSave.length === 0) {
+        // 저장할 데이터 없음 — 시각적 반영만 유지하고 종료
+        _showToast('✅ 순위가 변경되었습니다.', 'success');
+        await _reloadData();
+        return;
+      }
+
+      NaviComponent.showLoading();
+      var successCount = 0;
+      var failCount    = 0;
+
       try {
-        NaviComponent.showLoading();
-        var result = await _callPostAPI('univSaveAllRanks', {
-          studentId: studentId,
-          rows: univRows.map(function(r) { return { rank: r.rank, univ: r.univ }; })
-        });
+        // 각 행을 univSaveRow로 순차 저장
+        // originalRank는 oldRankMap에서 가져온 드래그 이전 순위
+        for (var i = 0; i < rowsToSave.length; i++) {
+          var r = rowsToSave[i];
+          var origRank = oldRankMap[r.rank] !== undefined ? oldRankMap[r.rank] : r.rank;
+          try {
+            var result = await _callPostAPI('univSaveRow', {
+              studentId       : studentId,
+              originalRank    : origRank,
+              rank            : r.rank,
+              univ            : r.univ            || '',
+              admsType        : r.admsType        || '',
+              admsKind        : r.admsKind        || '',
+              dept            : r.dept            || '',
+              quota           : r.quota           || '',
+              csatMin         : r.csatMin         || '',
+              selType         : r.selType         || '',
+              interview       : r.interview       || '',
+              interviewRegion : r.interviewRegion || '',
+              interviewStart  : r.interviewStart  || '',
+              interviewEnd    : r.interviewEnd    || '',
+              practical       : r.practical       || '',
+              practicalRegion : r.practicalRegion || '',
+              practicalStart  : r.practicalStart  || '',
+              practicalEnd    : r.practicalEnd    || '',
+              tendency        : r.tendency        || '',
+              remark          : r.remark          || ''
+            });
+            if (result && result.success) successCount++;
+            else failCount++;
+          } catch(e2) {
+            failCount++;
+          }
+        }
+
         NaviComponent.hideLoading();
-        if (result && result.success) {
+        if (failCount === 0) {
           _showToast('✅ 순위가 변경되었습니다.', 'success');
-          await _reloadData();
+        } else if (successCount > 0) {
+          _showToast('⚠️ 일부 순위 저장 실패 (' + failCount + '건)', 'error');
         } else {
-          _showToast('순위 저장 실패: ' + (result.message || ''), 'error');
-          await _reloadData(); // 실패 시에도 서버 기준으로 복원
+          _showToast('❌ 순위 저장에 실패했습니다.', 'error');
         }
       } catch(e) {
         NaviComponent.hideLoading();
         _showToast('❌ 오류: ' + e.message, 'error');
-        await _reloadData();
       }
+
+      await _reloadData();
     }
 
     // ── 뱃지 헬퍼 ───────────────────────────────────────────
