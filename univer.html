@@ -6,6 +6,7 @@
   <title>관심대학 조사</title>
   <script src="config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
   <script src="navi.js"></script>
   <style>
     * { box-sizing: border-box; }
@@ -29,7 +30,7 @@
     .toast {
       position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
       padding: 12px 28px; border-radius: 12px; color: #fff; font-weight: 600;
-      z-index: 9999; opacity: 0; transition: opacity 0.3s ease;
+      z-index: 99999; opacity: 0; transition: opacity 0.3s ease;
       box-shadow: 0 4px 16px rgba(0,0,0,0.18); white-space: nowrap;
     }
     .toast.show    { opacity: 1; }
@@ -43,9 +44,12 @@
       z-index: 9990; padding: 1rem;
     }
 
-    /* ── 테이블 행 호버 ── */
-    .univ-row { cursor: pointer; transition: background 0.15s; }
-    .univ-row:hover { background: #eff6ff !important; }
+    /* ── 경고 모달 (최상위 z-index) ── */
+    .warn-modal-bg {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 99990; padding: 1rem;
+    }
 
     /* ── 선택 버튼 그룹 ── */
     .seg-btn {
@@ -64,10 +68,14 @@
     /* ── 뱃지 ── */
     .rank-badge {
       display: inline-flex; align-items: center; justify-content: center;
-      width: 24px; height: 24px; border-radius: 50%;
-      font-size: 0.75rem; font-weight: 700;
+      width: 28px; height: 28px; border-radius: 50%;
+      font-size: 0.8rem; font-weight: 700;
       background: #e0e7ff; color: #3730a3;
+      flex-shrink: 0;
     }
+    .rank-badge-1 { background: #fef9c3; color: #854d0e; }
+    .rank-badge-2 { background: #f1f5f9; color: #475569; }
+    .rank-badge-3 { background: #fef3c7; color: #92400e; }
 
     /* ── 모달 입력 공통 ── */
     .field-label { font-size: 0.75rem; font-weight: 600; color: #4b5563; margin-bottom: 4px; }
@@ -79,7 +87,118 @@
     .field-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
     select.field-input { background: #fff; cursor: pointer; }
 
+    /* ── 날짜 입력 그룹 ── */
+    .date-group { display: flex; align-items: center; gap: 6px; }
+    .date-input {
+      border: 1px solid #d1d5db; border-radius: 0.375rem;
+      padding: 0.4rem 0.5rem; font-size: 0.82rem; color: #111827;
+      outline: none; transition: border-color 0.15s; text-align: center;
+    }
+    .date-input:focus { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+    .date-sep { font-size: 0.85rem; color: #6b7280; font-weight: 600; }
+    .date-result {
+      font-size: 0.78rem; color: #2563eb; font-weight: 600;
+      padding: 3px 8px; background: #eff6ff; border-radius: 6px;
+      min-height: 24px; display: inline-block;
+    }
 
+    /* ── 대학 카드 ── */
+    .univ-card {
+      background: #fff;
+      border: 1.5px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 18px 20px;
+      margin-bottom: 14px;
+      cursor: grab;
+      transition: box-shadow 0.2s, border-color 0.2s, transform 0.1s;
+      position: relative;
+      user-select: none;
+    }
+    .univ-card:hover {
+      border-color: #93c5fd;
+      box-shadow: 0 4px 18px rgba(37,99,235,0.10);
+    }
+    .univ-card.sortable-ghost {
+      opacity: 0.45;
+      border: 2px dashed #93c5fd;
+      background: #eff6ff;
+      transform: scale(0.98);
+    }
+    .univ-card.sortable-chosen {
+      box-shadow: 0 8px 32px rgba(37,99,235,0.18);
+      border-color: #2563eb;
+      cursor: grabbing;
+    }
+    .card-drag-handle {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 8px;
+      background: #f3f4f6; color: #9ca3af;
+      cursor: grab; flex-shrink: 0;
+      font-size: 1rem; transition: background 0.15s;
+    }
+    .card-drag-handle:hover { background: #e0e7ff; color: #3730a3; }
+
+    .card-info-row {
+      display: flex; flex-wrap: wrap; gap: 6px 10px;
+      align-items: center; margin-top: 8px;
+    }
+    .card-badge {
+      display: inline-flex; align-items: center; gap: 3px;
+      padding: 2px 8px; border-radius: 999px;
+      font-size: 0.72rem; font-weight: 600;
+    }
+    .badge-blue   { background: #dbeafe; color: #1d4ed8; }
+    .badge-green  { background: #d1fae5; color: #065f46; }
+    .badge-orange { background: #ffedd5; color: #c2410c; }
+    .badge-gray   { background: #f3f4f6; color: #6b7280; }
+    .badge-purple { background: #ede9fe; color: #5b21b6; }
+    .badge-red    { background: #fee2e2; color: #991b1b; }
+    .badge-yellow { background: #fef9c3; color: #854d0e; }
+    .badge-indigo { background: #e0e7ff; color: #3730a3; }
+
+    .card-section-divider {
+      height: 1px; background: #f3f4f6; margin: 10px 0;
+    }
+
+    .card-date-row {
+      display: flex; flex-wrap: wrap; gap: 4px 8px;
+      font-size: 0.73rem; color: #6b7280;
+    }
+    .card-date-item {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .card-date-label {
+      font-weight: 600; color: #374151;
+    }
+    .card-remark {
+      display: flex; align-items: flex-start; gap: 5px;
+      background: #f0f9ff; border-left: 3px solid #93c5fd;
+      border-radius: 0 6px 6px 0; padding: 6px 10px; margin-top: 10px;
+      font-size: 0.75rem; color: #374151; line-height: 1.5;
+    }
+    .card-remark-label {
+      font-size: 0.68rem; font-weight: 700; color: #2563eb;
+      white-space: nowrap; margin-top: 1px;
+    }
+    .card-edit-btn {
+      position: absolute; right: 14px; top: 14px;
+      padding: 4px 10px; background: #eff6ff; color: #2563eb;
+      border: 1px solid #bfdbfe; border-radius: 8px;
+      font-size: 0.72rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .card-edit-btn:hover { background: #dbeafe; }
+
+    .univ-card-empty {
+      border-style: dashed;
+      border-color: #d1d5db;
+      background: #fafafa;
+      cursor: pointer;
+    }
+    .univ-card-empty:hover {
+      border-color: #93c5fd;
+      background: #eff6ff;
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -88,7 +207,7 @@
   <div id="shared-nav"></div>
 
   <!-- ── 스켈레톤 ── -->
-  <div id="skeleton-ui" class="max-w-5xl mx-auto px-4 py-5">
+  <div id="skeleton-ui" class="max-w-3xl mx-auto px-4 py-5">
     <div class="skeleton skeleton-text mb-6" style="width:28%;height:22px;"></div>
     <div class="bg-white rounded-xl shadow-sm p-4">
       <div class="skeleton skeleton-text mb-4" style="width:20%;"></div>
@@ -101,12 +220,12 @@
   </div>
 
   <!-- ── 메인 콘텐츠 ── -->
-  <div id="main-content" class="hidden max-w-5xl mx-auto px-4 py-5">
+  <div id="main-content" class="hidden max-w-3xl mx-auto px-4 py-5">
 
     <!-- 타이틀 -->
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-lg sm:text-xl font-bold text-gray-800">🏫 관심대학 조사</h1>
-      <p class="text-xs text-gray-500 hidden sm:block">행을 클릭하면 내용을 입력할 수 있습니다.</p>
+      <p class="text-xs text-gray-500 hidden sm:block">카드를 드래그하여 순위를 변경할 수 있습니다.</p>
     </div>
 
     <!-- 선호전형 선택 -->
@@ -141,36 +260,11 @@
       </div>
     </div>
 
-    <!-- 관심대학 테이블 -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <!-- 데스크탑 테이블 (md 이상) -->
-      <div class="hidden md:block overflow-x-auto">
-        <table class="w-full text-sm">
-          <thead>
-            <tr class="bg-gray-50 border-b border-gray-200">
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-10">순위</th>
-              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">대학명</th>
-              <th class="px-3 py-2.5 text-left text-xs font-bold text-gray-600 w-36">전형유형</th>
-              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">전형종류</th>
-              <th class="px-3 py-2.5 text-left   text-xs font-bold text-gray-600">지원학과</th>
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16 whitespace-nowrap">모집정원</th>
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16 whitespace-nowrap">수능최저</th>
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-16 whitespace-nowrap">선발유형</th>
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-14">면접</th>
-              <th class="px-3 py-2.5 text-center text-xs font-bold text-gray-600 w-14">실기</th>
-
-            </tr>
-          </thead>
-          <tbody id="univ-table-body">
-          </tbody>
-        </table>
-      </div>
-
-      <!-- 모바일 카드 리스트 (md 미만) -->
-      <div class="md:hidden" id="univ-card-list"></div>
+    <!-- 관심대학 카드 리스트 -->
+    <div id="univ-card-sortable" class="pb-2">
     </div>
 
-    <p class="text-xs text-gray-400 mt-3 text-center">💡 행을 클릭하면 해당 순위의 대학 정보를 입력할 수 있습니다.</p>
+    <p class="text-xs text-gray-400 mt-1 mb-4 text-center">💡 카드를 드래그하여 순위를 조정하거나, 카드의 ✏️ 수정 버튼을 눌러 정보를 입력하세요.</p>
   </div>
 
   <!-- ── 입력 모달 ── -->
@@ -268,20 +362,84 @@
           </div>
         </div>
 
-        <!-- 면접유무 / 실기유무 -->
-        <div class="grid grid-cols-2 gap-3">
+        <!-- 면접유무 -->
+        <div>
+          <div class="field-label">면접유무</div>
+          <div class="flex" id="interview-group">
+            <button class="seg-btn" data-value="유" onclick="UniverNS.setInterview(this)">유</button>
+            <button class="seg-btn" data-value="무" onclick="UniverNS.setInterview(this)">무</button>
+          </div>
+        </div>
+
+        <!-- 면접 상세 정보 (면접 '유' 선택 시 표시) -->
+        <div id="interview-detail-section" class="hidden pl-3 border-l-2 border-blue-200 space-y-3">
           <div>
-            <div class="field-label">면접유무</div>
-            <div class="flex" id="interview-group">
-              <button class="seg-btn" data-value="유" onclick="UniverNS.setInterview(this)">유</button>
-              <button class="seg-btn" data-value="무" onclick="UniverNS.setInterview(this)">무</button>
+            <div class="field-label">면접 실시 지역</div>
+            <input type="text" id="modal-interview-region" class="field-input" placeholder="예) 서울, 부산, 대구 등" />
+          </div>
+          <div>
+            <div class="field-label">면접 시작일</div>
+            <div class="date-group">
+              <input type="number" id="modal-interview-start-y" class="date-input" style="width:58px;" placeholder="년" min="2020" max="2035" />
+              <span class="date-sep">년</span>
+              <input type="number" id="modal-interview-start-m" class="date-input" style="width:46px;" placeholder="월" min="1" max="12" />
+              <span class="date-sep">월</span>
+              <input type="number" id="modal-interview-start-d" class="date-input" style="width:46px;" placeholder="일" min="1" max="31" />
+              <span class="date-sep">일</span>
+              <span id="modal-interview-start-preview" class="date-result"></span>
             </div>
           </div>
           <div>
-            <div class="field-label">실기유무</div>
-            <div class="flex" id="practical-group">
-              <button class="seg-btn" data-value="유" onclick="UniverNS.setPractical(this)">유</button>
-              <button class="seg-btn" data-value="무" onclick="UniverNS.setPractical(this)">무</button>
+            <div class="field-label">면접 종료일</div>
+            <div class="date-group">
+              <input type="number" id="modal-interview-end-y" class="date-input" style="width:58px;" placeholder="년" min="2020" max="2035" />
+              <span class="date-sep">년</span>
+              <input type="number" id="modal-interview-end-m" class="date-input" style="width:46px;" placeholder="월" min="1" max="12" />
+              <span class="date-sep">월</span>
+              <input type="number" id="modal-interview-end-d" class="date-input" style="width:46px;" placeholder="일" min="1" max="31" />
+              <span class="date-sep">일</span>
+              <span id="modal-interview-end-preview" class="date-result"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 실기유무 -->
+        <div>
+          <div class="field-label">실기유무</div>
+          <div class="flex" id="practical-group">
+            <button class="seg-btn" data-value="유" onclick="UniverNS.setPractical(this)">유</button>
+            <button class="seg-btn" data-value="무" onclick="UniverNS.setPractical(this)">무</button>
+          </div>
+        </div>
+
+        <!-- 실기 상세 정보 (실기 '유' 선택 시 표시) -->
+        <div id="practical-detail-section" class="hidden pl-3 border-l-2 border-purple-200 space-y-3">
+          <div>
+            <div class="field-label">실기 실시 지역</div>
+            <input type="text" id="modal-practical-region" class="field-input" placeholder="예) 서울, 부산, 대구 등" />
+          </div>
+          <div>
+            <div class="field-label">실기 시작일</div>
+            <div class="date-group">
+              <input type="number" id="modal-practical-start-y" class="date-input" style="width:58px;" placeholder="년" min="2020" max="2035" />
+              <span class="date-sep">년</span>
+              <input type="number" id="modal-practical-start-m" class="date-input" style="width:46px;" placeholder="월" min="1" max="12" />
+              <span class="date-sep">월</span>
+              <input type="number" id="modal-practical-start-d" class="date-input" style="width:46px;" placeholder="일" min="1" max="31" />
+              <span class="date-sep">일</span>
+              <span id="modal-practical-start-preview" class="date-result"></span>
+            </div>
+          </div>
+          <div>
+            <div class="field-label">실기 종료일</div>
+            <div class="date-group">
+              <input type="number" id="modal-practical-end-y" class="date-input" style="width:58px;" placeholder="년" min="2020" max="2035" />
+              <span class="date-sep">년</span>
+              <input type="number" id="modal-practical-end-m" class="date-input" style="width:46px;" placeholder="월" min="1" max="12" />
+              <span class="date-sep">월</span>
+              <input type="number" id="modal-practical-end-d" class="date-input" style="width:46px;" placeholder="일" min="1" max="31" />
+              <span class="date-sep">일</span>
+              <span id="modal-practical-end-preview" class="date-result"></span>
             </div>
           </div>
         </div>
@@ -387,6 +545,49 @@
     </div>
   </div>
 
+  <!-- ── 미저장 경고 모달 (최상위 z-index) ── -->
+  <div id="unsaved-warn-modal" class="warn-modal-bg hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <!-- 상단 경고 바 -->
+      <div class="bg-amber-500 px-5 py-3 flex items-center gap-2">
+        <span class="text-2xl">⚠️</span>
+        <span class="text-white font-bold text-sm">저장하지 않은 변경사항</span>
+      </div>
+      <div class="px-6 py-5">
+        <p class="text-gray-800 font-semibold text-sm mb-1">페이지를 이동하시겠습니까?</p>
+        <p class="text-gray-500 text-xs leading-relaxed">입력한 내용이 저장되지 않았습니다.<br>저장하지 않고 이동하면 변경사항이 사라집니다.</p>
+      </div>
+      <div class="px-5 pb-5 flex gap-2">
+        <button id="unsaved-warn-cancel"
+          class="flex-1 border-2 border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold py-2.5 rounded-xl transition text-sm">
+          계속 입력
+        </button>
+        <button id="unsaved-warn-confirm"
+          class="flex-1 bg-amber-500 hover:bg-amber-600 text-white font-bold py-2.5 rounded-xl transition text-sm shadow">
+          저장 없이 이동
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 날짜 오류 경고 모달 ── -->
+  <div id="date-error-modal" class="warn-modal-bg hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div class="bg-red-500 px-5 py-3 flex items-center gap-2">
+        <span class="text-2xl">❌</span>
+        <span class="text-white font-bold text-sm">날짜 입력 오류</span>
+      </div>
+      <div class="px-6 py-5">
+        <p id="date-error-msg" class="text-gray-800 text-sm leading-relaxed"></p>
+      </div>
+      <div class="px-5 pb-5">
+        <button id="date-error-close"
+          class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl transition text-sm shadow">
+          확인하고 다시 입력
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- ── 토스트 ── -->
   <div id="toast" class="toast"></div>
@@ -411,6 +612,17 @@
 
     // 지원가능전형 로컬 캐시
     var eligibleTypeValue = '';
+
+    // 미저장 변경 여부 추적
+    var hasUnsavedChanges = false;
+    // 예정 이동 콜백
+    var _pendingNavCallback = null;
+
+    // SortableJS 인스턴스
+    var _sortableInstance = null;
+
+    // 요일 배열
+    var DAY_NAMES = ['일','월','화','수','목','금','토'];
 
     // 전형대상자 및 설명 목록 (공통)
     var ELIGIBLE_OPTIONS = [
@@ -500,7 +712,169 @@
       var navInfo = document.getElementById('nav-user-info');
       if (navInfo) navInfo.textContent = userName ? (userName + ' 학생') : '';
 
+      // 날짜 입력 실시간 미리보기 이벤트 등록
+      _bindDatePreviewEvents();
+
+      // 경고 모달 버튼 이벤트
+      document.getElementById('date-error-close').addEventListener('click', function() {
+        document.getElementById('date-error-modal').classList.add('hidden');
+      });
+
       _loadData();
+    }
+
+    // ── 날짜 미리보기 이벤트 바인딩 ─────────────────────────
+    function _bindDatePreviewEvents() {
+      var fields = [
+        { y: 'modal-interview-start-y', m: 'modal-interview-start-m', d: 'modal-interview-start-d', preview: 'modal-interview-start-preview' },
+        { y: 'modal-interview-end-y',   m: 'modal-interview-end-m',   d: 'modal-interview-end-d',   preview: 'modal-interview-end-preview' },
+        { y: 'modal-practical-start-y', m: 'modal-practical-start-m', d: 'modal-practical-start-d', preview: 'modal-practical-start-preview' },
+        { y: 'modal-practical-end-y',   m: 'modal-practical-end-m',   d: 'modal-practical-end-d',   preview: 'modal-practical-end-preview' }
+      ];
+      fields.forEach(function(f) {
+        ['y','m','d'].forEach(function(k) {
+          var el = document.getElementById(f[k]);
+          if (el) {
+            el.addEventListener('input', function() {
+              _updateDatePreview(f.y, f.m, f.d, f.preview);
+            });
+          }
+        });
+      });
+    }
+
+    // ── 날짜 미리보기 업데이트 ──────────────────────────────
+    function _updateDatePreview(yId, mId, dId, previewId) {
+      var y = parseInt(document.getElementById(yId).value, 10);
+      var m = parseInt(document.getElementById(mId).value, 10);
+      var d = parseInt(document.getElementById(dId).value, 10);
+      var el = document.getElementById(previewId);
+      if (isNaN(y) || isNaN(m) || isNaN(d) || !y || !m || !d) {
+        el.textContent = '';
+        return;
+      }
+      // 간단한 범위 체크
+      if (m < 1 || m > 12 || d < 1 || d > 31) {
+        el.textContent = '❌ 범위오류';
+        el.style.color = '#ef4444';
+        return;
+      }
+      try {
+        var date = new Date(y, m - 1, d);
+        // 날짜 유효성 (예: 2월 30일 방지)
+        if (date.getMonth() !== m - 1 || date.getDate() !== d) {
+          el.textContent = '❌ 유효하지 않은 날짜';
+          el.style.color = '#ef4444';
+          return;
+        }
+        var dayName = DAY_NAMES[date.getDay()];
+        // 두 자리 포맷
+        var yy = String(y).slice(-2);
+        var mm = String(m).padStart(2, '0');
+        var dd = String(d).padStart(2, '0');
+        el.textContent = yy + '년 ' + mm + '월 ' + dd + '일(' + dayName + ')';
+        el.style.color = '#2563eb';
+      } catch(e) {
+        el.textContent = '';
+      }
+    }
+
+    // ── 날짜 문자열 포맷 ────────────────────────────────────
+    function _formatDate(y, m, d) {
+      if (!y || !m || !d) return '';
+      var date = new Date(y, m - 1, d);
+      if (isNaN(date.getTime()) || date.getMonth() !== m - 1 || date.getDate() !== d) return '';
+      var dayName = DAY_NAMES[date.getDay()];
+      var yy = String(y).slice(-2);
+      var mm = String(m).padStart(2, '0');
+      var dd = String(d).padStart(2, '0');
+      return yy + '년 ' + mm + '월 ' + dd + '일(' + dayName + ')';
+    }
+
+    // ── 저장된 날짜 문자열 파싱 ─────────────────────────────
+    // 저장 형식: "25년 03월 12일(목)"
+    function _parseDateStr(str) {
+      if (!str) return { y: '', m: '', d: '' };
+      var match = str.match(/(\d{2,4})년\s*(\d{1,2})월\s*(\d{1,2})일/);
+      if (!match) return { y: '', m: '', d: '' };
+      var y = parseInt(match[1], 10);
+      if (y < 100) y += 2000;
+      return { y: y, m: parseInt(match[2], 10), d: parseInt(match[3], 10) };
+    }
+
+    // ── 날짜 유효성 검사 ────────────────────────────────────
+    function _validateDates() {
+      var interviewVal = _getSegBtn('interview-group');
+      var practicalVal = _getSegBtn('practical-group');
+
+      if (interviewVal === '유') {
+        var isy = parseInt(document.getElementById('modal-interview-start-y').value, 10);
+        var ism = parseInt(document.getElementById('modal-interview-start-m').value, 10);
+        var isd = parseInt(document.getElementById('modal-interview-start-d').value, 10);
+        var iey = parseInt(document.getElementById('modal-interview-end-y').value, 10);
+        var iem = parseInt(document.getElementById('modal-interview-end-m').value, 10);
+        var ied = parseInt(document.getElementById('modal-interview-end-d').value, 10);
+
+        // 시작일 또는 종료일 중 하나라도 입력된 경우 검증
+        var startFilled = !isNaN(isy) && !isNaN(ism) && !isNaN(isd) && isy && ism && isd;
+        var endFilled   = !isNaN(iey) && !isNaN(iem) && !isNaN(ied) && iey && iem && ied;
+
+        if (startFilled) {
+          if (ism < 1 || ism > 12) return '면접 시작일: 월은 1~12 범위여야 합니다.';
+          if (isd < 1 || isd > 31) return '면접 시작일: 일은 1~31 범위여야 합니다.';
+          var startDate = new Date(isy, ism - 1, isd);
+          if (startDate.getMonth() !== ism - 1 || startDate.getDate() !== isd) return '면접 시작일이 유효하지 않습니다. (예: 2월 30일 불가)';
+        }
+        if (endFilled) {
+          if (iem < 1 || iem > 12) return '면접 종료일: 월은 1~12 범위여야 합니다.';
+          if (ied < 1 || ied > 31) return '면접 종료일: 일은 1~31 범위여야 합니다.';
+          var endDate = new Date(iey, iem - 1, ied);
+          if (endDate.getMonth() !== iem - 1 || endDate.getDate() !== ied) return '면접 종료일이 유효하지 않습니다. (예: 2월 30일 불가)';
+        }
+        if (startFilled && endFilled) {
+          var sd = new Date(isy, ism - 1, isd);
+          var ed = new Date(iey, iem - 1, ied);
+          if (sd > ed) return '면접 시작일이 종료일보다 늦습니다.\n시작일은 종료일보다 앞이어야 합니다.';
+        }
+      }
+
+      if (practicalVal === '유') {
+        var psy = parseInt(document.getElementById('modal-practical-start-y').value, 10);
+        var psm = parseInt(document.getElementById('modal-practical-start-m').value, 10);
+        var psd = parseInt(document.getElementById('modal-practical-start-d').value, 10);
+        var pey = parseInt(document.getElementById('modal-practical-end-y').value, 10);
+        var pem = parseInt(document.getElementById('modal-practical-end-m').value, 10);
+        var ped = parseInt(document.getElementById('modal-practical-end-d').value, 10);
+
+        var pStartFilled = !isNaN(psy) && !isNaN(psm) && !isNaN(psd) && psy && psm && psd;
+        var pEndFilled   = !isNaN(pey) && !isNaN(pem) && !isNaN(ped) && pey && pem && ped;
+
+        if (pStartFilled) {
+          if (psm < 1 || psm > 12) return '실기 시작일: 월은 1~12 범위여야 합니다.';
+          if (psd < 1 || psd > 31) return '실기 시작일: 일은 1~31 범위여야 합니다.';
+          var pStartDate = new Date(psy, psm - 1, psd);
+          if (pStartDate.getMonth() !== psm - 1 || pStartDate.getDate() !== psd) return '실기 시작일이 유효하지 않습니다. (예: 2월 30일 불가)';
+        }
+        if (pEndFilled) {
+          if (pem < 1 || pem > 12) return '실기 종료일: 월은 1~12 범위여야 합니다.';
+          if (ped < 1 || ped > 31) return '실기 종료일: 일은 1~31 범위여야 합니다.';
+          var pEndDate = new Date(pey, pem - 1, ped);
+          if (pEndDate.getMonth() !== pem - 1 || pEndDate.getDate() !== ped) return '실기 종료일이 유효하지 않습니다. (예: 2월 30일 불가)';
+        }
+        if (pStartFilled && pEndFilled) {
+          var pSd = new Date(psy, psm - 1, psd);
+          var pEd = new Date(pey, pem - 1, ped);
+          if (pSd > pEd) return '실기 시작일이 종료일보다 늦습니다.\n시작일은 종료일보다 앞이어야 합니다.';
+        }
+      }
+
+      return null; // 오류 없음
+    }
+
+    // ── 날짜 오류 모달 표시 ──────────────────────────────────
+    function _showDateError(msg) {
+      document.getElementById('date-error-msg').textContent = msg;
+      document.getElementById('date-error-modal').classList.remove('hidden');
     }
 
     // ── 데이터 로드 ──────────────────────────────────────────
@@ -563,89 +937,211 @@
       document.getElementById('skeleton-ui').classList.add('hidden');
       document.getElementById('main-content').classList.remove('hidden');
 
-      // 순위 기준 정렬
       var sorted = univRows.slice().sort(function (a, b) { return a.rank - b.rank; });
-
-      _renderTable(sorted);
-      _renderCards(sorted);
+      _renderCardsSortable(sorted);
     }
 
-    // ── 데스크탑 테이블 렌더링 ───────────────────────────────
-    function _renderTable(sorted) {
-      var tbody = document.getElementById('univ-table-body');
-      tbody.innerHTML = '';
-      sorted.forEach(function (row, idx) {
-        var tr = document.createElement('tr');
-        tr.className = 'univ-row border-b border-gray-100 ' + (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50');
-        tr.onclick = function () { openModal(row.rank); };
-
-        var csatDisplay = row.csatMin === '유' ? '유' : (row.csatMin || '');
-        if (row.csatMin && row.csatMin.indexOf('|') !== -1) {
-          csatDisplay = '유';
-        }
-
-        tr.innerHTML =
-          '<td class="px-3 py-2.5 text-center"><span class="rank-badge">' + row.rank + '</span></td>' +
-          '<td class="px-3 py-2.5 font-medium text-gray-800">' + _esc(row.univ || '') + '</td>' +
-          '<td class="px-3 py-2.5 text-gray-600 text-xs w-36 whitespace-nowrap">' + _esc(row.admsType || '') + '</td>' +
-          '<td class="px-3 py-2.5 text-gray-600 text-xs">' + _esc(row.admsKind || '') + '</td>' +
-          '<td class="px-3 py-2.5 text-gray-600 text-xs">' + _esc(row.dept || '') + '</td>' +
-          '<td class="px-3 py-2.5 text-center text-gray-600 text-xs">' + _esc(row.quota || '') + '</td>' +
-          '<td class="px-3 py-2.5 text-center text-xs">' + _csatBadge(row) + '</td>' +
-          '<td class="px-3 py-2.5 text-center text-gray-600 text-xs">' + _esc(row.selType || '') + '</td>' +
-          '<td class="px-3 py-2.5 text-center text-xs">' + _ynBadge(row.interview) + '</td>' +
-          '<td class="px-3 py-2.5 text-center text-xs">' + _ynBadge(row.practical) + '</td>';
-
-        tbody.appendChild(tr);
-
-        // 비고가 있을 때만 별도 행으로 표시
-        if (row.remark && row.remark.trim()) {
-          var trRemark = document.createElement('tr');
-          trRemark.className = (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/50');
-          trRemark.innerHTML =
-            '<td colspan="10" class="px-3 pb-2.5 pt-0">' +
-              '<div style="display:flex;align-items:flex-start;gap:6px;background:#f0f9ff;border-left:3px solid #93c5fd;border-radius:0 6px 6px 0;padding:6px 10px;">' +
-                '<span style="font-size:0.7rem;font-weight:700;color:#2563eb;white-space:nowrap;margin-top:1px;">📝 비고</span>' +
-                '<span style="font-size:0.75rem;color:#374151;line-height:1.5;">' + _esc(row.remark) + '</span>' +
-              '</div>' +
-            '</td>';
-          tbody.appendChild(trRemark);
-        }
-      });
-    }
-
-    // ── 모바일 카드 렌더링 ───────────────────────────────────
-    function _renderCards(sorted) {
-      var container = document.getElementById('univ-card-list');
+    // ── 카드 렌더링 (SortableJS 연동) ───────────────────────
+    function _renderCardsSortable(sorted) {
+      var container = document.getElementById('univ-card-sortable');
       container.innerHTML = '';
-      sorted.forEach(function (row) {
-        var div = document.createElement('div');
-        div.className = 'univ-row border-b border-gray-100 px-4 py-3';
-        div.onclick = function () { openModal(row.rank); };
 
-        var hasData = row.univ || row.admsType || row.dept;
-        div.innerHTML =
-          '<div class="flex items-start gap-3">' +
-            '<span class="rank-badge mt-0.5 flex-shrink-0">' + row.rank + '</span>' +
-            '<div class="flex-1 min-w-0">' +
-              '<p class="font-semibold text-gray-800 text-sm truncate">' +
-                (row.univ ? _esc(row.univ) : '<span class="text-gray-300 font-normal">대학명 미입력</span>') +
-              '</p>' +
-              (hasData ?
-                '<p class="text-xs text-gray-500 mt-0.5 truncate">' +
-                  [row.admsType, row.admsKind, row.dept].filter(Boolean).map(_esc).join(' · ') +
-                '</p>' : '') +
-              (row.remark && row.remark.trim() ?
-                '<div style="display:flex;align-items:flex-start;gap:5px;background:#f0f9ff;border-left:3px solid #93c5fd;border-radius:0 6px 6px 0;padding:5px 8px;margin-top:6px;">' +
-                  '<span style="font-size:0.65rem;font-weight:700;color:#2563eb;white-space:nowrap;margin-top:1px;">📝 비고</span>' +
-                  '<span style="font-size:0.72rem;color:#374151;line-height:1.5;">' + _esc(row.remark) + '</span>' +
-                '</div>' : '') +
-            '</div>' +
-            '<span class="text-gray-300 text-sm">›</span>' +
-          '</div>';
+      // 10개 슬롯 확보 (빈 슬롯 포함)
+      var slots = [];
+      for (var i = 1; i <= 10; i++) {
+        var found = null;
+        for (var j = 0; j < sorted.length; j++) {
+          if (sorted[j].rank === i) { found = sorted[j]; break; }
+        }
+        slots.push(found || { rank: i, univ: '', admsType: '', admsKind: '', dept: '',
+                              quota: '', csatMin: '', selType: '', interview: '', practical: '',
+                              interviewRegion: '', interviewStart: '', interviewEnd: '',
+                              practicalRegion: '', practicalStart: '', practicalEnd: '',
+                              tendency: '', remark: '' });
+      }
 
-        container.appendChild(div);
+      slots.forEach(function(row) {
+        container.appendChild(_buildCard(row));
       });
+
+      // SortableJS 초기화
+      if (_sortableInstance) { _sortableInstance.destroy(); }
+      _sortableInstance = Sortable.create(container, {
+        animation: 180,
+        ghostClass: 'sortable-ghost',
+        chosenClass: 'sortable-chosen',
+        handle: '.card-drag-handle',
+        onEnd: function(evt) {
+          _onDragEnd(evt);
+        }
+      });
+    }
+
+    // ── 카드 DOM 생성 ────────────────────────────────────────
+    function _buildCard(row) {
+      var div = document.createElement('div');
+      div.className = 'univ-card' + (!row.univ ? ' univ-card-empty' : '');
+      div.dataset.rank = row.rank;
+
+      var hasData = row.univ || row.admsType || row.dept;
+
+      // 순위 뱃지 색상
+      var rankClass = 'rank-badge';
+      if (row.rank === 1) rankClass += ' rank-badge-1';
+      else if (row.rank === 2) rankClass += ' rank-badge-2';
+      else if (row.rank === 3) rankClass += ' rank-badge-3';
+
+      // 수능최저 표시
+      var csatDisplay = row.csatMin || '';
+      if (csatDisplay && csatDisplay !== '무') csatDisplay = '유';
+
+      // 지원성향 배지 색
+      var tendencyBadgeClass = 'badge-gray';
+      var t = row.tendency || '';
+      if (t === '과도한 상향') tendencyBadgeClass = 'badge-red';
+      else if (t === '상향') tendencyBadgeClass = 'badge-orange';
+      else if (t === '적정') tendencyBadgeClass = 'badge-green';
+      else if (t === '하향') tendencyBadgeClass = 'badge-blue';
+      else if (t === '확실한 안정') tendencyBadgeClass = 'badge-indigo';
+
+      var html = '<div style="display:flex;align-items:flex-start;gap:10px;">';
+      html += '<span class="card-drag-handle" title="드래그하여 순위 변경">⠿</span>';
+      html += '<span class="' + rankClass + '">' + row.rank + '</span>';
+      html += '<div style="flex:1;min-width:0;">';
+
+      if (!row.univ) {
+        // 빈 슬롯
+        html += '<p style="color:#9ca3af;font-size:0.85rem;font-weight:500;margin-bottom:2px;">대학명 미입력</p>';
+        html += '<p style="color:#d1d5db;font-size:0.75rem;">클릭하여 대학 정보를 입력하세요</p>';
+      } else {
+        // 대학명
+        html += '<p style="font-weight:700;font-size:0.95rem;color:#111827;margin-bottom:6px;">' + _esc(row.univ) + '</p>';
+
+        // 정보 뱃지 행
+        html += '<div class="card-info-row">';
+        if (row.admsType) html += '<span class="card-badge badge-blue">📚 ' + _esc(row.admsType) + '</span>';
+        if (row.admsKind) html += '<span class="card-badge badge-purple">🏷 ' + _esc(row.admsKind) + '</span>';
+        if (row.dept)     html += '<span class="card-badge badge-green">🎓 ' + _esc(row.dept) + '</span>';
+        if (row.quota)    html += '<span class="card-badge badge-gray">👥 ' + _esc(row.quota) + '명</span>';
+        html += '</div>';
+
+        // 두 번째 정보 행
+        html += '<div class="card-info-row" style="margin-top:4px;">';
+        if (csatDisplay) {
+          var csatClass = csatDisplay === '무' ? 'badge-gray' : 'badge-orange';
+          var csatLabel = csatDisplay === '무' ? '수능최저 무' : '수능최저 유';
+          if (row.csatMin && row.csatMin !== '무' && row.csatMin !== '유') {
+            csatLabel = '수능최저: ' + row.csatMin;
+          }
+          html += '<span class="card-badge ' + csatClass + '">📋 ' + _esc(csatLabel) + '</span>';
+        }
+        if (row.selType)  html += '<span class="card-badge badge-gray">🔀 ' + _esc(row.selType) + '</span>';
+        if (row.interview === '유') html += '<span class="card-badge badge-blue">🗣 면접 있음</span>';
+        if (row.practical === '유') html += '<span class="card-badge badge-purple">🎨 실기 있음</span>';
+        if (row.tendency) html += '<span class="card-badge ' + tendencyBadgeClass + '">📊 ' + _esc(row.tendency) + '</span>';
+        html += '</div>';
+
+        // 면접 날짜/지역 정보
+        var hasInterviewDetail = row.interview === '유' && (row.interviewRegion || row.interviewStart || row.interviewEnd);
+        if (hasInterviewDetail) {
+          html += '<div class="card-section-divider"></div>';
+          html += '<div class="card-date-row">';
+          html += '<span class="card-date-label">🗣 면접</span>';
+          if (row.interviewRegion) html += '<span class="card-date-item"><span style="color:#6b7280;">지역:</span> ' + _esc(row.interviewRegion) + '</span>';
+          if (row.interviewStart)  html += '<span class="card-date-item"><span style="color:#6b7280;">시작:</span> ' + _esc(row.interviewStart) + '</span>';
+          if (row.interviewEnd)    html += '<span class="card-date-item"><span style="color:#6b7280;">종료:</span> ' + _esc(row.interviewEnd) + '</span>';
+          html += '</div>';
+        }
+
+        // 실기 날짜/지역 정보
+        var hasPracticalDetail = row.practical === '유' && (row.practicalRegion || row.practicalStart || row.practicalEnd);
+        if (hasPracticalDetail) {
+          html += '<div class="card-section-divider"></div>';
+          html += '<div class="card-date-row">';
+          html += '<span class="card-date-label">🎨 실기</span>';
+          if (row.practicalRegion) html += '<span class="card-date-item"><span style="color:#6b7280;">지역:</span> ' + _esc(row.practicalRegion) + '</span>';
+          if (row.practicalStart)  html += '<span class="card-date-item"><span style="color:#6b7280;">시작:</span> ' + _esc(row.practicalStart) + '</span>';
+          if (row.practicalEnd)    html += '<span class="card-date-item"><span style="color:#6b7280;">종료:</span> ' + _esc(row.practicalEnd) + '</span>';
+          html += '</div>';
+        }
+
+        // 비고
+        if (row.remark && row.remark.trim()) {
+          html += '<div class="card-remark"><span class="card-remark-label">📝 비고</span><span>' + _esc(row.remark) + '</span></div>';
+        }
+      }
+
+      html += '</div></div>'; // flex 닫기
+
+      // 수정 버튼
+      html += '<button class="card-edit-btn" onclick="event.stopPropagation();UniverNS.openModal(' + row.rank + ')">✏️ 수정</button>';
+
+      div.innerHTML = html;
+
+      // 카드 클릭으로도 모달 열기 (빈 카드에서 유용)
+      div.addEventListener('click', function(e) {
+        if (e.target.classList.contains('card-edit-btn') || e.target.closest('.card-drag-handle')) return;
+        openModal(row.rank);
+      });
+
+      return div;
+    }
+
+    // ── 드래그 앤 드롭 완료 처리 ────────────────────────────
+    function _onDragEnd(evt) {
+      if (evt.oldIndex === evt.newIndex) return;
+
+      // 현재 카드 순서 기반으로 새 순위 할당
+      var container = document.getElementById('univ-card-sortable');
+      var cards = container.querySelectorAll('.univ-card');
+      var newRankMap = {}; // originalRank -> newRank
+
+      cards.forEach(function(card, idx) {
+        var originalRank = parseInt(card.dataset.rank, 10);
+        newRankMap[originalRank] = idx + 1;
+      });
+
+      // 로컬 univRows 업데이트
+      univRows.forEach(function(row) {
+        if (newRankMap.hasOwnProperty(row.rank)) {
+          row.rank = newRankMap[row.rank];
+        }
+      });
+
+      // card의 dataset.rank 및 표시 업데이트 (시각적 반영)
+      cards.forEach(function(card, idx) {
+        card.dataset.rank = idx + 1;
+      });
+
+      // 서버에 순위 변경 저장
+      _saveDragOrder();
+    }
+
+    // ── 드래그 순위 서버 저장 ────────────────────────────────
+    async function _saveDragOrder() {
+      var rankData = univRows.map(function(r) { return { originalRank: r._origRank || r.rank, rank: r.rank }; });
+      // 실제로는 univRows 전체를 payload로 전송
+      // 서버 univSaveDragOrder action 또는 각 행을 업데이트
+      // 여기서는 전체 rows를 일괄 저장하는 방식으로 처리
+      try {
+        NaviComponent.showLoading();
+        var result = await _callPostAPI('univSaveAllRanks', {
+          studentId: studentId,
+          rows: univRows.map(function(r) { return { rank: r.rank, univ: r.univ }; })
+        });
+        NaviComponent.hideLoading();
+        if (result && result.success) {
+          _showToast('✅ 순위가 변경되었습니다.', 'success');
+          await _reloadData();
+        } else {
+          _showToast('순위 저장 실패: ' + (result.message || ''), 'error');
+          await _reloadData(); // 실패 시에도 서버 기준으로 복원
+        }
+      } catch(e) {
+        NaviComponent.hideLoading();
+        _showToast('❌ 오류: ' + e.message, 'error');
+        await _reloadData();
+      }
     }
 
     // ── 뱃지 헬퍼 ───────────────────────────────────────────
@@ -681,28 +1177,28 @@
 
     // ── 선호전형 저장 ────────────────────────────────────────
     async function savePrefType() {
-  var selected = document.querySelector('#pref-type-group .seg-btn.selected');
-  if (!selected) { _showToast('선호전형을 선택해주세요.', 'error'); return; }
-  var prefType = selected.dataset.value;
+      var selected = document.querySelector('#pref-type-group .seg-btn.selected');
+      if (!selected) { _showToast('선호전형을 선택해주세요.', 'error'); return; }
+      var prefType = selected.dataset.value;
 
-   try {
-    NaviComponent.showLoading();    // ← 추가: API 호출 전 스피너 표시
-    var result = await _callPostAPI('univSavePrefType', {
-      studentId: studentId,
-      prefType : prefType
-    });
-    
-    if (result && result.success) {
-      NaviComponent.hideLoading();    // ← 추가: 성공 시 스피너 숨김
-      _showToast('✅ ' + result.message, 'success');
-    } else {
-      _showToast('저장 실패: ' + (result.message || ''), 'error');
+      try {
+        NaviComponent.showLoading();
+        var result = await _callPostAPI('univSavePrefType', {
+          studentId: studentId,
+          prefType : prefType
+        });
+        
+        if (result && result.success) {
+          NaviComponent.hideLoading();
+          _showToast('✅ ' + result.message, 'success');
+        } else {
+          _showToast('저장 실패: ' + (result.message || ''), 'error');
+        }
+      } catch (e) {
+        NaviComponent.hideLoading();
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
     }
-  } catch (e) {
-    NaviComponent.hideLoading();  // ← 추가: 오류 시에도 스피너 숨김
-    _showToast('❌ 오류: ' + e.message, 'error');
-  }
-}
 
     // ── 지원가능전형 표시 렌더링 ─────────────────────────────
     function _renderEligibleTypeDisplay() {
@@ -715,7 +1211,6 @@
       var container = document.getElementById('eligible-type-options');
       container.innerHTML = '';
 
-      // 현재 저장된 값에서 선택 항목 파싱
       var selected = eligibleTypeValue
         ? eligibleTypeValue.split(',').map(function(s){ return s.trim(); })
         : ['일반전형(기본)'];
@@ -765,37 +1260,32 @@
     }
 
     // ── 지원가능전형 저장 ────────────────────────────────────
-async function saveEligibleType() {
-  var checkboxes = document.querySelectorAll('#eligible-type-options input[type=checkbox]:checked');
-  var selected = [];
-  checkboxes.forEach(function(cb) { selected.push(cb.value); });
-  if (selected.indexOf('일반전형(기본)') === -1) selected.unshift('일반전형(기본)');
-  var value = selected.join(', ');
-  // ✨ 추가: API 호출 전 스피너 표시
-  NaviComponent.showLoading(); 
-  try {
-    var result = await _callPostAPI('univSaveEligibleType', {
-      studentId   : studentId,
-      eligibleType: value
-    });
-    // 종료 후 스피너 숨김 (성공 시)
-    NaviComponent.hideLoading(); 
-    if (result && result.success) {
-      eligibleTypeValue = value;
-      _renderEligibleTypeDisplay();
-      closeEligibleTypeModal();
-      _showToast('✅ ' + result.message, 'success');
-    } else {
-      _showToast('저장 실패: ' + (result.message || ''), 'error');
+    async function saveEligibleType() {
+      var checkboxes = document.querySelectorAll('#eligible-type-options input[type=checkbox]:checked');
+      var selected = [];
+      checkboxes.forEach(function(cb) { selected.push(cb.value); });
+      if (selected.indexOf('일반전형(기본)') === -1) selected.unshift('일반전형(기본)');
+      var value = selected.join(', ');
+      NaviComponent.showLoading(); 
+      try {
+        var result = await _callPostAPI('univSaveEligibleType', {
+          studentId   : studentId,
+          eligibleType: value
+        });
+        NaviComponent.hideLoading(); 
+        if (result && result.success) {
+          eligibleTypeValue = value;
+          _renderEligibleTypeDisplay();
+          closeEligibleTypeModal();
+          _showToast('✅ ' + result.message, 'success');
+        } else {
+          _showToast('저장 실패: ' + (result.message || ''), 'error');
+        }
+      } catch (e) {
+        NaviComponent.hideLoading(); 
+        _showToast('❌ 오류: ' + e.message, 'error');
+      }
     }
-  } catch (e) {
-    // 종료 후 스피너 숨김 (실패 시)
-    NaviComponent.hideLoading(); 
-    _showToast('❌ 오류: ' + e.message, 'error');
-  }
-}
-
-    
 
     // ── 선호전형 초기 모달 열기 ─────────────────────────────
     function _openPrefTypeModal() {
@@ -829,20 +1319,20 @@ async function saveEligibleType() {
     // ── 모달 열기 ────────────────────────────────────────────
     function openModal(rank) {
       editingOriginalRank = rank;
+      hasUnsavedChanges = false;
 
-      // 해당 rank의 row 찾기
       var row = null;
       for (var i = 0; i < univRows.length; i++) {
         if (univRows[i].rank === rank) { row = univRows[i]; break; }
       }
       if (!row) row = { rank: rank, univ: '', admsType: '', admsKind: '', dept: '', quota: '',
                         csatMin: '', csatDetail: '', selType: '', interview: '', practical: '',
+                        interviewRegion: '', interviewStart: '', interviewEnd: '',
+                        practicalRegion: '', practicalStart: '', practicalEnd: '',
                         tendency: '', remark: '' };
 
-      // 모달 라벨
       document.getElementById('modal-rank-label').textContent = rank;
 
-      // 값 채우기
       document.getElementById('modal-rank').value  = row.rank;
       document.getElementById('modal-univ').value  = row.univ || '';
       document.getElementById('modal-dept').value  = row.dept || '';
@@ -887,7 +1377,6 @@ async function saveEligibleType() {
         csatVal = csatRaw;
         csatDetail = '';
       } else {
-        // '무'나 빈값이 아니면 모두 '유'로 간주하고 내용을 상세칸에 표시
         csatVal = '유';
         csatDetail = csatRaw; 
       }
@@ -897,19 +1386,103 @@ async function saveEligibleType() {
       csatDetailEl.value = csatDetail;
       csatDetailEl.classList.toggle('hidden', csatVal !== '유');
 
-      // 선발유형, 면접, 실기
+      // 선발유형
       _setSegBtn('sel-type-group',  row.selType   || '');
+
+      // 면접
       _setSegBtn('interview-group', row.interview || '');
+      var showInterview = row.interview === '유';
+      document.getElementById('interview-detail-section').classList.toggle('hidden', !showInterview);
+
+      // 면접 지역/날짜 복원
+      document.getElementById('modal-interview-region').value = row.interviewRegion || '';
+      var iStart = _parseDateStr(row.interviewStart || '');
+      var iEnd   = _parseDateStr(row.interviewEnd || '');
+      document.getElementById('modal-interview-start-y').value = iStart.y || '';
+      document.getElementById('modal-interview-start-m').value = iStart.m || '';
+      document.getElementById('modal-interview-start-d').value = iStart.d || '';
+      document.getElementById('modal-interview-end-y').value   = iEnd.y || '';
+      document.getElementById('modal-interview-end-m').value   = iEnd.m || '';
+      document.getElementById('modal-interview-end-d').value   = iEnd.d || '';
+      _updateDatePreview('modal-interview-start-y','modal-interview-start-m','modal-interview-start-d','modal-interview-start-preview');
+      _updateDatePreview('modal-interview-end-y','modal-interview-end-m','modal-interview-end-d','modal-interview-end-preview');
+
+      // 실기
       _setSegBtn('practical-group', row.practical || '');
+      var showPractical = row.practical === '유';
+      document.getElementById('practical-detail-section').classList.toggle('hidden', !showPractical);
+
+      // 실기 지역/날짜 복원
+      document.getElementById('modal-practical-region').value = row.practicalRegion || '';
+      var pStart = _parseDateStr(row.practicalStart || '');
+      var pEnd   = _parseDateStr(row.practicalEnd || '');
+      document.getElementById('modal-practical-start-y').value = pStart.y || '';
+      document.getElementById('modal-practical-start-m').value = pStart.m || '';
+      document.getElementById('modal-practical-start-d').value = pStart.d || '';
+      document.getElementById('modal-practical-end-y').value   = pEnd.y || '';
+      document.getElementById('modal-practical-end-m').value   = pEnd.m || '';
+      document.getElementById('modal-practical-end-d').value   = pEnd.d || '';
+      _updateDatePreview('modal-practical-start-y','modal-practical-start-m','modal-practical-start-d','modal-practical-start-preview');
+      _updateDatePreview('modal-practical-end-y','modal-practical-end-m','modal-practical-end-d','modal-practical-end-preview');
 
       document.getElementById('row-modal').classList.remove('hidden');
+
+      // 변경 감지 이벤트 (저장 후 초기화)
+      setTimeout(function() {
+        hasUnsavedChanges = false;
+        var modal = document.getElementById('row-modal');
+        modal.querySelectorAll('input, select, textarea, button.seg-btn').forEach(function(el) {
+          el.addEventListener('change', _markUnsaved);
+          el.addEventListener('input', _markUnsaved);
+          el.addEventListener('click', _markUnsaved);
+        });
+      }, 100);
+    }
+
+    function _markUnsaved() {
+      hasUnsavedChanges = true;
     }
 
     function closeModal() {
+      if (hasUnsavedChanges) {
+        _showUnsavedWarnModal(function() {
+          _doCloseModal();
+        });
+        return;
+      }
+      _doCloseModal();
+    }
+
+    function _doCloseModal() {
+      hasUnsavedChanges = false;
       document.getElementById('row-modal').style.background = '';
       document.getElementById('row-modal').style.pointerEvents = '';
       document.getElementById('row-modal').classList.add('hidden');
       editingOriginalRank = null;
+    }
+
+    // ── 미저장 경고 모달 ─────────────────────────────────────
+    function _showUnsavedWarnModal(onConfirm) {
+      var modal = document.getElementById('unsaved-warn-modal');
+      modal.classList.remove('hidden');
+
+      var cancelBtn  = document.getElementById('unsaved-warn-cancel');
+      var confirmBtn = document.getElementById('unsaved-warn-confirm');
+
+      function cleanup() {
+        modal.classList.add('hidden');
+        cancelBtn.removeEventListener('click', onCancel);
+        confirmBtn.removeEventListener('click', onConfirmClick);
+      }
+      function onCancel() { cleanup(); }
+      function onConfirmClick() {
+        cleanup();
+        hasUnsavedChanges = false;
+        if (onConfirm) onConfirm();
+      }
+
+      cancelBtn.addEventListener('click', onCancel);
+      confirmBtn.addEventListener('click', onConfirmClick);
     }
 
     // ── 세그먼트 버튼 그룹 선택 헬퍼 ────────────────────────
@@ -942,8 +1515,18 @@ async function saveEligibleType() {
     }
 
     function setSelType(btn)   { _setSegBtn('sel-type-group',  btn.dataset.value); }
-    function setInterview(btn) { _setSegBtn('interview-group', btn.dataset.value); }
-    function setPractical(btn) { _setSegBtn('practical-group', btn.dataset.value); }
+
+    function setInterview(btn) {
+      _setSegBtn('interview-group', btn.dataset.value);
+      var show = btn.dataset.value === '유';
+      document.getElementById('interview-detail-section').classList.toggle('hidden', !show);
+    }
+
+    function setPractical(btn) {
+      _setSegBtn('practical-group', btn.dataset.value);
+      var show = btn.dataset.value === '유';
+      document.getElementById('practical-detail-section').classList.toggle('hidden', !show);
+    }
 
     // ── 전형 설명 모달 ─────────────────────────────────────
     function openEligibleDescModal() {
@@ -969,10 +1552,17 @@ async function saveEligibleType() {
       document.getElementById('eligible-desc-modal').classList.add('hidden');
     }
 
-        // ── 행 저장 ──────────────────────────────────────────────
+    // ── 행 저장 ──────────────────────────────────────────────
     async function saveRow() {
       var newRank = Number(document.getElementById('modal-rank').value);
       if (!newRank) { _showToast('순위를 선택해주세요.', 'error'); return; }
+
+      // 날짜 유효성 검사
+      var dateError = _validateDates();
+      if (dateError) {
+        _showDateError(dateError);
+        return;
+      }
 
       // 전형유형 값 결정
       var admsTypeRaw = document.getElementById('modal-adms-type').value;
@@ -993,21 +1583,61 @@ async function saveEligibleType() {
       var csatMin    = _getSegBtn('csat-min-group');
       var csatDetail = document.getElementById('modal-csat-detail').value.trim();
 
+      // 면접/실기 날짜 포맷
+      var interviewVal = _getSegBtn('interview-group');
+      var practicalVal = _getSegBtn('practical-group');
+
+      var interviewRegion = '';
+      var interviewStart  = '';
+      var interviewEnd    = '';
+      if (interviewVal === '유') {
+        interviewRegion = document.getElementById('modal-interview-region').value.trim();
+        var isy = parseInt(document.getElementById('modal-interview-start-y').value, 10);
+        var ism = parseInt(document.getElementById('modal-interview-start-m').value, 10);
+        var isd = parseInt(document.getElementById('modal-interview-start-d').value, 10);
+        var iey = parseInt(document.getElementById('modal-interview-end-y').value, 10);
+        var iem = parseInt(document.getElementById('modal-interview-end-m').value, 10);
+        var ied = parseInt(document.getElementById('modal-interview-end-d').value, 10);
+        if (isy && ism && isd) interviewStart = _formatDate(isy, ism, isd);
+        if (iey && iem && ied) interviewEnd   = _formatDate(iey, iem, ied);
+      }
+
+      var practicalRegion = '';
+      var practicalStart  = '';
+      var practicalEnd    = '';
+      if (practicalVal === '유') {
+        practicalRegion = document.getElementById('modal-practical-region').value.trim();
+        var psy = parseInt(document.getElementById('modal-practical-start-y').value, 10);
+        var psm = parseInt(document.getElementById('modal-practical-start-m').value, 10);
+        var psd = parseInt(document.getElementById('modal-practical-start-d').value, 10);
+        var pey = parseInt(document.getElementById('modal-practical-end-y').value, 10);
+        var pem = parseInt(document.getElementById('modal-practical-end-m').value, 10);
+        var ped = parseInt(document.getElementById('modal-practical-end-d').value, 10);
+        if (psy && psm && psd) practicalStart = _formatDate(psy, psm, psd);
+        if (pey && pem && ped) practicalEnd   = _formatDate(pey, pem, ped);
+      }
+
       var payload = {
-        studentId     : studentId,
-        originalRank  : editingOriginalRank,
-        rank          : newRank,
-        univ          : document.getElementById('modal-univ').value.trim(),
-        admsType      : admsType,
-        admsKind      : admsKind,
-        dept          : document.getElementById('modal-dept').value.trim(),
-        quota         : document.getElementById('modal-quota').value.trim(),
-        csatMin       : csatMin === '유' ? csatDetail : csatMin,
-        selType       : _getSegBtn('sel-type-group'),
-        interview     : _getSegBtn('interview-group'),
-        practical     : _getSegBtn('practical-group'),
-        tendency      : document.getElementById('modal-tendency').value.trim(),
-        remark        : document.getElementById('modal-remark').value.trim()
+        studentId       : studentId,
+        originalRank    : editingOriginalRank,
+        rank            : newRank,
+        univ            : document.getElementById('modal-univ').value.trim(),
+        admsType        : admsType,
+        admsKind        : admsKind,
+        dept            : document.getElementById('modal-dept').value.trim(),
+        quota           : document.getElementById('modal-quota').value.trim(),
+        csatMin         : csatMin === '유' ? csatDetail : csatMin,
+        selType         : _getSegBtn('sel-type-group'),
+        interview       : interviewVal,
+        interviewRegion : interviewRegion,
+        interviewStart  : interviewStart,
+        interviewEnd    : interviewEnd,
+        practical       : practicalVal,
+        practicalRegion : practicalRegion,
+        practicalStart  : practicalStart,
+        practicalEnd    : practicalEnd,
+        tendency        : document.getElementById('modal-tendency').value.trim(),
+        remark          : document.getElementById('modal-remark').value.trim()
       };
 
       var saveBtn = document.getElementById('modal-save-btn');
@@ -1022,11 +1652,13 @@ async function saveEligibleType() {
         NaviComponent.hideLoading();
         saveBtn.disabled = false;
         saveBtn.textContent = '💾 저장';
+        document.getElementById('row-modal').style.background = '';
+        document.getElementById('row-modal').style.pointerEvents = '';
 
         if (result && result.success) {
-          closeModal();
+          hasUnsavedChanges = false;
+          _doCloseModal();
           _showToast('✅ ' + result.message, 'success');
-          // 서버에서 최신 데이터를 다시 불러와 화면 갱신
           await _reloadData();
         } else {
           _showToast('저장 실패: ' + (result.message || ''), 'error');
@@ -1035,74 +1667,40 @@ async function saveEligibleType() {
         NaviComponent.hideLoading();
         saveBtn.disabled = false;
         saveBtn.textContent = '💾 저장';
+        document.getElementById('row-modal').style.background = '';
+        document.getElementById('row-modal').style.pointerEvents = '';
         _showToast('❌ 오류: ' + e.message, 'error');
       }
     }
 
-    // ── 로컬 캐시 업데이트 ───────────────────────────────────
-    function _updateLocalCache(payload) {
-      var newRank    = Number(payload.rank);
-      var origRank   = Number(payload.originalRank);
-
-      // 순위 교체
-      if (newRank !== origRank) {
-        for (var i = 0; i < univRows.length; i++) {
-          if (univRows[i].rank === newRank) {
-            univRows[i].rank = origRank;
-            break;
-          }
-        }
-      }
-
-      // 대상 행 업데이트 (originalRank → newRank로 교체 후)
-      // saveRow 후 서버 기준으로 맞추기 위해 originalRank를 가진 row를 수정
-      var target = null;
-      for (var j = 0; j < univRows.length; j++) {
-        if (univRows[j].rank === origRank) { target = univRows[j]; break; }
-      }
-      // 순위 교체가 일어났으면 위에서 이미 바뀜. 실제 저장 대상은 newRank를 가진 row
-      // 다시 newRank로 찾기
-      target = null;
-      for (var k = 0; k < univRows.length; k++) {
-        if (univRows[k].rank === newRank) { target = univRows[k]; break; }
-      }
-      // originalRank row가 newRank를 할당받은 경우 (교체 전)
-      if (!target) {
-        for (var m = 0; m < univRows.length; m++) {
-          if (univRows[m].rank === origRank) { target = univRows[m]; break; }
-        }
-      }
-      if (target) {
-        target.rank      = newRank;
-        target.univ      = payload.univ;
-        target.admsType  = payload.admsType;
-        target.admsKind  = payload.admsKind;
-        target.dept      = payload.dept;
-        target.quota     = payload.quota;
-        target.csatMin   = payload.csatMin;
-        target.selType   = payload.selType;
-        target.interview = payload.interview;
-        target.practical = payload.practical;
-        target.tendency  = payload.tendency;
-        target.remark    = payload.remark;
-      }
-    }
-
-    // ── 네비게이션 ───────────────────────────────────────────
+    // ── 네비게이션 (미저장 경고 포함) ───────────────────────
     function navigateTo(page) {
-      var params = new URLSearchParams({ studentId: studentId, name: userName });
-      switch (page) {
-        case 'schedule':
-          window.location.href = GITHUB_URL + '/firstpage.html?' + params.toString(); break;
-        case 'suneung':
-          window.location.href = GITHUB_URL + '/susel.html?' + params.toString(); break;
-        case 'record':
-          window.location.href = GITHUB_URL + '/record.html?' + params.toString(); break;
+      var doNav = function() {
+        var params = new URLSearchParams({ studentId: studentId, name: userName });
+        switch (page) {
+          case 'schedule':
+            window.location.href = GITHUB_URL + '/firstpage.html?' + params.toString(); break;
+          case 'suneung':
+            window.location.href = GITHUB_URL + '/susel.html?' + params.toString(); break;
+          case 'record':
+            window.location.href = GITHUB_URL + '/record.html?' + params.toString(); break;
+        }
+      };
+
+      if (hasUnsavedChanges) {
+        _showUnsavedWarnModal(doNav);
+      } else {
+        doNav();
       }
     }
 
     function doLogout() {
-      window.location.href = GITHUB_URL;
+      var doNav = function() { window.location.href = GITHUB_URL; };
+      if (hasUnsavedChanges) {
+        _showUnsavedWarnModal(doNav);
+      } else {
+        doNav();
+      }
     }
 
     // ── 토스트 ───────────────────────────────────────────────
