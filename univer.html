@@ -1095,34 +1095,30 @@ function _onDragEnd(evt) {
       var container = document.getElementById('univ-card-sortable');
       var cards = container.querySelectorAll('.univ-card');
 
-      // DOM 새 순서 기준으로 univRows를 재정렬한 배열 생성
-      // dataset.rank = 드래그 전 순위 → 그 순위에 해당하는 데이터를 찾아
-      // 새 순위(idx+1)를 부여한 딥카피 배열을 만든다
-      var newRows = [];
-      cards.forEach(function(card, idx) {
-        var oldRank = parseInt(card.dataset.rank, 10);
-        for (var i = 0; i < univRows.length; i++) {
-          if (univRows[i].rank === oldRank) {
-            var copy = JSON.parse(JSON.stringify(univRows[i]));
-            copy.rank = idx + 1;   // 새 순위를 바로 여기서 확정
-            newRows.push(copy);
-            break;
-          }
+      // 드래그한 카드(oldIndex)와 놓은 자리(newIndex)의 데이터 유무 확인
+      var draggedRank = parseInt(cards[evt.oldIndex].dataset.rank, 10);
+      var targetRank  = parseInt(cards[evt.newIndex].dataset.rank, 10);
+
+      var draggedRow = univRows.find(function(r) { return r.rank === draggedRank; });
+      var targetRow  = univRows.find(function(r) { return r.rank === targetRank; });
+
+      var draggedHasData = draggedRow && (draggedRow.univ || draggedRow.admsType || draggedRow.dept || draggedRow.admsKind);
+      var targetHasData  = targetRow  && (targetRow.univ  || targetRow.admsType  || targetRow.dept  || targetRow.admsKind);
+
+      // 빈 카드와의 교체는 허용하지 않음 (DOM을 원래대로 되돌림)
+      if (!draggedHasData || !targetHasData) {
+        // SortableJS가 바꾼 DOM을 원복
+        var parent = container;
+        var allCards = Array.from(parent.querySelectorAll('.univ-card'));
+        // oldIndex 위치로 되돌리기
+        if (evt.oldIndex < evt.newIndex) {
+          parent.insertBefore(allCards[evt.newIndex], allCards[evt.oldIndex]);
+        } else {
+          parent.insertBefore(allCards[evt.newIndex], allCards[evt.oldIndex].nextSibling);
         }
-      });
-
-      // 로컬 univRows를 newRows로 교체
-      univRows = newRows;
-
-      // card dataset 업데이트
-      cards.forEach(function(card, idx) {
-        card.dataset.rank = idx + 1;
-      });
-
-      // 서버 저장: 각 행의 rank = 새 순위, originalRank = 드래그 전 dataset.rank 기반이 아닌
-      // univRows 전체를 rank=1부터 10까지 순서대로 덮어쓰기
-      _saveDragOrder(newRows);
-    }
+        _showToast('⚠️ 데이터가 없는 빈 카드와는 순위를 교체할 수 없습니다.', 'error');
+        return;
+      }
     
 
     // ── 드래그 순위 서버 저장 ────────────────────────────────
