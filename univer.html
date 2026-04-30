@@ -1107,10 +1107,8 @@ function _onDragEnd(evt) {
 
       // 빈 카드와의 교체는 허용하지 않음 (DOM을 원래대로 되돌림)
       if (!draggedHasData || !targetHasData) {
-        // SortableJS가 바꾼 DOM을 원복
         var parent = container;
         var allCards = Array.from(parent.querySelectorAll('.univ-card'));
-        // oldIndex 위치로 되돌리기
         if (evt.oldIndex < evt.newIndex) {
           parent.insertBefore(allCards[evt.newIndex], allCards[evt.oldIndex]);
         } else {
@@ -1119,6 +1117,31 @@ function _onDragEnd(evt) {
         _showToast('⚠️ 데이터가 없는 빈 카드와는 순위를 교체할 수 없습니다.', 'error');
         return;
       }
+
+      // DOM 새 순서 기준으로 univRows를 재정렬한 배열 생성
+      var newRows = [];
+      cards.forEach(function(card, idx) {
+        var oldRank = parseInt(card.dataset.rank, 10);
+        for (var i = 0; i < univRows.length; i++) {
+          if (univRows[i].rank === oldRank) {
+            var copy = JSON.parse(JSON.stringify(univRows[i]));
+            copy.rank = idx + 1;
+            newRows.push(copy);
+            break;
+          }
+        }
+      });
+
+      // 로컬 univRows를 newRows로 교체
+      univRows = newRows;
+
+      // card dataset 업데이트
+      cards.forEach(function(card, idx) {
+        card.dataset.rank = idx + 1;
+      });
+
+      _saveDragOrder(newRows);
+    }
     
 
     // ── 드래그 순위 서버 저장 ────────────────────────────────
