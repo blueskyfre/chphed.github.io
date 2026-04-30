@@ -673,9 +673,16 @@ var Admin = (function() {
   // ─── 메뉴 클릭 ───────────────────────────────────────────────
   function _onMenuClick(menu) {
     if (_state.hasUnsavedEdit) {
-      if (!confirm('저장하지 않은 편집 내용이 있습니다.\n페이지를 이동하면 변경 내용이 사라집니다.\n계속하시겠습니까?')) return;
-      _state.hasUnsavedEdit = false;
+      _showUnsavedModal('페이지를 이동하면 저장하지 않은 편집 내용이 사라집니다.', function() {
+        _state.hasUnsavedEdit = false;
+        _doMenuClick(menu);
+      });
+      return;
     }
+    _doMenuClick(menu);
+  }
+
+  function _doMenuClick(menu) {
     _state.currentMenu = menu;
     _state.currentStudentId = '';
  
@@ -1436,10 +1443,53 @@ var Admin = (function() {
   // ─── 로그아웃 ─────────────────────────────────────────────────
   function _logout() {
     if (_state.hasUnsavedEdit) {
-      if (!confirm('저장하지 않은 편집 내용이 있습니다.\n로그아웃하면 변경 내용이 사라집니다.\n계속하시겠습니까?')) return;
-      _state.hasUnsavedEdit = false;
+      _showUnsavedModal('로그아웃하면 저장하지 않은 편집 내용이 사라집니다.', function() {
+        _state.hasUnsavedEdit = false;
+        document.getElementById('logout-modal').classList.remove('hidden');
+      });
+      return;
     }
     document.getElementById('logout-modal').classList.remove('hidden');
+  }
+
+  // ─── 미저장 경고 커스텀 모달 ──────────────────────────────────
+  var _unsavedCallback = null;
+  function _showUnsavedModal(msg, onConfirm) {
+    _unsavedCallback = onConfirm || null;
+    var msgEl = document.getElementById('unsaved-modal-msg');
+    if (msgEl) msgEl.textContent = msg;
+    var modal = document.getElementById('unsaved-modal');
+    var card  = document.getElementById('unsaved-modal-card');
+    if (!modal || !card) return;
+    modal.classList.remove('hidden');
+    requestAnimationFrame(function() {
+      card.classList.remove('scale-95', 'opacity-0');
+      card.classList.add('scale-100', 'opacity-100');
+    });
+  }
+  function _confirmUnsaved() {
+    var modal = document.getElementById('unsaved-modal');
+    var card  = document.getElementById('unsaved-modal-card');
+    if (card) {
+      card.classList.remove('scale-100', 'opacity-100');
+      card.classList.add('scale-95', 'opacity-0');
+    }
+    setTimeout(function() {
+      if (modal) modal.classList.add('hidden');
+      if (_unsavedCallback) { var cb = _unsavedCallback; _unsavedCallback = null; cb(); }
+    }, 180);
+  }
+  function _cancelUnsaved() {
+    var modal = document.getElementById('unsaved-modal');
+    var card  = document.getElementById('unsaved-modal-card');
+    if (card) {
+      card.classList.remove('scale-100', 'opacity-100');
+      card.classList.add('scale-95', 'opacity-0');
+    }
+    setTimeout(function() {
+      if (modal) modal.classList.add('hidden');
+      _unsavedCallback = null;
+    }, 180);
   }
 
   function _confirmLogout() {
@@ -1465,7 +1515,9 @@ var Admin = (function() {
     editUnivRank:        _editUnivRank,
     copyGibuContent:     _copyGibuContent,
     updateEditBytes:     _updateEditBytes,
-    saveGibuEdit:        _saveGibuEdit
+    saveGibuEdit:        _saveGibuEdit,
+    confirmUnsaved:      _confirmUnsaved,
+    cancelUnsaved:       _cancelUnsaved
   };
  
 })();
@@ -1615,14 +1667,10 @@ var Admin = (function() {
 
 <!-- 로그아웃 확인 모달 -->
 <div id="logout-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
-  <!-- 배경 오버레이 -->
   <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="Admin.cancelLogout()"></div>
-  <!-- 모달 카드 -->
   <div class="relative bg-white rounded-2xl shadow-2xl w-80 overflow-hidden">
-    <!-- 상단 컬러 바 -->
     <div class="h-1.5 bg-gradient-to-r from-blue-800 to-blue-500"></div>
     <div class="px-7 py-6">
-      <!-- 아이콘 -->
       <div class="flex justify-center mb-4">
         <div class="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center">
           <svg class="w-7 h-7 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1647,6 +1695,37 @@ var Admin = (function() {
   </div>
 </div>
 
+<!-- 미저장 경고 모달 -->
+<div id="unsaved-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="Admin.cancelUnsaved()"></div>
+  <div id="unsaved-modal-card" class="relative bg-white rounded-2xl shadow-2xl w-80 overflow-hidden transform transition-all duration-200 scale-95 opacity-0">
+    <div class="h-1.5 bg-gradient-to-r from-amber-500 to-amber-300"></div>
+    <div class="px-7 py-6">
+      <div class="flex justify-center mb-4">
+        <div class="relative">
+          <div class="w-16 h-16 rounded-full bg-amber-50 flex items-center justify-center ring-4 ring-amber-100/60">
+            <svg class="w-9 h-9 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <h3 class="text-center text-lg font-bold text-gray-800 mb-1">저장하지 않은 내용</h3>
+      <p id="unsaved-modal-msg" class="text-center text-sm text-gray-500 mb-6">저장하지 않은 편집 내용이 사라집니다.</p>
+      <div class="flex gap-3">
+        <button onclick="Admin.cancelUnsaved()"
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-colors">
+          취소
+        </button>
+        <button onclick="Admin.confirmUnsaved()"
+          class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors shadow-sm">
+          계속
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <script>
   document.addEventListener('DOMContentLoaded', function() { Admin.init(); });
 </script>
