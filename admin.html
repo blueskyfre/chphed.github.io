@@ -7,66 +7,116 @@
   <script src="config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
+    /* ── 글로벌 폰트 / 색감 ── */
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #0f172a;
+      background: #f5f7fb;
+      letter-spacing: -0.01em;
+    }
+
     @keyframes skeleton-shimmer {
       0% { background-position: -200% 0; }
       100% { background-position: 200% 0; }
     }
     .skeleton-box {
-      background: linear-gradient(90deg, #e5e7eb 25%, #f3f4f6 50%, #e5e7eb 75%);
+      background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
       background-size: 200% 100%;
       animation: skeleton-shimmer 1.5s ease-in-out infinite;
-      border-radius: 0.375rem;
+      border-radius: 0.5rem;
     }
-    ::-webkit-scrollbar { width: 6px; }
-    ::-webkit-scrollbar-track { background: #f1f5f9; }
-    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 3px; }
-    .student-item.active { background-color: #eff6ff; border-left: 3px solid #3b82f6; }
-    .area-btn.active { background-color: #1d4ed8; color: #fff; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+    /* ── 사이드바 학생/영역 항목 ── */
+    .student-item {
+      border-radius: 10px;
+      margin: 2px 8px;
+      padding: 10px 12px;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+    }
+    .student-item:hover {
+      background: #eef2ff;
+      border-color: #c7d2fe;
+    }
+    .student-item.active {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      border-color: #4338ca;
+      box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.35);
+    }
+    .student-item.active span { color: #fff !important; }
+    .student-item.active .text-gray-400 { color: #c7d2fe !important; }
+
+    .area-btn {
+      border-radius: 10px;
+      margin: 4px 8px;
+      padding: 12px 14px !important;
+      border: 1px solid #e2e8f0 !important;
+      transition: all 0.15s ease;
+    }
+    .area-btn:hover {
+      background: #eef2ff !important;
+      border-color: #c7d2fe !important;
+    }
+    .area-btn.active {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+      color: #fff !important;
+      border-color: #4338ca !important;
+      box-shadow: 0 4px 12px -2px rgba(79, 70, 229, 0.35);
+    }
 
     /* ── 헤더 공통 ── */
     .site-header {
-      background: #fff;
-      border-bottom: 1px solid #e5e9f0;
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: saturate(180%) blur(12px);
+      -webkit-backdrop-filter: saturate(180%) blur(12px);
+      border-bottom: 1px solid #e2e8f0;
       position: sticky;
       top: 0;
       z-index: 100;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
     }
     .site-header-inner {
-      height: 56px;
+      height: 60px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 16px;
-      padding: 0 24px;
+      gap: 20px;
+      padding: 0 28px;
     }
 
     /* ── 인사 영역 ── */
     .header-greeting {
-      font-size: 0.875rem;
-      font-weight: 600;
-      color: #1e293b;
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: #0f172a;
       white-space: nowrap;
+      letter-spacing: -0.01em;
     }
     .header-auth {
       display: flex;
       align-items: center;
-      gap: 4px;
-      font-size: 0.75rem;
-      color: #94a3b8;
+      gap: 6px;
+      font-size: 0.78rem;
+      color: #64748b;
+      font-weight: 500;
     }
 
     /* ── 메뉴 탭 버튼 ── */
     .menu-btn {
       position: relative;
-      padding: 0 4px;
-      height: 56px;
-      font-size: 0.835rem;
-      font-weight: 500;
-      color: #64748b;
+      padding: 0 10px;
+      height: 60px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: #475569;
       background: transparent;
       border: none;
       cursor: pointer;
-      letter-spacing: 0.01em;
+      letter-spacing: -0.01em;
       transition: color 0.2s ease;
       white-space: nowrap;
     }
@@ -74,65 +124,58 @@
       content: '';
       position: absolute;
       bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: #2563eb;
-      border-radius: 2px 2px 0 0;
+      left: 8px;
+      right: 8px;
+      height: 3px;
+      background: linear-gradient(90deg, #6366f1, #4f46e5);
+      border-radius: 3px 3px 0 0;
       transform: scaleX(0);
       transform-origin: center;
       transition: transform 0.25s ease;
     }
-    .menu-btn:hover {
-      color: #2563eb;
-    }
-    .menu-btn:hover::after {
-      transform: scaleX(1);
-    }
+    .menu-btn:hover { color: #4f46e5; }
+    .menu-btn:hover::after { transform: scaleX(1); }
     .menu-btn.active {
-      color: #2563eb;
-      font-weight: 600;
+      color: #4f46e5;
+      font-weight: 700;
     }
-    .menu-btn.active::after {
-      transform: scaleX(1);
-    }
+    .menu-btn.active::after { transform: scaleX(1); }
 
-    /* ── 메뉴 버튼 사이 간격 ── */
     .header-nav {
       display: flex;
       align-items: center;
-      gap: 20px;
-      height: 56px;
+      gap: 8px;
+      height: 60px;
     }
 
     /* ── 액션 버튼 ── */
     .header-action-btn {
       display: inline-flex;
       align-items: center;
-      gap: 5px;
-      padding: 6px 14px;
-      font-size: 0.78rem;
-      font-weight: 500;
-      border-radius: 7px;
+      gap: 6px;
+      padding: 8px 16px;
+      font-size: 0.83rem;
+      font-weight: 600;
+      border-radius: 9px;
       cursor: pointer;
-      transition: background 0.18s ease, color 0.18s ease;
+      transition: all 0.18s ease;
       border: 1px solid transparent;
-      letter-spacing: 0.01em;
+      letter-spacing: -0.01em;
       white-space: nowrap;
     }
     .btn-download {
-      background: #f1f5f9;
-      color: #475569;
-      border-color: #e2e8f0;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      color: #fff;
+      border-color: #059669;
+      box-shadow: 0 2px 6px -1px rgba(16, 185, 129, 0.3);
     }
     .btn-download:hover {
-      background: #e0f2fe;
-      color: #0369a1;
-      border-color: #bae6fd;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px -2px rgba(16, 185, 129, 0.4);
     }
     .btn-logout {
       background: #fff;
-      color: #94a3b8;
+      color: #64748b;
       border-color: #e2e8f0;
     }
     .btn-logout:hover {
@@ -142,26 +185,288 @@
     }
     .header-divider {
       width: 1px;
-      height: 18px;
+      height: 22px;
       background: #e2e8f0;
-      margin: 0 2px;
+      margin: 0 4px;
     }
 
     /* ── 드롭다운 select ── */
     #class-dropdown {
-      font-size: 0.78rem;
-      font-weight: 500;
-      color: #334155;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 6px;
-      padding: 3px 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #1e293b;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 5px 10px;
       cursor: pointer;
       outline: none;
-      transition: border-color 0.18s;
+      transition: all 0.18s;
     }
+    #class-dropdown:hover { background: #e2e8f0; }
     #class-dropdown:focus {
-      border-color: #93c5fd;
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    }
+
+    /* ── 사이드바 ── */
+    .app-sidebar {
+      background: #ffffff;
+      border-right: 1px solid #e2e8f0;
+    }
+    .sidebar-header {
+      padding: 14px 16px;
+      background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+      border-bottom: 1px solid #e2e8f0;
+    }
+    .sidebar-title {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #4f46e5;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    /* ── 데이터 테이블 (수능선택 등) ── */
+    .modern-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size: 0.875rem;
+      background: #fff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 1px 2px rgba(15, 23, 42, 0.03);
+    }
+    .modern-table thead tr {
+      background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+    }
+    .modern-table thead th {
+      color: #fff;
+      font-weight: 600;
+      padding: 12px 14px;
+      text-align: center;
+      font-size: 0.82rem;
+      letter-spacing: -0.01em;
+      border: none;
+      white-space: nowrap;
+    }
+    .modern-table tbody td {
+      padding: 11px 14px;
+      border-bottom: 1px solid #f1f5f9;
+      text-align: center;
+      color: #334155;
+      white-space: nowrap;
+    }
+    .modern-table tbody tr:nth-child(even) { background: #fafbff; }
+    .modern-table tbody tr:hover { background: #fef9c3; }
+    .modern-table tbody tr:last-child td { border-bottom: none; }
+
+    /* ── 관심대학 카드 ── */
+    .univ-card {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      padding: 18px 20px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .univ-card::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 4px;
+      background: linear-gradient(180deg, #10b981, #059669);
+    }
+    .univ-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.12);
+      border-color: #c7d2fe;
+    }
+    .univ-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px dashed #e2e8f0;
+    }
+    .univ-rank-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 36px;
+      height: 36px;
+      padding: 0 10px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #fff;
+      font-weight: 800;
+      font-size: 0.95rem;
+      box-shadow: 0 2px 6px -1px rgba(245, 158, 11, 0.4);
+      cursor: pointer;
+      transition: transform 0.15s;
+    }
+    .univ-rank-badge:hover { transform: scale(1.05); }
+    .univ-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+    .univ-dept {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin-top: 2px;
+    }
+    .univ-tag {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: -0.01em;
+    }
+    .tag-type { background: #eef2ff; color: #4338ca; }
+    .tag-kind { background: #ecfdf5; color: #047857; }
+    .tag-suneung { background: #fef3c7; color: #92400e; }
+    .tag-judge { background: #fce7f3; color: #be185d; }
+    .univ-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 8px 16px;
+      margin-top: 6px;
+    }
+    .univ-field {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      font-size: 0.82rem;
+    }
+    .univ-field-label {
+      color: #94a3b8;
+      font-size: 0.7rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      text-transform: uppercase;
+    }
+    .univ-field-value {
+      color: #1e293b;
+      font-weight: 500;
+      word-break: keep-all;
+    }
+    .univ-section-divider {
+      grid-column: 1 / -1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      padding-top: 8px;
+      border-top: 1px dashed #e2e8f0;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #6366f1;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+    .univ-memo {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #fffbeb;
+      border-left: 3px solid #f59e0b;
+      border-radius: 6px;
+      font-size: 0.82rem;
+      color: #78350f;
+      white-space: pre-wrap;
+    }
+
+    /* ── 학생 정보 카드 (관심대학 상단) ── */
+    .student-info-banner {
+      background: linear-gradient(135deg, #eef2ff 0%, #ddd6fe 100%);
+      border: 1px solid #c7d2fe;
+      border-radius: 14px;
+      padding: 18px 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 3px rgba(79, 70, 229, 0.08);
+    }
+    .student-info-name {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: #312e81;
+      letter-spacing: -0.02em;
+    }
+    .student-info-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .info-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #fff;
+      border: 1px solid #c7d2fe;
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #4338ca;
+    }
+    .info-pill-label {
+      color: #6366f1;
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+    .info-pill-value { color: #1e1b4b; }
+
+    /* ── "전체 보기" 사이드바 항목 ── */
+    .student-item-all {
+      background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+      border: 1px solid #bae6fd !important;
+      font-weight: 700;
+      color: #075985;
+    }
+    .student-item-all.active {
+      background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+      border-color: #0369a1 !important;
+      box-shadow: 0 4px 12px -2px rgba(14, 165, 233, 0.35);
+    }
+    .student-item-all.active span { color: #fff !important; }
+
+    /* ── 빈 상태 메시지 ── */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 60vh;
+      gap: 14px;
+    }
+    .empty-state-icon {
+      width: 64px;
+      height: 64px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #eef2ff 0%, #ddd6fe 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #6366f1;
+      box-shadow: 0 4px 12px -2px rgba(99, 102, 241, 0.15);
+    }
+    .empty-state-text {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #475569;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 20px;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -198,7 +503,8 @@ var Admin = (function() {
     currentMenu:  '',
     currentArea:  '',
     currentStudentId: '',
-    studentList:  []
+    studentList:  [],
+    suneungData:  null   // 수능선택 원본 데이터 캐시 (개별/전체 전환용)
   };
  
   // ─── API 호출 (GET) ──────────────────────────────────────────
@@ -310,13 +616,35 @@ var Admin = (function() {
       return;
     }
     ul.innerHTML = '';
+
+    // ── 수능선택 메뉴일 때 최상단에 "전체 학생" 항목 노출 ──
+    if (_state.currentMenu === 'suneung') {
+      var liAll = document.createElement('div');
+      liAll.className = 'student-item student-item-all flex items-center gap-2 cursor-pointer';
+      liAll.dataset.id = '__ALL__';
+      liAll.innerHTML =
+        '<span class="flex items-center justify-center w-7 h-7 rounded-lg bg-sky-100 text-sky-600 shrink-0">'
+        + '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>'
+        + '</span>'
+        + '<span class="text-sm font-bold truncate">전체 학생</span>';
+      liAll.addEventListener('click', function() {
+        document.querySelectorAll('.student-item').forEach(function(el) { el.classList.remove('active'); });
+        liAll.classList.add('active');
+        _state.currentStudentId = '';
+        _renderSuneung(_state.suneungData, null);
+      });
+      ul.appendChild(liAll);
+      // 기본은 "전체 학생" 활성 상태
+      if (!_state.currentStudentId) liAll.classList.add('active');
+    }
+
     students.forEach(function(s) {
       var li = document.createElement('div');
-      li.className = 'student-item flex items-center gap-2 px-3 py-2 border-b border-gray-100 cursor-pointer hover:bg-blue-50 transition-colors';
+      li.className = 'student-item flex items-center gap-2 cursor-pointer';
       li.dataset.id = s.studentId;
       li.innerHTML =
-        '<span class="text-xs text-gray-400 w-12 shrink-0">' + s.studentId + '</span>' +
-        '<span class="text-sm font-medium text-gray-800 truncate">' + s.name + '</span>';
+        '<span class="text-xs text-gray-400 w-12 shrink-0 font-mono">' + s.studentId + '</span>' +
+        '<span class="text-sm font-semibold text-gray-800 truncate">' + s.name + '</span>';
       li.addEventListener('click', function() {
         document.querySelectorAll('.student-item').forEach(function(el) { el.classList.remove('active'); });
         li.classList.add('active');
@@ -325,6 +653,8 @@ var Admin = (function() {
           _renderGibuPersonalForStudent(s.studentId);
         } else if (_state.currentMenu === 'univ') {
           _renderUnivForStudent(s);
+        } else if (_state.currentMenu === 'suneung') {
+          _renderSuneung(_state.suneungData, s.studentId);
         }
       });
       ul.appendChild(li);
@@ -349,6 +679,7 @@ var Admin = (function() {
       _renderStudentList(_state.studentList);
       _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
     } else if (menu === 'suneung') {
+      _state.currentStudentId = '';
       _renderStudentList(_state.studentList);
       _loadSuneung();
     } else if (menu === 'univ') {
@@ -359,7 +690,7 @@ var Admin = (function() {
  
   function _refreshContent() {
     if (!_state.currentMenu) return;
-    if (_state.currentMenu === 'suneung')           _loadSuneung();
+    if (_state.currentMenu === 'suneung')           { _state.currentStudentId = ''; _loadSuneung(); }
     else if (_state.currentMenu === 'univ')         { _state.currentStudentId = ''; _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-emerald-100"><svg class="w-6 h-6 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>'); }
     else if (_state.currentMenu === 'gibu_personal') _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에서 학생을 선택하세요.</p></div>');
     else if (_state.currentMenu === 'gibu_area')    { _renderAreaButtons(); _clearContent('<div class="flex flex-col items-center justify-center h-64 gap-3"><div class="flex items-center justify-center w-12 h-12 rounded-full bg-blue-100"><svg class="w-6 h-6 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg></div><p class="text-base font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl px-5 py-3 shadow-sm">좌측에 있는 생기부 영역을 클릭하여 데이터를 조회하세요.</p></div>'); }
@@ -397,36 +728,76 @@ var Admin = (function() {
         adminId:     _state.adminId,
         filterClass: _state.currentClass
       });
-      if (res.success) _renderSuneung(res.data);
-      else _showError(res.message);
+      if (res.success) {
+        _state.suneungData = res.data;
+        _renderSuneung(res.data, _state.currentStudentId || null);
+      } else {
+        _showError(res.message);
+      }
     } catch (err) { _showError(err.message); }
   }
- 
-  function _renderSuneung(data) {
+
+  function _renderSuneung(data, filterStudentId) {
     if (!data || !data.rows || data.rows.length === 0) {
       _clearContent('<p class="text-gray-400 text-center mt-20">데이터가 없습니다.</p>');
       return;
     }
-    var html = '<div class="overflow-x-auto p-2"><table class="min-w-full text-sm border-collapse">'
-             + '<thead><tr class="bg-blue-700 text-white">'
-             + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">반</th>'
-             + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">학번</th>'
-             + '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">이름</th>';
+
+    var rowsToShow = data.rows;
+    var bannerHtml = '';
+    if (filterStudentId) {
+      rowsToShow = data.rows.filter(function(r){
+        return String(r.studentId) === String(filterStudentId);
+      });
+      if (rowsToShow.length === 0) {
+        _clearContent('<p class="text-gray-400 text-center mt-20">선택한 학생의 데이터가 없습니다.</p>');
+        return;
+      }
+      var s = rowsToShow[0];
+      bannerHtml =
+        '<div class="student-info-banner" style="background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);border-color:#93c5fd;">'
+        + '<div class="flex items-center gap-3">'
+        + '<div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#3b82f6,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.05rem;box-shadow:0 4px 10px -2px rgba(37,99,235,0.4);">'
+        + (s.name ? s.name.charAt(0) : '?')
+        + '</div>'
+        + '<div>'
+        + '<div class="student-info-name" style="color:#1e3a8a;">' + s.name + ' 학생</div>'
+        + '<div style="font-size:0.82rem;color:#1e40af;font-weight:600;">' + s.studentClass + '반 · 학번 ' + s.studentId + '</div>'
+        + '</div></div></div>';
+    } else {
+      bannerHtml =
+        '<div class="student-info-banner" style="background:linear-gradient(135deg,#dbeafe 0%,#bfdbfe 100%);border-color:#93c5fd;">'
+        + '<div class="flex items-center gap-3">'
+        + '<div style="width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#0ea5e9,#0284c7);display:flex;align-items:center;justify-content:center;color:#fff;">'
+        + '<svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6-5.13a4 4 0 11-8 0 4 4 0 018 0zm6 0a4 4 0 11-8 0 4 4 0 018 0z"/></svg>'
+        + '</div>'
+        + '<div>'
+        + '<div class="student-info-name" style="color:#0c4a6e;">전체 학생 수능선택</div>'
+        + '<div style="font-size:0.82rem;color:#075985;font-weight:600;">총 ' + rowsToShow.length + '명</div>'
+        + '</div></div></div>';
+    }
+
+    var html = '<div class="p-5">' + bannerHtml
+             + '<div class="overflow-x-auto rounded-xl" style="box-shadow:0 1px 3px rgba(15,23,42,0.05);"><table class="modern-table">'
+             + '<thead><tr>'
+             + '<th>반</th>'
+             + '<th>학번</th>'
+             + '<th>이름</th>';
     data.headers.forEach(function(h) {
-      html += '<th class="px-3 py-2 border border-blue-600 whitespace-nowrap">' + h + '</th>';
+      html += '<th>' + h + '</th>';
     });
     html += '</tr></thead><tbody>';
-    data.rows.forEach(function(row, idx) {
-      html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-blue-50') + ' hover:bg-yellow-50">'
-            + '<td class="px-3 py-1.5 border border-gray-200 text-center">' + row.studentClass + '</td>'
-            + '<td class="px-3 py-1.5 border border-gray-200 text-center">' + row.studentId + '</td>'
-            + '<td class="px-3 py-1.5 border border-gray-200 font-medium">' + row.name + '</td>';
+    rowsToShow.forEach(function(row) {
+      html += '<tr>'
+            + '<td>' + row.studentClass + '</td>'
+            + '<td>' + row.studentId + '</td>'
+            + '<td style="font-weight:600;color:#1e293b;">' + row.name + '</td>';
       row.values.forEach(function(v) {
-        html += '<td class="px-3 py-1.5 border border-gray-200 text-center whitespace-nowrap">' + (v || '-') + '</td>';
+        html += '<td>' + (v || '-') + '</td>';
       });
       html += '</tr>';
     });
-    html += '</tbody></table></div>';
+    html += '</tbody></table></div></div>';
     document.getElementById('content-area').innerHTML = html;
   }
  
@@ -441,50 +812,144 @@ var Admin = (function() {
       if (!res.success) { _showError(res.message); return; }
 
       var data = res.data;
-      // 표시할 헤더: 순위, 대학명, 전형유형, 전형종류, 지원학과, 모집정원, 수능최저, 선발유형, 면접유무, 실기유무, 지원성향판단, 비고
-      var displayHeaders = ['순위', '대학명', '전형유형', '전형종류', '지원학과', '모집정원', '수능최저', '선발유형', '면접유무', '실기유무', '지원성향판단', '비고'];
+      var rows = data.rows || [];
 
-      var html = '<div class="p-4">'
-               + '<div class="mb-3 text-base font-bold text-gray-800">'
-               + student.studentId + ' ' + student.name + ' 학생 : ' + (data.prefType || '-')
-               + '</div>'
-               + '<div class="overflow-x-auto"><table class="min-w-full text-sm border-collapse">'
-               + '<thead><tr class="bg-emerald-700 text-white">';
-
-      displayHeaders.forEach(function(h) {
-        html += '<th class="px-3 py-2 border border-emerald-600 whitespace-nowrap">' + h + '</th>';
+      // ── 지원가능전형: 모든 row에 동일하게 들어있는 값을 한 번만 추출 ──
+      // (10개 중복 데이터에서 유일값을 뽑기 위해 Set 사용)
+      var availSet = {};
+      var availList = [];
+      rows.forEach(function(r) {
+        var v = (r['지원가능전형'] !== undefined && r['지원가능전형'] !== null) ? String(r['지원가능전형']).trim() : '';
+        if (v && !availSet[v]) { availSet[v] = true; availList.push(v); }
       });
-      html += '</tr></thead><tbody>';
+      var availTypeText = availList.length > 0 ? availList.join(', ') : '-';
 
-      var allHeadersRef = ['연번', '반', '학번', '이름', '선호전형', '순위', '대학명', '전형유형', '전형종류', '지원학과', '모집정원', '수능최저', '선발유형', '면접유무', '실기유무', '지원성향판단', '비고'];
-      // 표시 컬럼 인덱스 (allHeadersRef 기준)
-      var displayColNames = ['순위', '대학명', '전형유형', '전형종류', '지원학과', '모집정원', '수능최저', '선발유형', '면접유무', '실기유무', '지원성향판단', '비고'];
+      // ── 선호전형: row의 '선호전형' 컬럼 우선, 없으면 data.prefType ──
+      var prefSet = {};
+      var prefList = [];
+      rows.forEach(function(r) {
+        var v = (r['선호전형'] !== undefined && r['선호전형'] !== null) ? String(r['선호전형']).trim() : '';
+        if (v && !prefSet[v]) { prefSet[v] = true; prefList.push(v); }
+      });
+      var prefTypeText = prefList.length > 0 ? prefList.join(', ') : (data.prefType || '-');
 
-      if (!data.rows || data.rows.length === 0) {
-        html += '<tr><td colspan="' + displayHeaders.length + '" class="text-center py-4 text-gray-400">데이터가 없습니다.</td></tr>';
+      // ── 상단 학생 정보 배너 (지원가능전형 → 선호전형 순서) ──
+      var html = '<div class="p-5">'
+               + '<div class="student-info-banner">'
+               + '<div class="flex items-center gap-3">'
+               + '<div style="width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#6366f1,#4f46e5);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:1.15rem;box-shadow:0 4px 10px -2px rgba(79,70,229,0.4);">'
+               + (student.name ? student.name.charAt(0) : '?')
+               + '</div>'
+               + '<div style="flex:1;">'
+               + '<div class="student-info-name">' + student.name + ' 학생</div>'
+               + '<div style="font-size:0.82rem;color:#4338ca;font-weight:600;margin-top:2px;">학번 ' + student.studentId + '</div>'
+               + '</div>'
+               + '<div style="font-size:0.78rem;color:#6366f1;font-weight:700;background:#fff;padding:6px 12px;border-radius:999px;border:1px solid #c7d2fe;">'
+               + '지원 ' + rows.length + '개'
+               + '</div>'
+               + '</div>'
+               + '<div class="student-info-pills">'
+               + '<div class="info-pill">'
+               + '<span class="info-pill-label">지원가능전형</span>'
+               + '<span class="info-pill-value">' + availTypeText + '</span>'
+               + '</div>'
+               + '<div class="info-pill" style="background:#fef9c3;border-color:#fde047;">'
+               + '<span class="info-pill-label" style="color:#a16207;">선호전형</span>'
+               + '<span class="info-pill-value" style="color:#713f12;">' + prefTypeText + '</span>'
+               + '</div>'
+               + '</div>'
+               + '</div>';
+
+      // ── 카드 영역 ──
+      if (rows.length === 0) {
+        html += '<div class="text-center py-16" style="background:#fff;border:1px dashed #cbd5e1;border-radius:14px;">'
+              + '<p class="text-gray-400">등록된 관심대학 데이터가 없습니다.</p></div>';
       } else {
-        data.rows.forEach(function(row, idx) {
-          html += '<tr class="' + (idx % 2 === 0 ? 'bg-white' : 'bg-emerald-50') + ' hover:bg-yellow-50">';
-          displayColNames.forEach(function(colName) {
-            var val = row[colName] !== undefined ? row[colName] : '-';
-            // 순위 셀은 편집 가능하게 표시 (더블클릭 편집)
-            if (colName === '순위') {
-              html += '<td class="px-3 py-1.5 border border-gray-200 text-center whitespace-nowrap font-semibold text-emerald-700 cursor-pointer univ-rank-cell"'
-                    + ' data-studentid="' + student.studentId + '"'
-                    + ' data-rowindex="' + row._rowIndex + '"'
-                    + ' data-current="' + val + '"'
-                    + ' ondblclick="Admin.editUnivRank(this)">'
-                    + (val || '-')
-                    + '</td>';
-            } else {
-              html += '<td class="px-3 py-1.5 border border-gray-200 whitespace-nowrap">' + (val || '-') + '</td>';
-            }
+        html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(420px,1fr));gap:16px;">';
+
+        rows.forEach(function(row) {
+          var get = function(k) {
+            var v = row[k];
+            return (v === undefined || v === null || v === '') ? '-' : v;
+          };
+
+          var rank = get('순위');
+          var univName = get('대학명');
+          var dept = get('지원학과');
+
+          html += '<div class="univ-card">'
+                + '<div class="univ-card-header">'
+                + '<div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0;">'
+                + '<span class="univ-rank-badge univ-rank-cell"'
+                + ' data-studentid="' + student.studentId + '"'
+                + ' data-rowindex="' + (row._rowIndex !== undefined ? row._rowIndex : '') + '"'
+                + ' data-current="' + (rank === '-' ? '' : rank) + '"'
+                + ' ondblclick="Admin.editUnivRank(this)"'
+                + ' title="더블클릭하여 순위 편집">'
+                + rank
+                + '</span>'
+                + '<div style="min-width:0;flex:1;">'
+                + '<div class="univ-name">' + univName + '</div>'
+                + '<div class="univ-dept">' + dept + '</div>'
+                + '</div>'
+                + '</div>'
+                + '</div>';
+
+          // 태그 행
+          html += '<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">'
+                + '<span class="univ-tag tag-type">' + get('전형유형') + '</span>'
+                + '<span class="univ-tag tag-kind">' + get('전형종류') + '</span>'
+                + '<span class="univ-tag tag-suneung">수능최저: ' + get('수능최저') + '</span>'
+                + '<span class="univ-tag tag-judge">' + get('지원성향판단') + '</span>'
+                + '</div>';
+
+          // 기본 정보 그리드
+          html += '<div class="univ-grid">'
+                + '<div class="univ-field"><span class="univ-field-label">모집정원</span><span class="univ-field-value">' + get('모집정원') + '</span></div>'
+                + '<div class="univ-field"><span class="univ-field-label">선발유형</span><span class="univ-field-value">' + get('선발유형') + '</span></div>'
+                + '</div>';
+
+          // 면접 섹션 (면접 관련 데이터가 하나라도 있으면 표시)
+          var hasInterview = ['면접유무','면접지역','면접시작일','면접종료일'].some(function(k){
+            return row[k] !== undefined && row[k] !== null && row[k] !== '';
           });
-          html += '</tr>';
+          if (hasInterview) {
+            html += '<div class="univ-grid" style="margin-top:8px;">'
+                  + '<div class="univ-section-divider">📝 면접</div>'
+                  + '<div class="univ-field"><span class="univ-field-label">면접유무</span><span class="univ-field-value">' + get('면접유무') + '</span></div>'
+                  + '<div class="univ-field"><span class="univ-field-label">면접지역</span><span class="univ-field-value">' + get('면접지역') + '</span></div>'
+                  + '<div class="univ-field"><span class="univ-field-label">면접시작일</span><span class="univ-field-value">' + get('면접시작일') + '</span></div>'
+                  + '<div class="univ-field"><span class="univ-field-label">면접종료일</span><span class="univ-field-value">' + get('면접종료일') + '</span></div>'
+                  + '</div>';
+          }
+
+          // 실기 섹션
+          var hasPractical = ['실기유무','실기지역','실기시작일','실기종료일'].some(function(k){
+            return row[k] !== undefined && row[k] !== null && row[k] !== '';
+          });
+          if (hasPractical) {
+            html += '<div class="univ-grid" style="margin-top:8px;">'
+                  + '<div class="univ-section-divider">🎨 실기</div>'
+                  + '<div class="univ-field"><span class="univ-field-label">실기유무</span><span class="univ-field-value">' + get('실기유무') + '</span></div>'
+                  + '<div class="univ-field"><span class="univ-field-label">실기지역</span><span class="univ-field-value">' + get('실기지역') + '</span></div>'
+                  + '<div class="univ-field"><span class="univ-field-label">실기시작일</span><span class="univ-field-value">' + get('실기시작일') + '</span></div>'
+                  + '<div class="univ-field"><span class="univ-field-label">실기종료일</span><span class="univ-field-value">' + get('실기종료일') + '</span></div>'
+                  + '</div>';
+          }
+
+          // 비고
+          var memo = row['비고'];
+          if (memo !== undefined && memo !== null && String(memo).trim() !== '') {
+            html += '<div class="univ-memo">💬 ' + memo + '</div>';
+          }
+
+          html += '</div>'; // univ-card
         });
+
+        html += '</div>'; // grid
       }
 
-      html += '</tbody></table></div></div>';
+      html += '</div>'; // p-5
       document.getElementById('content-area').innerHTML = html;
     } catch (err) { _showError(err.message); }
   }
@@ -643,7 +1108,8 @@ var Admin = (function() {
     var hasTable = contentArea.querySelector('table');
     var hasCard  = contentArea.querySelector('.bg-white.border.border-gray-200.rounded-lg');
     var hasGibuPersonal = contentArea.querySelector('.bg-gray-50.border.border-gray-200.rounded-lg');
-    if (!hasTable && !hasCard && !hasGibuPersonal) {
+    var hasUnivCard = contentArea.querySelector('.univ-card');
+    if (!hasTable && !hasCard && !hasGibuPersonal && !hasUnivCard) {
       alert('저장할 데이터가 없습니다. 영역을 선택하여 데이터를 먼저 조회하세요.');
       return;
     }
@@ -687,11 +1153,42 @@ var Admin = (function() {
       XLSX.utils.book_append_sheet(wb, ws, '데이터');
 
     } else {
-      // ── 카드 형태 (생기부 개인별 / 영역별) ──
+      // ── 카드 형태 (관심대학 / 생기부 개인별 / 영역별) ──
       var rows = [];
       var menu = _state.currentMenu;
 
-      if (menu === 'gibu_area') {
+      if (menu === 'univ') {
+        // 관심대학 카드: 모든 필드를 컬럼으로 추출
+        var univHeaders = ['순위','대학명','전형유형','전형종류','지원학과','모집정원','수능최저','선발유형','면접유무','면접지역','면접시작일','면접종료일','실기유무','실기지역','실기시작일','실기종료일','지원성향판단','비고'];
+        rows.push(univHeaders);
+        var cards = contentArea.querySelectorAll('.univ-card');
+        cards.forEach(function(card) {
+          var rank = (card.querySelector('.univ-rank-badge') || {}).textContent || '';
+          var name = (card.querySelector('.univ-name') || {}).textContent || '';
+          var dept = (card.querySelector('.univ-dept') || {}).textContent || '';
+          // 태그에서 전형유형/종류/수능최저/지원성향판단 추출
+          var tagType = (card.querySelector('.tag-type') || {}).textContent || '';
+          var tagKind = (card.querySelector('.tag-kind') || {}).textContent || '';
+          var tagSuneung = ((card.querySelector('.tag-suneung') || {}).textContent || '').replace('수능최저:','').trim();
+          var tagJudge = (card.querySelector('.tag-judge') || {}).textContent || '';
+          // 필드값들을 라벨로 매핑
+          var fieldMap = {};
+          card.querySelectorAll('.univ-field').forEach(function(f) {
+            var lbl = (f.querySelector('.univ-field-label') || {}).textContent || '';
+            var val = (f.querySelector('.univ-field-value') || {}).textContent || '';
+            fieldMap[lbl.trim()] = val.trim();
+          });
+          var memoEl = card.querySelector('.univ-memo');
+          var memo = memoEl ? memoEl.textContent.replace(/^💬\s*/, '').trim() : '';
+          rows.push([
+            rank.trim(), name.trim(), tagType.trim(), tagKind.trim(), dept.trim(),
+            fieldMap['모집정원'] || '', tagSuneung, fieldMap['선발유형'] || '',
+            fieldMap['면접유무'] || '', fieldMap['면접지역'] || '', fieldMap['면접시작일'] || '', fieldMap['면접종료일'] || '',
+            fieldMap['실기유무'] || '', fieldMap['실기지역'] || '', fieldMap['실기시작일'] || '', fieldMap['실기종료일'] || '',
+            tagJudge.trim(), memo
+          ]);
+        });
+      } else if (menu === 'gibu_area') {
         // 영역별: 카드 = 반 / 학번 / 이름 / 바이트 / 내용
         rows.push(['반', '학번', '이름', '바이트', '내용']);
         var cards = contentArea.querySelectorAll('.mb-4.bg-white.border.border-gray-200.rounded-lg');
@@ -826,9 +1323,9 @@ var Admin = (function() {
 <div class="flex" style="height: calc(100vh - 70px);">
  
   <!-- 좌측 사이드바 -->
-  <aside class="w-44 sm:w-52 md:w-60 shrink-0 bg-white border-r border-gray-200 flex flex-col overflow-hidden">
-    <div class="px-3 py-2 bg-gray-50 border-b border-gray-200">
-      <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide" id="sidebar-title">학생 명단</span>
+  <aside class="app-sidebar w-44 sm:w-52 md:w-60 shrink-0 flex flex-col overflow-hidden">
+    <div class="sidebar-header">
+      <span class="sidebar-title" id="sidebar-title">학생 명단</span>
     </div>
     <div id="student-list" class="flex-1 overflow-y-auto">
       <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
@@ -847,7 +1344,7 @@ var Admin = (function() {
   </aside>
  
   <!-- 중앙 콘텐츠 -->
-  <main class="flex-1 overflow-y-auto bg-gray-50">
+  <main class="flex-1 overflow-y-auto" style="background:#f5f7fb;">
     <div id="content-area" class="min-h-full">
       <div class="flex flex-col items-center justify-center h-64 text-gray-400">
         <svg class="w-16 h-16 mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
