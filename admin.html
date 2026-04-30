@@ -1270,10 +1270,15 @@ var Admin = (function() {
     var contentArea = document.getElementById('content-area');
     var hasTable = contentArea.querySelector('table');
     var hasCard  = contentArea.querySelector('.bg-white.border.border-gray-200.rounded-lg');
-    var hasGibuPersonal = contentArea.querySelector('.bg-gray-50.border.border-gray-200.rounded-lg');
     var hasUnivCard = contentArea.querySelector('.univ-card');
+    // 생기부(개인별): 학생이 선택되어 화면에 영역 블록이 있으면 데이터 있음
+    var hasGibuPersonal = (menu === 'gibu_personal' && !!_state.currentStudentId && !!contentArea.querySelector('.bg-blue-100'));
     if (!hasTable && !hasCard && !hasGibuPersonal && !hasUnivCard) {
-      alert('저장할 데이터가 없습니다. 영역을 선택하여 데이터를 먼저 조회하세요.');
+      if (menu === 'gibu_personal') {
+        alert('저장할 데이터가 없습니다. 좌측에서 학생을 먼저 선택하세요.');
+      } else {
+        alert('저장할 데이터가 없습니다. 영역을 선택하여 데이터를 먼저 조회하세요.');
+      }
       return;
     }
     // 기본 파일명 자동 설정
@@ -1398,19 +1403,35 @@ var Admin = (function() {
         });
 
       } else if (menu === 'gibu_personal') {
-        // 개인별: 영역 / 바이트 / 내용
-        rows.push(['영역', '바이트', '내용']);
+        // 개인별: 영역 / 글자수(바이트/제한) / 작성내용 / 편집내용 / 편집글자수(바이트/제한)
+        rows.push(['영역', '글자수(바이트/제한)', '작성내용', '편집내용', '편집글자수(바이트/제한)']);
         var areaBlocks = contentArea.querySelectorAll('.mb-4');
         areaBlocks.forEach(function(block) {
           var areaLabel = block.querySelector('.bg-blue-100');
           if (!areaLabel) return;
-          var area = areaLabel.textContent.trim();
-          var byteSpan = block.querySelector('.text-xs.text-gray-500');
-          var bytesTxt = byteSpan ? byteSpan.textContent.replace(/[()]/g,'').trim() : '';
-          var contentDiv = block.querySelector('.bg-gray-50.border');
-          var content = contentDiv ? contentDiv.innerText.trim() : '';
-          if (content === '학생이 제출한 내용이 없음') content = '';
-          rows.push([area, bytesTxt, content]);
+          var areaName = areaLabel.textContent.trim();
+          // 원본 바이트 정보 (영역명 옆 span)
+          var bytesTxt = '';
+          var headerSpans = block.querySelectorAll('.flex.items-center.flex-wrap.gap-2.mb-1 span');
+          headerSpans.forEach(function(sp) {
+            if (sp.classList.contains('text-xs') && sp.classList.contains('text-gray-500') && sp.textContent.indexOf('\uBC14\uc774\ud2b8') !== -1) {
+              bytesTxt = sp.textContent.replace(/[()]/g, '').trim();
+            }
+          });
+          // 원본 작성 내용 (data-raw 속성 우선)
+          var originalDiv = block.querySelector('[id^="gibu-original-"]');
+          var originalContent = '';
+          if (originalDiv) {
+            originalContent = originalDiv.getAttribute('data-raw') || originalDiv.innerText.trim();
+            if (originalContent === '\ud559\uc0dd\uc774 \uc81c\ucd9c\ud55c \ub0b4\uc6a9\uc774 \uc5c6\uc74c') originalContent = '';
+          }
+          // 편집 내용 (textarea)
+          var editTextarea = block.querySelector('textarea[id^="gibu-edit-"]');
+          var editedContent = editTextarea ? editTextarea.value.trim() : '';
+          // 편집 바이트 정보
+          var editBytesSpan = block.querySelector('[id^="gibu-edit-bytes-"]');
+          var editBytesTxt = editBytesSpan ? editBytesSpan.textContent.replace(/[()]/g, '').trim() : '';
+          rows.push([areaName, bytesTxt, originalContent, editedContent, editBytesTxt]);
         });
       }
 
@@ -1418,20 +1439,24 @@ var Admin = (function() {
       // 내용 열 너비 넓게
       var colWidths2 = [];
       if (rows[0]) {
+        // gibu_personal: 헤더 ['영역','글자수(바이트/제한)','작성내용','편집내용','편집글자수(바이트/제한)']
+        // 작성내용(index 2)과 편집내용(index 3)도 넓게
+        var wideContentCols = menu === 'gibu_personal' ? [2, 3] : [rows[0].length - 1];
         rows[0].forEach(function(_, i) {
-          colWidths2.push({ wch: i === rows[0].length - 1 ? 80 : 20 });
+          colWidths2.push({ wch: wideContentCols.indexOf(i) !== -1 ? 80 : 20 });
         });
       }
       ws['!cols'] = colWidths2;
       // 내용 셀 줄바꿈 허용
       var range2 = XLSX.utils.decode_range(ws['!ref'] || 'A1');
       for (var R2 = 1; R2 <= range2.e.r; R2++) {
-        var lastCol = range2.e.c;
-        var cellRef = XLSX.utils.encode_cell({r: R2, c: lastCol});
-        if (ws[cellRef]) {
-          if (!ws[cellRef].s) ws[cellRef].s = {};
-          ws[cellRef].s.alignment = { wrapText: true };
-        }
+        wideContentCols.forEach(function(wc) {
+          var cellRef = XLSX.utils.encode_cell({r: R2, c: wc});
+          if (ws[cellRef]) {
+            if (!ws[cellRef].s) ws[cellRef].s = {};
+            ws[cellRef].s.alignment = { wrapText: true };
+          }
+        });
       }
       XLSX.utils.book_append_sheet(wb, ws, '데이터');
     }
