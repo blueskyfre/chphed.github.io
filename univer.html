@@ -1088,63 +1088,49 @@
     }
 
     // ── 드래그 앤 드롭 완료 처리 ────────────────────────────
-    function _onDragEnd(evt) {
+
+function _onDragEnd(evt) {
       if (evt.oldIndex === evt.newIndex) return;
 
       var container = document.getElementById('univ-card-sortable');
       var cards = container.querySelectorAll('.univ-card');
 
-      // ── 핵심: SortableJS가 DOM을 이미 새 순서로 바꾼 상태
-      // dataset.rank는 아직 이전 순위값 → 드래그 전 스냅샷 확보
-      // snapRows: 드래그 전 순위 기준으로 univRows를 딥카피한 배열
-      // (서버 저장 시 "어떤 데이터를 어느 순위로 써야 하는지" 기준이 됨)
-      var snapRows = [];
-      cards.forEach(function(card) {
+      // DOM 새 순서 기준으로 univRows를 재정렬한 배열 생성
+      // dataset.rank = 드래그 전 순위 → 그 순위에 해당하는 데이터를 찾아
+      // 새 순위(idx+1)를 부여한 딥카피 배열을 만든다
+      var newRows = [];
+      cards.forEach(function(card, idx) {
         var oldRank = parseInt(card.dataset.rank, 10);
         for (var i = 0; i < univRows.length; i++) {
           if (univRows[i].rank === oldRank) {
-            // 깊은 복사
-          var copy = JSON.parse(JSON.stringify(univRows[i]));
-          copy.originalRank = copy.rank;   // 드래그 전 순위를 별도 필드로 보존
-          snapRows.push(copy);
+            var copy = JSON.parse(JSON.stringify(univRows[i]));
+            copy.rank = idx + 1;   // 새 순위를 바로 여기서 확정
+            newRows.push(copy);
             break;
           }
         }
       });
-      // snapRows[idx] = 드래그 전 rank(oldRank)를 가진 행 데이터,
-      // 새 순위는 idx + 1
 
-      // 로컬 univRows rank 업데이트
-      var newRankMap = {}; // oldRank -> newRank
-      cards.forEach(function(card, idx) {
-        newRankMap[parseInt(card.dataset.rank, 10)] = idx + 1;
-      });
-      univRows.forEach(function(row) {
-        if (newRankMap.hasOwnProperty(row.rank)) {
-          row.rank = newRankMap[row.rank];
-        }
-      });
+      // 로컬 univRows를 newRows로 교체
+      univRows = newRows;
 
       // card dataset 업데이트
       cards.forEach(function(card, idx) {
         card.dataset.rank = idx + 1;
       });
 
-      // 서버 저장: snapRows 기반으로 "originalRank=이전순위, rank=새순위, 데이터=이전데이터"
-      _saveDragOrder(snapRows);
+      // 서버 저장: 각 행의 rank = 새 순위, originalRank = 드래그 전 dataset.rank 기반이 아닌
+      // univRows 전체를 rank=1부터 10까지 순서대로 덮어쓰기
+      _saveDragOrder(newRows);
     }
+    
 
     // ── 드래그 순위 서버 저장 ────────────────────────────────
     // snapRows[i].rank = 드래그 전 원래 순위 (originalRank)
     // 새 순위 = i + 1
     // 데이터는 snapRows[i]에 그대로 담겨 있음
-async function _saveDragOrder(snapRows) {
-      // 새 순위를 인덱스 기준으로 부여한 전체 배열 생성
-      var newRows = snapRows.map(function(r, i) {
-        return Object.assign({}, r, { rank: i + 1 });
-      });
 
-      // 데이터가 있는 항목만 추출
+async function _saveDragOrder(newRows) {
       var toSave = newRows.filter(function(r) {
         return r.univ || r.admsType || r.dept || r.admsKind;
       });
@@ -1159,24 +1145,16 @@ async function _saveDragOrder(snapRows) {
       var successCount = 0;
       var failCount    = 0;
 
-      // ── 핵심 수정: rank가 큰 것부터 작은 것 순으로 저장 ──
-      // 오름차순 저장 시 "A→B 저장 후 B를 originalRank로 검색"하는
-      // 충돌을 방지하기 위해 내림차순(큰 rank 먼저)으로 처리
-      var sorted = toSave.slice().sort(function(a, b) { return b.rank - a.rank; });
-
       try {
-        for (var i = 0; i < sorted.length; i++) {
-          var r       = sorted[i];
-          var newRank = r.rank;           // 새 순위 (이미 위에서 부여됨)
-          var oldRank = r.originalRank !== undefined ? r.originalRank : r.rank;
-          // snapRows[i].rank = 드래그 전 순위이므로 그것을 originalRank로 사용
-          // (map 이전 값이 r.rank에 보존돼 있지 않으므로 snapRows 원본 참조)
-
+        for (var i = 0; i < toSave.length; i++) {
+          var r = toSave[i];
+          // originalRank = rank와 동일하게 전송 (서버가 해당 번호 행을 그냥 덮어씀)
+          // 충돌 없이 "rank번 슬롯에 이 데이터를 써라" 방식
           try {
             var result = await _callPostAPI('univSaveRow', {
               studentId       : studentId,
-              originalRank    : oldRank,
-              rank            : newRank,
+              originalRank    : r.rank,
+              rank            : r.rank,
               univ            : r.univ            || '',
               admsType        : r.admsType        || '',
               admsKind        : r.admsKind        || '',
@@ -1217,6 +1195,7 @@ async function _saveDragOrder(snapRows) {
 
       await _reloadData();
     }
+
 
     
     // ── 뱃지 헬퍼 ───────────────────────────────────────────
