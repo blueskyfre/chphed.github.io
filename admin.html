@@ -1086,7 +1086,7 @@ var Admin = (function() {
         editedBytes:   bytes
       });
       if (res && res.success) {
-        alert('저장되었습니다.');
+        _showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
       } else {
         alert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
@@ -1267,6 +1267,35 @@ var Admin = (function() {
     document.getElementById('download-modal').classList.add('hidden');
   }
 
+  // ─── 저장 성공 모달 ─────────────────────────────────────────
+  var _saveSuccessTimer = null;
+  function _showSaveSuccess(msg) {
+    var modal = document.getElementById('save-success-modal');
+    var card  = document.getElementById('save-success-card');
+    var msgEl = document.getElementById('save-success-msg');
+    if (!modal || !card) return;
+    if (msgEl && msg) msgEl.textContent = msg;
+    modal.classList.remove('hidden');
+    // 진입 애니메이션
+    requestAnimationFrame(function() {
+      card.classList.remove('scale-95', 'opacity-0');
+      card.classList.add('scale-100', 'opacity-100');
+    });
+    // 1.4초 후 자동 닫힘
+    if (_saveSuccessTimer) clearTimeout(_saveSuccessTimer);
+    _saveSuccessTimer = setTimeout(_closeSaveSuccess, 1400);
+  }
+
+  function _closeSaveSuccess() {
+    var modal = document.getElementById('save-success-modal');
+    var card  = document.getElementById('save-success-card');
+    if (!modal || !card) return;
+    if (_saveSuccessTimer) { clearTimeout(_saveSuccessTimer); _saveSuccessTimer = null; }
+    card.classList.remove('scale-100', 'opacity-100');
+    card.classList.add('scale-95', 'opacity-0');
+    setTimeout(function() { modal.classList.add('hidden'); }, 180);
+  }
+
   function _confirmDownload() {
     var filename = (document.getElementById('download-filename').value.trim() || '생기부_데이터') + '.xlsx';
     var wb = XLSX.utils.book_new();
@@ -1413,6 +1442,7 @@ var Admin = (function() {
     openDownloadModal:   _openDownloadModal,
     closeDownloadModal:  _closeDownloadModal,
     confirmDownload:     _confirmDownload,
+    closeSaveSuccess:    _closeSaveSuccess,
     editUnivRank:        _editUnivRank,
     copyGibuContent:     _copyGibuContent,
     updateEditBytes:     _updateEditBytes,
@@ -1535,6 +1565,31 @@ var Admin = (function() {
           저장
         </button>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- 저장 성공 모달 -->
+<div id="save-success-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">
+  <div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="Admin.closeSaveSuccess()"></div>
+  <div id="save-success-card" class="relative bg-white rounded-2xl shadow-2xl w-80 overflow-hidden transform transition-all duration-200 scale-95 opacity-0">
+    <div class="h-1.5 bg-gradient-to-r from-emerald-600 to-emerald-400"></div>
+    <div class="px-7 py-6">
+      <div class="flex justify-center mb-4">
+        <div class="relative">
+          <div class="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center ring-4 ring-emerald-100/60">
+            <svg class="w-9 h-9 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+      <h3 class="text-center text-lg font-bold text-gray-800 mb-1">저장 완료</h3>
+      <p id="save-success-msg" class="text-center text-sm text-gray-500 mb-6">변경 내용이 정상적으로 저장되었습니다.</p>
+      <button onclick="Admin.closeSaveSuccess()"
+        class="w-full py-2.5 rounded-xl text-sm font-semibold bg-emerald-500 text-white hover:bg-emerald-600 transition-colors shadow-sm flex items-center justify-center gap-1.5">
+        확인
+      </button>
     </div>
   </div>
 </div>
