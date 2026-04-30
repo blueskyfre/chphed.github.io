@@ -136,6 +136,13 @@
         </div>
       </div>
 
+      <!-- 활동내용 안내 (SH공식활동 탭 활동내용 열) -->
+      <div id="section-activity-desc" class="mb-4 hidden">
+        <label class="block text-sm font-semibold text-gray-700 mb-2">활동 내용</label>
+        <div id="activity-desc-box"
+          class="w-full border border-gray-200 rounded-lg p-3 text-sm text-gray-600 bg-gray-50 leading-relaxed whitespace-pre-wrap"></div>
+      </div>
+
       <!-- 활동내용 입력 -->
       <div id="section-content" class="mb-5 hidden">
         <label class="block text-sm font-semibold text-gray-700 mb-2">활동 내용 입력</label>
@@ -827,6 +834,13 @@
         document.getElementById('activity-content-input').value =
           (existing && existing.생기부영역 !== '불참') ? existing.생기부내용 : '';
 
+        // 활동내용 열 데이터 표시
+        var actDesc = act['활동내용'] || '';
+        var descBox = document.getElementById('activity-desc-box');
+        descBox.textContent = actDesc || '(활동 내용 정보 없음)';
+        if (!actDesc) descBox.classList.add('text-gray-400');
+        else descBox.classList.remove('text-gray-400');
+
         _updateModalSections();
         document.getElementById('activity-modal').classList.remove('hidden');
       }
@@ -851,11 +865,12 @@
         }
 
         // 미참여 경고
-        _toggleSection('section-no-warning', participated === false);
+        _toggleSection('section-no-warning',    participated === false);
         // 참여 섹션
-        _toggleSection('section-area',       participated === true);
-        _toggleSection('section-competency', participated === true && hasArea);
-        _toggleSection('section-content',    participated === true && hasArea && hasComp);
+        _toggleSection('section-area',          participated === true);
+        _toggleSection('section-competency',    participated === true && hasArea);
+        _toggleSection('section-activity-desc', participated === true && hasArea && hasComp);
+        _toggleSection('section-content',       participated === true && hasArea && hasComp);
 
         // 저장 버튼: 참여(영역+역량 완료) 또는 미참여 선택 시 표시
         var saveVisible = (participated === true && hasArea && hasComp) || (participated === false);
