@@ -1656,7 +1656,6 @@ async function _saveDragOrder(newRows) {
       var csatMin    = _getSegBtn('csat-min-group');
       var csatDetail = document.getElementById('modal-csat-detail').value.trim();
 
-      // 면접/실기 날짜 포맷
       var interviewVal = _getSegBtn('interview-group');
       var practicalVal = _getSegBtn('practical-group');
 
@@ -1690,9 +1689,13 @@ async function _saveDragOrder(newRows) {
         if (pey && pem && ped) practicalEnd   = _formatDate(pey, pem, ped);
       }
 
-      var payload = {
-        studentId       : studentId,
-        originalRank    : editingOriginalRank,
+      // ── 핵심: univRows를 드래그앤드롭과 동일한 방식으로 재배치 ──
+      // 1) 편집 중인 행의 데이터를 모달 입력값으로 업데이트
+      // 2) editingOriginalRank 위치에서 제거 후 newRank 위치에 삽입
+      // 3) 전체를 rank 1~10 순서로 재번호 매기기
+      // 4) _saveDragOrder 로 전달 (드래그앤드롭과 완전히 동일한 저장 경로)
+
+      var editedData = {
         rank            : newRank,
         univ            : document.getElementById('modal-univ').value.trim(),
         admsType        : admsType,
@@ -1713,37 +1716,45 @@ async function _saveDragOrder(newRows) {
         remark          : document.getElementById('modal-remark').value.trim()
       };
 
-      var saveBtn = document.getElementById('modal-save-btn');
-      saveBtn.disabled = true;
-      saveBtn.textContent = '⏳ 저장 중...';
-      document.getElementById('row-modal').style.background = 'rgba(0,0,0,0.1)';
-      document.getElementById('row-modal').style.pointerEvents = 'none';
-      NaviComponent.showLoading();
-
-      try {
-        var result = await _callPostAPI('univSaveRow', payload);
-        NaviComponent.hideLoading();
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 저장';
-        document.getElementById('row-modal').style.background = '';
-        document.getElementById('row-modal').style.pointerEvents = '';
-
-        if (result && result.success) {
-          hasUnsavedChanges = false;
-          _doCloseModal();
-          _showToast('✅ ' + result.message, 'success');
-          await _reloadData();
-        } else {
-          _showToast('저장 실패: ' + (result.message || ''), 'error');
+      // rank 순으로 정렬된 10개 슬롯 배열 생성
+      var slots = [];
+      for (var s = 1; s <= 10; s++) {
+        var found = null;
+        for (var k = 0; k < univRows.length; k++) {
+          if (univRows[k].rank === s) { found = JSON.parse(JSON.stringify(univRows[k])); break; }
         }
-      } catch (e) {
-        NaviComponent.hideLoading();
-        saveBtn.disabled = false;
-        saveBtn.textContent = '💾 저장';
-        document.getElementById('row-modal').style.background = '';
-        document.getElementById('row-modal').style.pointerEvents = '';
-        _showToast('❌ 오류: ' + e.message, 'error');
+        slots.push(found || { rank: s, univ: '', admsType: '', admsKind: '', dept: '',
+                              quota: '', csatMin: '', selType: '', interview: '', practical: '',
+                              interviewRegion: '', interviewStart: '', interviewEnd: '',
+                              practicalRegion: '', practicalStart: '', practicalEnd: '',
+                              tendency: '', remark: '' });
       }
+
+      // editingOriginalRank 위치의 슬롯을 편집된 데이터로 교체 후 제거
+      var oldIdx = editingOriginalRank - 1;  // 0-based
+      var newIdx = newRank - 1;              // 0-based
+      slots[oldIdx] = editedData;
+
+      // oldIdx에서 꺼내서 newIdx 위치에 삽입 (드래그앤드롭과 동일한 재배치)
+      var moved = slots.splice(oldIdx, 1)[0];
+      slots.splice(newIdx, 0, moved);
+
+      // rank 재번호 매기기
+      var newRows = slots.map(function(row, idx) {
+        var copy = JSON.parse(JSON.stringify(row));
+        copy.rank = idx + 1;
+        return copy;
+      });
+
+      // 로컬 univRows 업데이트
+      univRows = newRows;
+
+      // UI 닫기
+      hasUnsavedChanges = false;
+      _doCloseModal();
+
+      // 드래그앤드롭과 동일한 저장 경로로 전달
+      await _saveDragOrder(newRows);
     }
 
     // ── 네비게이션 (미저장 경고 포함) ───────────────────────
