@@ -1386,8 +1386,8 @@ var Admin = (function() {
           ]);
         });
       } else if (menu === 'gibu_area') {
-        // 영역별: 카드 = 반 / 학번 / 이름 / 바이트 / 내용
-        rows.push(['반', '학번', '이름', '바이트', '내용']);
+        // 영역별: 반 / 학번 / 이름 / 작성내용 / 글자수(바이트/제한) / 편집내용 / 편집글자수(바이트/제한)
+        rows.push(['반', '학번', '이름', '작성내용', '글자수(바이트/제한)', '편집내용', '편집글자수(바이트/제한)']);
         var cards = contentArea.querySelectorAll('.mb-4.bg-white.border.border-gray-200.rounded-lg');
         cards.forEach(function(card) {
           var header = card.querySelector('.bg-gray-50');
@@ -1396,10 +1396,20 @@ var Admin = (function() {
           var sid    = spans[1] ? spans[1].textContent.trim() : '';
           var name   = spans[2] ? spans[2].textContent.trim() : '';
           var bytesTxt = spans[3] ? spans[3].textContent.replace(/[()]/g,'').trim() : '';
-          var body   = card.querySelector('.p-3');
-          var content = body ? body.innerText.trim() : '';
-          if (content === '내용 없음') content = '';
-          rows.push([cls, sid, name, bytesTxt, content]);
+          // 원본 작성 내용: data-raw 속성 우선 사용
+          var originalDiv = card.querySelector('[id^="gibu-original-"]');
+          var content = '';
+          if (originalDiv) {
+            content = originalDiv.getAttribute('data-raw') || originalDiv.innerText.trim();
+            if (content === '내용 없음') content = '';
+          }
+          // 편집 내용: textarea 값 읽기
+          var editTextarea = card.querySelector('textarea[id^="gibu-edit-"]');
+          var editedContent = editTextarea ? editTextarea.value : '';
+          // 편집 바이트 정보
+          var editBytesSpan = card.querySelector('[id^="gibu-edit-bytes-"]');
+          var editBytesTxt = editBytesSpan ? editBytesSpan.textContent.replace(/[()]/g,'').trim() : '';
+          rows.push([cls, sid, name, content, bytesTxt, editedContent, editBytesTxt]);
         });
 
       } else if (menu === 'gibu_personal') {
@@ -1441,7 +1451,7 @@ var Admin = (function() {
       if (rows[0]) {
         // gibu_personal: 헤더 ['영역','글자수(바이트/제한)','작성내용','편집내용','편집글자수(바이트/제한)']
         // 작성내용(index 2)과 편집내용(index 3)도 넓게
-        var wideContentCols = menu === 'gibu_personal' ? [2, 3] : [rows[0].length - 1];
+        var wideContentCols = menu === 'gibu_personal' ? [2, 3] : (menu === 'gibu_area' ? [3, 5] : [rows[0].length - 1]);
         rows[0].forEach(function(_, i) {
           colWidths2.push({ wch: wideContentCols.indexOf(i) !== -1 ? 80 : 20 });
         });
