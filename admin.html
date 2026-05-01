@@ -753,8 +753,14 @@
       border-color: #4338ca !important;
       box-shadow: 0 2px 8px -2px rgba(79,70,229,0.35);
     }
-    #btn-gibu_personal.active::after,
-    #btn-gibu_area.active::after { transform: scaleX(0) !important; }
+    #btn-gibu_personal::after,
+    #btn-gibu_area::after { display: none !important; }
+    #btn-gibu_personal,
+    #btn-gibu_area {
+      justify-content: center;
+      color: #4f46e5;
+      font-weight: 600;
+    }
 
     /* ── 빈 상태 메시지 ── */
     .empty-state {
@@ -2264,12 +2270,12 @@ var Admin = (function() {
   <aside class="app-sidebar w-44 sm:w-52 md:w-60 shrink-0 flex flex-col overflow-hidden">
     <div class="sidebar-header">
       <span class="sidebar-title" id="sidebar-title">학생 명단</span>
-      <div style="display:flex;gap:6px;margin-top:8px;">
+      <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
         <button id="btn-gibu_personal" class="menu-btn"
-          style="height:32px;padding:0 10px;font-size:0.78rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"
+          style="width:100%;height:30px;padding:0 8px;font-size:0.76rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;text-align:center;"
           onclick="Admin.onMenuClick('gibu_personal')">생기부(개인별)</button>
         <button id="btn-gibu_area" class="menu-btn"
-          style="height:32px;padding:0 10px;font-size:0.78rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"
+          style="width:100%;height:30px;padding:0 8px;font-size:0.76rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;text-align:center;"
           onclick="Admin.onMenuClick('gibu_area')">생기부(영역별)</button>
       </div>
     </div>
