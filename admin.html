@@ -215,7 +215,7 @@
       border-right: 1px solid #e2e8f0;
     }
     .sidebar-header {
-      padding: 14px 16px;
+      padding: 12px 12px 10px;
       background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
       border-bottom: 1px solid #e2e8f0;
     }
@@ -615,12 +615,13 @@
       white-space: nowrap;
     }
     .gibu-card-toolbar .gibu-spacer {
+      flex: 1;
       display: inline-block;
-      min-width: 72px;
+      min-width: 60px;
       font-size: 0.74rem;
       color: #16a34a;
       font-weight: 600;
-      text-align: left;
+      text-align: right;
       white-space: nowrap;
     }
     /* ── 미리보기 (2줄) / 전체보기 토글 ── */
@@ -741,8 +742,19 @@
       border-color: #6366f1;
       box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
     }
-    /* unsaved warning overlay above modal */
+    /* ── unsaved warning overlay above modal */
     #unsaved-modal { z-index: 300 !important; }
+
+    /* ── 사이드바 생기부 버튼 active 상태 ── */
+    #btn-gibu_personal.active,
+    #btn-gibu_area.active {
+      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
+      color: #fff !important;
+      border-color: #4338ca !important;
+      box-shadow: 0 2px 8px -2px rgba(79,70,229,0.35);
+    }
+    #btn-gibu_personal.active::after,
+    #btn-gibu_area.active::after { transform: scaleX(0) !important; }
 
     /* ── 빈 상태 메시지 ── */
     .empty-state {
@@ -1202,6 +1214,7 @@ var Admin = (function() {
           var rank = get('순위');
           var univName = get('대학명');
           var dept = get('지원학과');
+          var rankLabel = (rank === '-') ? '-' : rank + '순위';
 
           html += '<div class="univ-card">'
                 + '<div class="univ-card-header">'
@@ -1212,11 +1225,13 @@ var Admin = (function() {
                 + ' data-current="' + (rank === '-' ? '' : rank) + '"'
                 + ' ondblclick="Admin.editUnivRank(this)"'
                 + ' title="더블클릭하여 순위 편집">'
-                + rank
+                + rankLabel
                 + '</span>'
                 + '<div style="min-width:0;flex:1;">'
-                + '<div class="univ-name">' + univName + '</div>'
-                + '<div class="univ-dept">' + dept + '</div>'
+                + '<div class="univ-name-dept" style="display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;">'
+                + '<span class="univ-name" style="margin:0;">' + univName + '</span>'
+                + '<span class="univ-name" style="margin:0;">' + dept + '</span>'
+                + '</div>'
                 + '</div>'
                 + '</div>'
                 + '</div>';
@@ -1291,7 +1306,7 @@ var Admin = (function() {
 
     function _commit() {
       var newVal = input.value.trim();
-      if (newVal === currentVal) { cell.textContent = currentVal || '-'; return; }
+      if (newVal === currentVal) { cell.textContent = currentVal ? currentVal + '순위' : '-'; return; }
       var studentId = cell.dataset.studentid;
       var rowIndex  = cell.dataset.rowindex;
       cell.textContent = '저장 중...';
@@ -1302,22 +1317,22 @@ var Admin = (function() {
         newRank:   newVal
       }).then(function(res) {
         if (res.success) {
-          cell.textContent = newVal || '-';
+          cell.textContent = newVal ? newVal + '순위' : '-';
           cell.dataset.current = newVal;
         } else {
           alert('저장 실패: ' + res.message);
-          cell.textContent = currentVal || '-';
+          cell.textContent = currentVal ? currentVal + '순위' : '-';
         }
       }).catch(function(err) {
         alert('오류: ' + err.message);
-        cell.textContent = currentVal || '-';
+        cell.textContent = currentVal ? currentVal + '순위' : '-';
       });
     }
 
     input.addEventListener('blur', _commit);
     input.addEventListener('keydown', function(e) {
       if (e.key === 'Enter') { input.blur(); }
-      if (e.key === 'Escape') { input.removeEventListener('blur', _commit); cell.textContent = currentVal || '-'; }
+      if (e.key === 'Escape') { input.removeEventListener('blur', _commit); cell.textContent = currentVal ? currentVal + '순위' : '-'; }
     });
 
     cell.textContent = '';
@@ -1714,11 +1729,11 @@ var Admin = (function() {
               +     '<div class="gibu-card-toolbar mb-2">'
               +       '<span class="gibu-label">📄 학생 작성 내용</span>'
               +       (bytes !== '' ? '<span class="gibu-bytes-info">(' + bytes + '바이트 / ' + limit + '바이트)</span>' : '<span class="gibu-bytes-info"></span>')
-              +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
+              +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
+              +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
               +         '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
               +         '내용 복사'
               +       '</button>'
-              +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
               +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
               +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
               +         '<span>펼치기</span>'
@@ -1737,11 +1752,15 @@ var Admin = (function() {
               +     '<div class="gibu-card-toolbar mb-2">'
               +       '<span class="gibu-label">✏️ 내용 편집창</span>'
               +       '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
-              +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
+              +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+              +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
               +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
               +         '편집 복사'
               +       '</button>'
-              +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+              +       '<button type="button" class="gibu-write-btn" style="margin-left:4px;" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
+              +         '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+              +         '생기부 작성'
+              +       '</button>'
               +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
               +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
               +         '<span>펼치기</span>'
@@ -1753,10 +1772,6 @@ var Admin = (function() {
               +       '</div>'
               +       (editedContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
               +     '</div>'
-              +     '<button type="button" class="gibu-write-btn mt-2" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
-              +       '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
-              +       '생기부 작성'
-              +     '</button>'
               +   '</div>'
               + '</div>'
               + '</div>';
@@ -1839,11 +1854,11 @@ var Admin = (function() {
             +     '<div class="gibu-card-toolbar mb-2">'
             +       '<span class="gibu-label">📄 학생 작성 내용</span>'
             +       (row.bytes !== undefined && row.bytes !== '' ? '<span class="gibu-bytes-info">(' + row.bytes + '바이트 / ' + limit + '바이트)</span>' : '<span class="gibu-bytes-info"></span>')
-            +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
+            +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
+            +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
             +         '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
             +         '내용 복사'
             +       '</button>'
-            +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
             +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
             +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
             +         '<span>펼치기</span>'
@@ -1862,11 +1877,15 @@ var Admin = (function() {
             +     '<div class="gibu-card-toolbar mb-2">'
             +       '<span class="gibu-label">✏️ 내용 편집창</span>'
             +       '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
-            +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
+            +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+            +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
             +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
             +         '편집 복사'
             +       '</button>'
-            +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+            +       '<button type="button" class="gibu-write-btn" style="margin-left:4px;" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
+            +         '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+            +         '생기부 작성'
+            +       '</button>'
             +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
             +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
             +         '<span>펼치기</span>'
@@ -1878,10 +1897,6 @@ var Admin = (function() {
             +       '</div>'
             +       (editedContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
             +     '</div>'
-            +     '<button type="button" class="gibu-write-btn mt-2" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
-            +       '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
-            +       '생기부 작성'
-            +     '</button>'
             +   '</div>'
             + '</div>'
             + '</div>';
@@ -1990,9 +2005,11 @@ var Admin = (function() {
         rows.push(univHeaders);
         var cards = contentArea.querySelectorAll('.univ-card');
         cards.forEach(function(card) {
-          var rank = (card.querySelector('.univ-rank-badge') || {}).textContent || '';
-          var name = (card.querySelector('.univ-name') || {}).textContent || '';
-          var dept = (card.querySelector('.univ-dept') || {}).textContent || '';
+          var rankRaw = (card.querySelector('.univ-rank-badge') || {}).textContent || '';
+          var rank = rankRaw.replace('순위','').trim();
+          var nameSpans = card.querySelectorAll('.univ-name');
+          var name = nameSpans[0] ? nameSpans[0].textContent.trim() : '';
+          var dept = nameSpans[1] ? nameSpans[1].textContent.trim() : '';
           // 태그에서 전형유형/종류/수능최저/지원성향판단 추출
           var tagType = (card.querySelector('.tag-type') || {}).textContent || '';
           var tagKind = (card.querySelector('.tag-kind') || {}).textContent || '';
@@ -2220,8 +2237,6 @@ var Admin = (function() {
     <nav class="header-nav">
       <button id="btn-suneung" class="menu-btn" onclick="Admin.onMenuClick('suneung')">수능선택</button>
       <button id="btn-univ" class="menu-btn" onclick="Admin.onMenuClick('univ')">관심대학</button>
-      <button id="btn-gibu_personal" class="menu-btn" onclick="Admin.onMenuClick('gibu_personal')">생기부(개인별)</button>
-      <button id="btn-gibu_area" class="menu-btn" onclick="Admin.onMenuClick('gibu_area')">생기부(영역별)</button>
     </nav>
     <!-- 우측: 액션 버튼 -->
     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
@@ -2249,6 +2264,14 @@ var Admin = (function() {
   <aside class="app-sidebar w-44 sm:w-52 md:w-60 shrink-0 flex flex-col overflow-hidden">
     <div class="sidebar-header">
       <span class="sidebar-title" id="sidebar-title">학생 명단</span>
+      <div style="display:flex;gap:6px;margin-top:8px;">
+        <button id="btn-gibu_personal" class="menu-btn"
+          style="height:32px;padding:0 10px;font-size:0.78rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"
+          onclick="Admin.onMenuClick('gibu_personal')">생기부(개인별)</button>
+        <button id="btn-gibu_area" class="menu-btn"
+          style="height:32px;padding:0 10px;font-size:0.78rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;"
+          onclick="Admin.onMenuClick('gibu_area')">생기부(영역별)</button>
+      </div>
     </div>
     <div id="student-list" class="flex-1 overflow-y-auto">
       <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
