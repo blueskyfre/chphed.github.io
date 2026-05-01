@@ -1932,8 +1932,10 @@ var Admin = (function() {
     var hasCard  = contentArea.querySelector('.bg-white.border.border-gray-200.rounded-lg');
     var hasUnivCard = contentArea.querySelector('.univ-card');
     // 생기부(개인별): 학생이 선택되어 화면에 영역 블록이 있으면 데이터 있음
-    var hasGibuPersonal = (menu === 'gibu_personal' && !!_state.currentStudentId && !!contentArea.querySelector('.bg-blue-100'));
-    if (!hasTable && !hasCard && !hasGibuPersonal && !hasUnivCard) {
+    var hasGibuPersonal = (menu === 'gibu_personal' && !!_state.currentStudentId && !!contentArea.querySelector('.gibu-area-block'));
+    // 생기부(영역별): 영역을 선택하여 학생 카드가 렌더링되어 있으면 데이터 있음
+    var hasGibuArea = (menu === 'gibu_area' && !!contentArea.querySelector('.gibu-student-block'));
+    if (!hasTable && !hasCard && !hasGibuPersonal && !hasGibuArea && !hasUnivCard) {
       if (menu === 'gibu_personal') {
         alert('저장할 데이터가 없습니다. 좌측에서 학생을 먼저 선택하세요.');
       } else {
@@ -2050,14 +2052,20 @@ var Admin = (function() {
       } else if (menu === 'gibu_area') {
         // 영역별: 반 / 학번 / 이름 / 작성내용 / 글자수(바이트/제한) / 편집내용 / 편집글자수(바이트/제한)
         rows.push(['반', '학번', '이름', '작성내용', '글자수(바이트/제한)', '편집내용', '편집글자수(바이트/제한)']);
-        var cards = contentArea.querySelectorAll('.mb-4.bg-white.border.border-gray-200.rounded-lg');
+        // 실제 렌더링 구조: .gibu-student-block 사용
+        var cards = contentArea.querySelectorAll('.gibu-student-block');
         cards.forEach(function(card) {
-          var header = card.querySelector('.bg-gray-50');
-          var spans  = header ? header.querySelectorAll('span') : [];
-          var cls    = spans[0] ? spans[0].textContent.replace('반','').trim() : '';
-          var sid    = spans[1] ? spans[1].textContent.trim() : '';
-          var name   = spans[2] ? spans[2].textContent.trim() : '';
-          var bytesTxt = spans[3] ? spans[3].textContent.replace(/[()]/g,'').trim() : '';
+          // 헤더: .gibu-student-header 내부의 span들 (반 / 학번 / 이름)
+          var clsEl  = card.querySelector('.gibu-student-class');
+          var sidEl  = card.querySelector('.gibu-student-id');
+          var nameEl = card.querySelector('.gibu-student-name');
+          var cls  = clsEl  ? clsEl.textContent.replace('반','').trim() : '';
+          var sid  = sidEl  ? sidEl.textContent.trim() : '';
+          var name = nameEl ? nameEl.textContent.trim() : '';
+          // 원본 바이트 정보
+          var bytesTxt = '';
+          var byteInfoEl = card.querySelector('.gibu-bytes-info');
+          if (byteInfoEl) bytesTxt = byteInfoEl.textContent.replace(/[()]/g,'').trim();
           // 원본 작성 내용: data-raw 속성 우선 사용
           var originalDiv = card.querySelector('[id^="gibu-original-"]');
           var content = '';
@@ -2065,44 +2073,60 @@ var Admin = (function() {
             content = originalDiv.getAttribute('data-raw') || originalDiv.innerText.trim();
             if (content === '내용 없음') content = '';
           }
-          // 편집 내용: textarea 값 읽기
-          var editTextarea = card.querySelector('textarea[id^="gibu-edit-"]');
-          var editedContent = editTextarea ? editTextarea.value : '';
-          // 편집 바이트 정보
+          // 편집 내용: 편집창 미리보기 div의 data-raw-edit 또는 텍스트
+          var editedContent = '';
           var editBytesSpan = card.querySelector('[id^="gibu-edit-bytes-"]');
           var editBytesTxt = editBytesSpan ? editBytesSpan.textContent.replace(/[()]/g,'').trim() : '';
+          // textarea가 있으면 우선, 없으면 미리보기 div에서 읽기
+          var editTextarea = card.querySelector('textarea[id^="gibu-edit-"]');
+          if (editTextarea) {
+            editedContent = editTextarea.value;
+          } else {
+            var editPreviewDiv = card.querySelector('.gibu-preview-text[data-iseditor="1"]');
+            if (editPreviewDiv) {
+              editedContent = editPreviewDiv.getAttribute('data-raw-edit') || editPreviewDiv.innerText.trim();
+              if (editedContent === '편집 내용 없음') editedContent = '';
+            }
+          }
           rows.push([cls, sid, name, content, bytesTxt, editedContent, editBytesTxt]);
         });
 
       } else if (menu === 'gibu_personal') {
         // 개인별: 영역 / 글자수(바이트/제한) / 작성내용 / 편집내용 / 편집글자수(바이트/제한)
         rows.push(['영역', '글자수(바이트/제한)', '작성내용', '편집내용', '편집글자수(바이트/제한)']);
-        var areaBlocks = contentArea.querySelectorAll('.mb-4');
+        // 실제 렌더링 구조: .gibu-area-block 사용
+        var areaBlocks = contentArea.querySelectorAll('.gibu-area-block');
         areaBlocks.forEach(function(block) {
-          var areaLabel = block.querySelector('.bg-blue-100');
-          if (!areaLabel) return;
-          var areaName = areaLabel.textContent.trim();
-          // 원본 바이트 정보 (영역명 옆 span)
+          // 영역 이름: .gibu-area-title
+          var areaTitleEl = block.querySelector('.gibu-area-title');
+          if (!areaTitleEl) return;
+          var areaName = areaTitleEl.textContent.trim();
+          // 원본 바이트 정보
           var bytesTxt = '';
-          var headerSpans = block.querySelectorAll('.flex.items-center.flex-wrap.gap-2.mb-1 span');
-          headerSpans.forEach(function(sp) {
-            if (sp.classList.contains('text-xs') && sp.classList.contains('text-gray-500') && sp.textContent.indexOf('\uBC14\uc774\ud2b8') !== -1) {
-              bytesTxt = sp.textContent.replace(/[()]/g, '').trim();
-            }
-          });
+          var byteInfoEl = block.querySelector('.gibu-bytes-info');
+          if (byteInfoEl) bytesTxt = byteInfoEl.textContent.replace(/[()]/g,'').trim();
           // 원본 작성 내용 (data-raw 속성 우선)
           var originalDiv = block.querySelector('[id^="gibu-original-"]');
           var originalContent = '';
           if (originalDiv) {
             originalContent = originalDiv.getAttribute('data-raw') || originalDiv.innerText.trim();
-            if (originalContent === '\ud559\uc0dd\uc774 \uc81c\ucd9c\ud55c \ub0b4\uc6a9\uc774 \uc5c6\uc74c') originalContent = '';
+            if (originalContent === '학생이 제출한 내용이 없음') originalContent = '';
           }
-          // 편집 내용 (textarea)
+          // 편집 내용 (textarea 또는 미리보기 div)
+          var editedContent = '';
           var editTextarea = block.querySelector('textarea[id^="gibu-edit-"]');
-          var editedContent = editTextarea ? editTextarea.value.trim() : '';
+          if (editTextarea) {
+            editedContent = editTextarea.value.trim();
+          } else {
+            var editPreviewDiv = block.querySelector('.gibu-preview-text[data-iseditor="1"]');
+            if (editPreviewDiv) {
+              editedContent = editPreviewDiv.getAttribute('data-raw-edit') || editPreviewDiv.innerText.trim();
+              if (editedContent === '편집 내용 없음') editedContent = '';
+            }
+          }
           // 편집 바이트 정보
           var editBytesSpan = block.querySelector('[id^="gibu-edit-bytes-"]');
-          var editBytesTxt = editBytesSpan ? editBytesSpan.textContent.replace(/[()]/g, '').trim() : '';
+          var editBytesTxt = editBytesSpan ? editBytesSpan.textContent.replace(/[()]/g,'').trim() : '';
           rows.push([areaName, bytesTxt, originalContent, editedContent, editBytesTxt]);
         });
       }
