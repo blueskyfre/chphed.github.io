@@ -215,7 +215,7 @@
       border-right: 1px solid #e2e8f0;
     }
     .sidebar-header {
-      padding: 12px 12px 10px;
+      padding: 14px 16px;
       background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
       border-bottom: 1px solid #e2e8f0;
     }
@@ -744,23 +744,6 @@
     }
     /* ── unsaved warning overlay above modal */
     #unsaved-modal { z-index: 300 !important; }
-
-    /* ── 사이드바 생기부 버튼 active 상태 ── */
-    #btn-gibu_personal.active,
-    #btn-gibu_area.active {
-      background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%) !important;
-      color: #fff !important;
-      border-color: #4338ca !important;
-      box-shadow: 0 2px 8px -2px rgba(79,70,229,0.35);
-    }
-    #btn-gibu_personal::after,
-    #btn-gibu_area::after { display: none !important; }
-    #btn-gibu_personal,
-    #btn-gibu_area {
-      justify-content: center;
-      color: #4f46e5;
-      font-weight: 600;
-    }
 
     /* ── 빈 상태 메시지 ── */
     .empty-state {
@@ -2243,6 +2226,8 @@ var Admin = (function() {
     <nav class="header-nav">
       <button id="btn-suneung" class="menu-btn" onclick="Admin.onMenuClick('suneung')">수능선택</button>
       <button id="btn-univ" class="menu-btn" onclick="Admin.onMenuClick('univ')">관심대학</button>
+      <button id="btn-gibu_personal" class="menu-btn" onclick="Admin.onMenuClick('gibu_personal')">생기부(개인별)</button>
+      <button id="btn-gibu_area" class="menu-btn" onclick="Admin.onMenuClick('gibu_area')">생기부(영역별)</button>
     </nav>
     <!-- 우측: 액션 버튼 -->
     <div style="display:flex; align-items:center; gap:8px; flex-shrink:0;">
@@ -2270,14 +2255,6 @@ var Admin = (function() {
   <aside class="app-sidebar w-44 sm:w-52 md:w-60 shrink-0 flex flex-col overflow-hidden">
     <div class="sidebar-header">
       <span class="sidebar-title" id="sidebar-title">학생 명단</span>
-      <div style="display:flex;flex-direction:column;gap:5px;margin-top:8px;">
-        <button id="btn-gibu_personal" class="menu-btn"
-          style="width:100%;height:30px;padding:0 8px;font-size:0.76rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;text-align:center;"
-          onclick="Admin.onMenuClick('gibu_personal')">생기부(개인별)</button>
-        <button id="btn-gibu_area" class="menu-btn"
-          style="width:100%;height:30px;padding:0 8px;font-size:0.76rem;border:1px solid #e2e8f0;border-radius:8px;background:#fff;text-align:center;"
-          onclick="Admin.onMenuClick('gibu_area')">생기부(영역별)</button>
-      </div>
     </div>
     <div id="student-list" class="flex-1 overflow-y-auto">
       <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
