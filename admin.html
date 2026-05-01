@@ -1464,7 +1464,8 @@ var Admin = (function() {
   // ─── 생기부 작성 모달 ─────────────────────────────────────────
   var _gibuModalState = {
     areaKey: '', studentId: '', area: '', limit: 0,
-    originalText: '', savedText: '', scrollY: 0
+    originalText: '', savedText: '', scrollY: 0,
+    isSaving: false
   };
 
   function _openGibuWriteModal(areaKey, studentId, area, limit) {
@@ -1558,6 +1559,7 @@ var Admin = (function() {
   }
 
   async function _saveGibuModal() {
+    if (_gibuModalState.isSaving) return;
     var ta = document.getElementById('gibu-modal-textarea');
     var saveBtn = document.getElementById('gibu-modal-save-btn');
     if (!ta) return;
@@ -1567,6 +1569,7 @@ var Admin = (function() {
     if (bytes > limit) {
       if (!confirm('글자수(' + bytes + '바이트)가 제한(' + limit + '바이트)을 초과했습니다. 그래도 저장하시겠습니까?')) return;
     }
+    _gibuModalState.isSaving = true;
     if (saveBtn) {
       saveBtn.disabled = true;
       saveBtn.innerHTML =
@@ -1624,10 +1627,13 @@ var Admin = (function() {
         saveBtn.innerHTML =
           '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
       }
+    } finally {
+      _gibuModalState.isSaving = false;
     }
   }
 
   function _closeGibuWriteModal() {
+    if (_gibuModalState.isSaving) return;
     var ta = document.getElementById('gibu-modal-textarea');
     var isDirty = ta && (ta.value !== _gibuModalState.savedText);
     if (isDirty) {
