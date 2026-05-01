@@ -596,6 +596,154 @@
       margin-top: 2px;
     }
 
+    /* ── 생기부 카드 헤더 버튼 행 ── */
+    .gibu-card-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: nowrap;
+    }
+    .gibu-card-toolbar .gibu-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: #1e40af;
+      white-space: nowrap;
+    }
+    .gibu-card-toolbar .gibu-bytes-info {
+      font-size: 0.74rem;
+      color: #6b7280;
+      white-space: nowrap;
+    }
+    .gibu-card-toolbar .gibu-spacer {
+      display: inline-block;
+      min-width: 72px;
+      font-size: 0.74rem;
+      color: #16a34a;
+      font-weight: 600;
+      text-align: left;
+      white-space: nowrap;
+    }
+    /* ── 미리보기 (2줄) / 전체보기 토글 ── */
+    .gibu-preview-box {
+      position: relative;
+      cursor: pointer;
+    }
+    .gibu-preview-text {
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .gibu-preview-text.expanded {
+      display: block;
+      -webkit-line-clamp: unset;
+      overflow: visible;
+    }
+    .gibu-ellipsis-hint {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: linear-gradient(to right, transparent, #f9fafb 40%);
+      padding-left: 16px;
+      font-size: 0.82rem;
+      color: #94a3b8;
+      pointer-events: none;
+    }
+    .gibu-preview-text.expanded + .gibu-ellipsis-hint { display: none; }
+    .gibu-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 2px 8px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      border-radius: 6px;
+      border: 1px solid #c7d2fe;
+      background: #eef2ff;
+      color: #4338ca;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+    .gibu-toggle-btn:hover { background: #e0e7ff; border-color: #818cf8; }
+    /* ── 생기부 작성 버튼 ── */
+    .gibu-write-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 14px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      border-radius: 7px;
+      background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      box-shadow: 0 2px 6px -1px rgba(109,40,217,0.35);
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .gibu-write-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 10px -2px rgba(109,40,217,0.45);
+    }
+    /* ── 생기부 작성 모달 ── */
+    #gibu-write-modal {
+      z-index: 200;
+    }
+    .gibu-modal-pane {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      min-height: 0;
+    }
+    .gibu-modal-pane-header {
+      padding: 10px 14px 8px;
+      border-bottom: 1px solid #e2e8f0;
+      flex-shrink: 0;
+    }
+    .gibu-modal-pane-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 12px 14px;
+    }
+    .gibu-modal-readonly {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.875rem;
+      color: #374151;
+      white-space: pre-wrap;
+      word-break: break-word;
+      line-height: 1.6;
+      min-height: 80px;
+    }
+    .gibu-modal-textarea {
+      width: 100%;
+      flex: 1;
+      border: 1px solid #c7d2fe;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.875rem;
+      color: #1e293b;
+      line-height: 1.6;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s;
+      min-height: 120px;
+    }
+    .gibu-modal-textarea:focus {
+      border-color: #6366f1;
+      box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
+    }
+    /* unsaved warning overlay above modal */
+    #unsaved-modal { z-index: 300 !important; }
+
     /* ── 빈 상태 메시지 ── */
     .empty-state {
       display: flex;
@@ -1220,10 +1368,9 @@ var Admin = (function() {
     var fb = document.getElementById('copy-feedback-' + areaKey);
     function _showFeedback() {
       if (!fb) return;
-      fb.textContent = '복사가 되었습니다.';
-      fb.style.opacity = '1';
+      fb.textContent = '복사 완료';
       clearTimeout(fb._hideTimer);
-      fb._hideTimer = setTimeout(function() { fb.style.opacity = '0'; }, 2000);
+      fb._hideTimer = setTimeout(function() { fb.textContent = ''; }, 2000);
     }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(_showFeedback, function() {
@@ -1234,6 +1381,39 @@ var Admin = (function() {
     }
   }
 
+  function _copyGibuEdit(areaKey) {
+    // 카드 화면의 편집 복사 (미리보기 div 에서 텍스트)
+    // 모달이 열려있으면 모달 textarea 우선
+    var modalTa = document.getElementById('gibu-modal-textarea');
+    var fb = document.getElementById('copy-feedback-edit-' + areaKey);
+    var text = '';
+    if (modalTa && !document.getElementById('gibu-write-modal').classList.contains('hidden')) {
+      text = modalTa.value;
+    } else {
+      // 카드 편집창 미리보기 div 에서 data-editor 텍스트 읽기
+      // areaKey 로 편집 미리보기를 직접 찾기
+      var previewDivs = document.querySelectorAll('.gibu-preview-text[data-iseditor="1"]');
+      // find the one near gibu-edit-bytes-{areaKey}
+      var bytesEl = document.getElementById('gibu-edit-bytes-' + areaKey);
+      if (bytesEl) {
+        var card = bytesEl.closest('.bg-white');
+        if (card) {
+          var pDiv = card.querySelector('.gibu-preview-text[data-iseditor="1"]');
+          if (pDiv) text = pDiv.getAttribute('data-raw-edit') || pDiv.textContent;
+        }
+      }
+    }
+    function _showFeedback() {
+      if (!fb) return;
+      fb.textContent = '복사 완료';
+      clearTimeout(fb._hideTimer);
+      fb._hideTimer = setTimeout(function() { fb.textContent = ''; }, 2000);
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(_showFeedback, function() { _gibuFallbackCopy(text); _showFeedback(); });
+    } else { _gibuFallbackCopy(text); _showFeedback(); }
+  }
+
   function _updateEditBytes(areaKey, limit) {
     var ta = document.getElementById('gibu-edit-' + areaKey);
     var label = document.getElementById('gibu-edit-bytes-' + areaKey);
@@ -1242,6 +1422,209 @@ var Admin = (function() {
     label.textContent = '(' + bytes + '바이트 / ' + limit + '바이트)';
     label.style.color = bytes > limit ? '#dc2626' : '#6b7280';
     _state.hasUnsavedEdit = true;
+  }
+
+  // ─── 토글 (버튼 클릭) ───────────────────────────────────────
+  function _toggleGibuPreview(btn) {
+    var box = btn.closest('.bg-white') ? btn.closest('.bg-white').querySelector('.gibu-preview-box') : null;
+    if (!box) return;
+    _doToggleBox(box, btn);
+  }
+
+  function _toggleGibuPreviewBox(box) {
+    // box 는 .gibu-preview-box
+    var toolbar = box.closest('.bg-white') ? box.closest('.bg-white').querySelector('.gibu-card-toolbar') : null;
+    var btn = toolbar ? toolbar.querySelector('.gibu-toggle-btn') : null;
+    _doToggleBox(box, btn);
+  }
+
+  function _doToggleBox(box, btn) {
+    var pDiv = box.querySelector('.gibu-preview-text');
+    var hint = box.querySelector('.gibu-ellipsis-hint');
+    if (!pDiv) return;
+    var expanded = pDiv.classList.contains('expanded');
+    if (expanded) {
+      pDiv.classList.remove('expanded');
+      if (hint) hint.style.display = '';
+      if (btn) { btn.dataset.expanded = '0'; btn.querySelector('span').textContent = '펼치기'; }
+    } else {
+      pDiv.classList.add('expanded');
+      if (hint) hint.style.display = 'none';
+      if (btn) { btn.dataset.expanded = '1'; btn.querySelector('span').textContent = '접기'; }
+    }
+  }
+
+  // ─── 생기부 작성 모달 ─────────────────────────────────────────
+  var _gibuModalState = {
+    areaKey: '', studentId: '', area: '', limit: 0,
+    originalText: '', savedText: '', scrollY: 0
+  };
+
+  function _openGibuWriteModal(areaKey, studentId, area, limit) {
+    _gibuModalState.areaKey    = areaKey;
+    _gibuModalState.studentId  = studentId;
+    _gibuModalState.area       = area;
+    _gibuModalState.limit      = limit;
+    _gibuModalState.scrollY    = document.querySelector('main.flex-1') ? document.querySelector('main.flex-1').scrollTop : window.scrollY;
+
+    // 원본 텍스트 (학생 작성 내용)
+    var originalEl = document.getElementById('gibu-original-' + areaKey);
+    var originalText = originalEl ? (originalEl.getAttribute('data-raw') || '') : '';
+    var originalBytes = originalEl ? (originalEl.closest('.bg-white') ? (function(){
+      var byteSpan = originalEl.closest('.bg-white').querySelector('.gibu-bytes-info');
+      return byteSpan ? byteSpan.textContent : '';
+    })() : '') : '';
+
+    // 편집 내용 (카드 편집창 미리보기에서 읽기)
+    var editedText = '';
+    var bytesEl = document.getElementById('gibu-edit-bytes-' + areaKey);
+    if (bytesEl) {
+      var editCard = bytesEl.closest('.bg-white');
+      if (editCard) {
+        var pDiv = editCard.querySelector('.gibu-preview-text[data-iseditor="1"]');
+        if (pDiv) editedText = pDiv.getAttribute('data-raw-edit') || pDiv.innerText || '';
+        // clean up any placeholder text
+        if (editedText === '편집 내용 없음') editedText = '';
+      }
+    }
+    // Also try hidden textarea if exists
+    var hiddenTa = document.getElementById('gibu-edit-' + areaKey);
+    if (hiddenTa) editedText = hiddenTa.value || editedText;
+
+    _gibuModalState.originalText = originalText;
+    _gibuModalState.savedText    = editedText;
+
+    // Populate modal
+    var modal = document.getElementById('gibu-write-modal');
+    var leftLabel = document.getElementById('gibu-modal-left-label');
+    var leftBytes = document.getElementById('gibu-modal-left-bytes');
+    var leftContent = document.getElementById('gibu-modal-left-content');
+    var rightLabel = document.getElementById('gibu-modal-right-label');
+    var rightBytes = document.getElementById('gibu-modal-right-bytes');
+    var ta = document.getElementById('gibu-modal-textarea');
+
+    if (leftLabel)   leftLabel.textContent = area + ' — 학생 작성 내용';
+    if (leftBytes)   leftBytes.textContent = originalBytes;
+    if (leftContent) leftContent.textContent = originalText || '학생이 제출한 내용이 없음';
+
+    if (rightLabel)  rightLabel.textContent = area + ' — 내용 편집';
+    if (ta) {
+      ta.value = editedText;
+      _updateModalBytes();
+    }
+
+    modal.classList.remove('hidden');
+    if (ta) ta.focus();
+  }
+
+  function _updateModalBytes() {
+    var ta = document.getElementById('gibu-modal-textarea');
+    var label = document.getElementById('gibu-modal-right-bytes');
+    if (!ta || !label) return;
+    var bytes = _calcBytes(ta.value);
+    var limit = _gibuModalState.limit;
+    label.textContent = bytes + '바이트 / ' + limit + '바이트';
+    label.style.color = bytes > limit ? '#dc2626' : '#374151';
+    // mark unsaved if changed
+    if (ta.value !== _gibuModalState.savedText) {
+      _state.hasUnsavedEdit = true;
+    }
+  }
+
+  function _copyModalLeft() {
+    var text = _gibuModalState.originalText || '';
+    var fb = document.getElementById('gibu-modal-left-copy-fb');
+    function show() { if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function(){ fb.textContent=''; }, 2000); } }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(show, function(){ _gibuFallbackCopy(text); show(); });
+    } else { _gibuFallbackCopy(text); show(); }
+  }
+
+  function _copyModalRight() {
+    var ta = document.getElementById('gibu-modal-textarea');
+    var text = ta ? ta.value : '';
+    var fb = document.getElementById('gibu-modal-right-copy-fb');
+    function show() { if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function(){ fb.textContent=''; }, 2000); } }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(show, function(){ _gibuFallbackCopy(text); show(); });
+    } else { _gibuFallbackCopy(text); show(); }
+  }
+
+  async function _saveGibuModal() {
+    var ta = document.getElementById('gibu-modal-textarea');
+    var saveBtn = document.getElementById('gibu-modal-save-btn');
+    if (!ta) return;
+    var text = ta.value || '';
+    var bytes = _calcBytes(text);
+    var limit = _gibuModalState.limit;
+    if (bytes > limit) {
+      if (!confirm('글자수(' + bytes + '바이트)가 제한(' + limit + '바이트)을 초과했습니다. 그래도 저장하시겠습니까?')) return;
+    }
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '저장 중...'; }
+    try {
+      var res = await _apiGet('adminSaveTeacherGibu', {
+        adminId:       _state.adminId,
+        adminAuth:     _state.adminAuth,
+        adminClass:    _state.adminClass,
+        studentId:     _gibuModalState.studentId,
+        area:          _gibuModalState.area,
+        editedContent: text,
+        editedBytes:   bytes
+      });
+      if (res && res.success) {
+        _gibuModalState.savedText = text;
+        _state.hasUnsavedEdit = false;
+        // Update card preview
+        var areaKey = _gibuModalState.areaKey;
+        var bytesEl = document.getElementById('gibu-edit-bytes-' + areaKey);
+        if (bytesEl) {
+          bytesEl.textContent = '(' + bytes + '바이트 / ' + limit + '바이트)';
+          bytesEl.style.color = bytes > limit ? '#dc2626' : '#6b7280';
+          var editCard = bytesEl.closest('.bg-white');
+          if (editCard) {
+            var pDiv = editCard.querySelector('.gibu-preview-text[data-iseditor="1"]');
+            if (pDiv) {
+              pDiv.setAttribute('data-raw-edit', text);
+              pDiv.textContent = text || '편집 내용 없음';
+            }
+            var hint = editCard.querySelector('.gibu-ellipsis-hint');
+            if (hint) hint.style.display = '';
+            if (pDiv) pDiv.classList.remove('expanded');
+          }
+        }
+        _showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
+      } else {
+        alert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch (err) {
+      alert('오류: ' + err.message);
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = '저장'; }
+    }
+  }
+
+  function _closeGibuWriteModal() {
+    var ta = document.getElementById('gibu-modal-textarea');
+    var isDirty = ta && (ta.value !== _gibuModalState.savedText);
+    if (isDirty) {
+      _showUnsavedModal('저장하지 않은 편집 내용이 사라집니다. 계속하시겠습니까?', function() {
+        _state.hasUnsavedEdit = false;
+        _doCloseGibuModal();
+      });
+      return;
+    }
+    _doCloseGibuModal();
+  }
+
+  function _doCloseGibuModal() {
+    document.getElementById('gibu-write-modal').classList.add('hidden');
+    // restore scroll
+    var main = document.querySelector('main.flex-1');
+    if (main) {
+      main.scrollTop = _gibuModalState.scrollY;
+    } else {
+      window.scrollTo(0, _gibuModalState.scrollY);
+    }
   }
 
   async function _saveGibuEdit(areaKey, studentId, area, limit) {
@@ -1318,40 +1701,62 @@ var Admin = (function() {
         var areaKey = 'p_' + encodeURIComponent(area).replace(/%/g, '_');
         var sidAttr = _escapeHtml(found.studentId);
         var areaAttr = _escapeHtml(area);
+        var hasContent = !!content;
+
         html += '<div class="gibu-area-block">'
               + '<div class="gibu-area-header">'
               +   '<span class="gibu-area-title">' + area + '</span>'
               + '</div>'
               + '<div class="gibu-area-body">'
+
+              // ── 학생 작성 내용 카드
               +   '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
-              +     '<div class="flex items-center gap-2 mb-2">'
-              +       '<span class="text-xs font-bold text-blue-800">📄 학생 작성 내용</span>'
-              +       (bytes !== '' ? '<span class="text-xs text-gray-500">(' + bytes + '바이트 / ' + limit + '바이트)</span>' : '')
-              +       '<button type="button" class="gibu-copy-btn ml-auto" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
+              +     '<div class="gibu-card-toolbar mb-2">'
+              +       '<span class="gibu-label">📄 학생 작성 내용</span>'
+              +       (bytes !== '' ? '<span class="gibu-bytes-info">(' + bytes + '바이트 / ' + limit + '바이트)</span>' : '<span class="gibu-bytes-info"></span>')
+              +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
               +         '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
               +         '내용 복사'
               +       '</button>'
-              +       '<span id="copy-feedback-' + areaKey + '" class="text-xs text-green-600 font-semibold" style="opacity:0;transition:opacity 0.3s;"></span>'
+              +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
+              +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+              +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+              +         '<span>펼치기</span>'
+              +       '</button>'
               +     '</div>'
-              +     '<div id="gibu-original-' + areaKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 min-h-[60px] whitespace-pre-wrap" data-raw="' + _escapeHtml(content) + '">'
-              +       (content ? _escapeHtml(content) : '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
+              +     '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+              +       '<div id="gibu-original-' + areaKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-raw="' + _escapeHtml(content) + '">'
+              +         (hasContent ? _escapeHtml(content) : '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
+              +       '</div>'
+              +       (hasContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
               +     '</div>'
               +   '</div>'
+
+              // ── 내용 편집창 카드
               +   '<div class="bg-white border border-blue-200 rounded-lg p-3">'
-              +     '<div class="flex items-center gap-2 mb-2">'
-              +       '<span class="text-xs font-bold text-blue-800">✏️ 내용 편집창</span>'
-              +       '<span id="gibu-edit-bytes-' + areaKey + '" class="text-xs text-gray-500">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
-              +       '<button type="button" class="gibu-copy-btn ml-auto" style="background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="(function(){var ta=document.getElementById(\'gibu-edit-' + areaKey + '\');if(!ta)return;var t=ta.value;if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){var fb=document.getElementById(\'copy-feedback-edit-' + areaKey + '\');if(fb){fb.textContent=\'복사됨\';fb.style.opacity=\'1\';setTimeout(function(){fb.style.opacity=\'0\';},2000);}});}else{var ta2=document.createElement(\'textarea\');ta2.value=t;document.body.appendChild(ta2);ta2.select();document.execCommand(\'copy\');document.body.removeChild(ta2);}})();">'
+              +     '<div class="gibu-card-toolbar mb-2">'
+              +       '<span class="gibu-label">✏️ 내용 편집창</span>'
+              +       '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
+              +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
               +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
               +         '편집 복사'
               +       '</button>'
-              +       '<span id="copy-feedback-edit-' + areaKey + '" class="text-xs text-green-600 font-semibold" style="opacity:0;transition:opacity 0.3s;"></span>'
-              +       '<button type="button" id="gibu-save-btn-' + areaKey + '" class="gibu-save-btn" onclick="Admin.saveGibuEdit(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
-              +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
-              +         '저장'
+              +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+              +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+              +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+              +         '<span>펼치기</span>'
               +       '</button>'
               +     '</div>'
-              +     '<textarea id="gibu-edit-' + areaKey + '" class="w-full bg-white border border-gray-200 rounded p-3 text-sm text-gray-700 min-h-[80px] whitespace-pre-wrap" oninput="Admin.updateEditBytes(\'' + areaKey + '\', ' + limit + ')">' + _escapeHtml(editedContent) + '</textarea>'
+              +     '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+              +       '<div class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-iseditor="1">'
+              +         (_escapeHtml(editedContent) || '<span class="text-gray-400 italic">편집 내용 없음</span>')
+              +       '</div>'
+              +       (editedContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
+              +     '</div>'
+              +     '<button type="button" class="gibu-write-btn mt-2" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
+              +       '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+              +       '생기부 작성'
+              +     '</button>'
               +   '</div>'
               + '</div>'
               + '</div>';
@@ -1419,6 +1824,8 @@ var Admin = (function() {
                         : _calcBytes(editedContent);
       var sidAttr = _escapeHtml(row.studentId);
       var areaAttr = _escapeHtml(row.area || area);
+      var hasContent = !!(row.content);
+
       html += '<div class="gibu-student-block">'
             + '<div class="gibu-student-header">'
             +   '<span class="gibu-student-class">' + row.studentClass + '반</span>'
@@ -1426,35 +1833,55 @@ var Admin = (function() {
             +   '<span class="gibu-student-name">' + row.name + '</span>'
             + '</div>'
             + '<div class="gibu-student-body">'
+
+            // ── 학생 작성 내용
             +   '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
-            +     '<div class="flex items-center gap-2 mb-2">'
-            +       '<span class="text-xs font-bold text-blue-800">📄 학생 작성 내용</span>'
-            +       (row.bytes !== undefined && row.bytes !== '' ? '<span class="text-xs text-gray-500">(' + row.bytes + '바이트 / ' + limit + '바이트)</span>' : '')
-            +       '<button type="button" class="gibu-copy-btn ml-auto" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
+            +     '<div class="gibu-card-toolbar mb-2">'
+            +       '<span class="gibu-label">📄 학생 작성 내용</span>'
+            +       (row.bytes !== undefined && row.bytes !== '' ? '<span class="gibu-bytes-info">(' + row.bytes + '바이트 / ' + limit + '바이트)</span>' : '<span class="gibu-bytes-info"></span>')
+            +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
             +         '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
             +         '내용 복사'
             +       '</button>'
-            +       '<span id="copy-feedback-' + areaKey + '" class="text-xs text-green-600 font-semibold" style="opacity:0;transition:opacity 0.3s;"></span>'
+            +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
+            +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+            +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+            +         '<span>펼치기</span>'
+            +       '</button>'
             +     '</div>'
-            +     '<div id="gibu-original-' + areaKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 whitespace-pre-wrap min-h-[48px]" data-raw="' + _escapeHtml(row.content || '') + '">'
-            +       (row.content ? _escapeHtml(row.content) : '<span class="text-gray-400 italic">내용 없음</span>')
+            +     '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+            +       '<div id="gibu-original-' + areaKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-raw="' + _escapeHtml(row.content || '') + '">'
+            +         (hasContent ? _escapeHtml(row.content) : '<span class="text-gray-400 italic">내용 없음</span>')
+            +       '</div>'
+            +       (hasContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
             +     '</div>'
             +   '</div>'
+
+            // ── 내용 편집창
             +   '<div class="bg-white border border-blue-200 rounded-lg p-3">'
-            +     '<div class="flex items-center gap-2 mb-2">'
-            +       '<span class="text-xs font-bold text-blue-800">✏️ 내용 편집창</span>'
-            +       '<span id="gibu-edit-bytes-' + areaKey + '" class="text-xs text-gray-500">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
-            +       '<button type="button" class="gibu-copy-btn ml-auto" style="background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="(function(){var ta=document.getElementById(\'gibu-edit-' + areaKey + '\');if(!ta)return;var t=ta.value;if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){var fb=document.getElementById(\'copy-feedback-edit-' + areaKey + '\');if(fb){fb.textContent=\'복사됨\';fb.style.opacity=\'1\';setTimeout(function(){fb.style.opacity=\'0\';},2000);}});}else{var ta2=document.createElement(\'textarea\');ta2.value=t;document.body.appendChild(ta2);ta2.select();document.execCommand(\'copy\');document.body.removeChild(ta2);}})();">'
+            +     '<div class="gibu-card-toolbar mb-2">'
+            +       '<span class="gibu-label">✏️ 내용 편집창</span>'
+            +       '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
+            +       '<button type="button" class="gibu-copy-btn" style="margin-left:6px;background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
             +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
             +         '편집 복사'
             +       '</button>'
-            +       '<span id="copy-feedback-edit-' + areaKey + '" class="text-xs text-green-600 font-semibold" style="opacity:0;transition:opacity 0.3s;"></span>'
-            +       '<button type="button" id="gibu-save-btn-' + areaKey + '" class="gibu-save-btn" onclick="Admin.saveGibuEdit(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
-            +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
-            +         '저장'
+            +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+            +       '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+            +         '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+            +         '<span>펼치기</span>'
             +       '</button>'
             +     '</div>'
-            +     '<textarea id="gibu-edit-' + areaKey + '" class="w-full bg-white border border-gray-200 rounded p-3 text-sm text-gray-700 min-h-[80px] whitespace-pre-wrap" oninput="Admin.updateEditBytes(\'' + areaKey + '\', ' + limit + ')">' + _escapeHtml(editedContent) + '</textarea>'
+            +     '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+            +       '<div class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-iseditor="1">'
+            +         (_escapeHtml(editedContent) || '<span class="text-gray-400 italic">편집 내용 없음</span>')
+            +       '</div>'
+            +       (editedContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
+            +     '</div>'
+            +     '<button type="button" class="gibu-write-btn mt-2" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
+            +       '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+            +       '생기부 작성'
+            +     '</button>'
             +   '</div>'
             + '</div>'
             + '</div>';
@@ -1680,7 +2107,11 @@ var Admin = (function() {
 
   // ─── 로그아웃 ─────────────────────────────────────────────────
   function _logout() {
-    if (_state.hasUnsavedEdit) {
+    // 모달이 열린 상태에서 unsaved 체크
+    var gibuModal = document.getElementById('gibu-write-modal');
+    var ta = document.getElementById('gibu-modal-textarea');
+    var gibuDirty = gibuModal && !gibuModal.classList.contains('hidden') && ta && (ta.value !== _gibuModalState.savedText);
+    if (gibuDirty || _state.hasUnsavedEdit) {
       _showUnsavedModal('로그아웃하면 저장하지 않은 편집 내용이 사라집니다.', function() {
         _state.hasUnsavedEdit = false;
         document.getElementById('logout-modal').classList.remove('hidden');
@@ -1752,10 +2183,19 @@ var Admin = (function() {
     closeSaveSuccess:    _closeSaveSuccess,
     editUnivRank:        _editUnivRank,
     copyGibuContent:     _copyGibuContent,
+    copyGibuEdit:        _copyGibuEdit,
     updateEditBytes:     _updateEditBytes,
     saveGibuEdit:        _saveGibuEdit,
     confirmUnsaved:      _confirmUnsaved,
-    cancelUnsaved:       _cancelUnsaved
+    cancelUnsaved:       _cancelUnsaved,
+    toggleGibuPreview:   _toggleGibuPreview,
+    toggleGibuPreviewBox:_toggleGibuPreviewBox,
+    openGibuWriteModal:  _openGibuWriteModal,
+    closeGibuWriteModal: _closeGibuWriteModal,
+    updateModalBytes:    _updateModalBytes,
+    copyModalLeft:       _copyModalLeft,
+    copyModalRight:      _copyModalRight,
+    saveGibuModal:       _saveGibuModal
   };
  
 })();
@@ -1964,6 +2404,100 @@ var Admin = (function() {
     </div>
   </div>
 </div>
+<!-- 생기부 작성 모달 -->
+<div id="gibu-write-modal" class="hidden fixed inset-0 flex items-stretch justify-center" style="z-index:200;">
+  <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="Admin.closeGibuWriteModal()"></div>
+  <div class="relative bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden"
+       style="width:min(96vw,1100px);height:min(92vh,820px);margin:auto;">
+    <!-- 모달 상단 헤더 -->
+    <div class="flex items-center justify-between px-5 py-3 border-b border-gray-200 flex-shrink-0"
+         style="background:linear-gradient(135deg,#4f46e5 0%,#6366f1 100%);">
+      <div class="flex items-center gap-2">
+        <svg width="18" height="18" fill="none" stroke="#fff" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+        </svg>
+        <span style="font-size:1rem;font-weight:800;color:#fff;letter-spacing:-0.01em;">생기부 작성</span>
+      </div>
+      <button onclick="Admin.closeGibuWriteModal()"
+        style="width:30px;height:30px;border-radius:8px;background:rgba(255,255,255,0.2);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#fff;font-size:1.1rem;font-weight:700;transition:background 0.15s;"
+        onmouseover="this.style.background='rgba(255,255,255,0.35)'"
+        onmouseout="this.style.background='rgba(255,255,255,0.2)'">✕</button>
+    </div>
+    <!-- 모달 본문 (좌우 2분할) -->
+    <div class="flex flex-1 min-h-0 overflow-hidden">
+      <!-- 좌측: 학생 작성 내용 (읽기 전용) -->
+      <div class="flex flex-col" style="width:50%;border-right:1px solid #e2e8f0;min-height:0;">
+        <div class="gibu-modal-pane-header" style="background:#eff6ff;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <div>
+              <div style="font-size:0.82rem;font-weight:800;color:#1e40af;margin-bottom:2px;">
+                📄 <span id="gibu-modal-left-label">학생 작성 내용</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:0.72rem;font-weight:600;color:#3b82f6;background:#dbeafe;padding:2px 8px;border-radius:999px;">읽기 전용</span>
+                <span id="gibu-modal-left-bytes" style="font-size:0.74rem;color:#64748b;"></span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="gibu-copy-btn" onclick="Admin.copyModalLeft()">
+                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                내용 복사
+              </button>
+              <span id="gibu-modal-left-copy-fb" class="gibu-spacer" style="min-width:60px;font-size:0.74rem;color:#16a34a;font-weight:600;"></span>
+            </div>
+          </div>
+        </div>
+        <div class="gibu-modal-pane-body">
+          <div id="gibu-modal-left-content" class="gibu-modal-readonly"></div>
+        </div>
+      </div>
+      <!-- 우측: 내용 편집 -->
+      <div class="flex flex-col" style="width:50%;min-height:0;">
+        <div class="gibu-modal-pane-header" style="background:#f5f3ff;">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+            <div>
+              <div style="font-size:0.82rem;font-weight:800;color:#5b21b6;margin-bottom:2px;">
+                ✏️ <span id="gibu-modal-right-label">내용 편집</span>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-size:0.72rem;font-weight:600;color:#7c3aed;background:#ede9fe;padding:2px 8px;border-radius:999px;">편집 가능</span>
+                <span id="gibu-modal-right-bytes" style="font-size:0.74rem;color:#374151;font-weight:600;"></span>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <button type="button" class="gibu-copy-btn" style="background:linear-gradient(135deg,#64748b,#475569);box-shadow:none;" onclick="Admin.copyModalRight()">
+                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+                </svg>
+                편집 복사
+              </button>
+              <span id="gibu-modal-right-copy-fb" class="gibu-spacer" style="min-width:60px;font-size:0.74rem;color:#16a34a;font-weight:600;"></span>
+              <button type="button" id="gibu-modal-save-btn" class="gibu-save-btn" onclick="Admin.saveGibuModal()">
+                <svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                </svg>
+                저장
+              </button>
+            </div>
+          </div>
+        </div>
+        <div class="gibu-modal-pane-body flex flex-col">
+          <textarea id="gibu-modal-textarea"
+            class="gibu-modal-textarea flex-1"
+            style="min-height:300px;"
+            oninput="Admin.updateModalBytes()"
+            placeholder="내용을 입력하세요..."></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
   document.addEventListener('DOMContentLoaded', function() { Admin.init(); });
 </script>
