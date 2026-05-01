@@ -67,11 +67,15 @@
 
     /* ── 뱃지 ── */
     .rank-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      width: 28px; height: 28px; border-radius: 50%;
-      font-size: 0.8rem; font-weight: 700;
-      background: #e0e7ff; color: #3730a3;
-      flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 54px; /* 한 줄로 보이도록 최소 너비 확보 */
+    padding: 4px 8px; /* 텍스트 주변 여백 */
+    height: 28px; 
+    border-radius: 6px; /* 원형(50%)에서 둥근 사각형으로 변경 */
+    font-size: 0.8rem; font-weight: 700;
+    background: #e0e7ff; color: #3730a3;
+    flex-shrink: 0;
+    white-space: nowrap; /* 텍스트 줄바꿈 절대 방지 */
     }
     .rank-badge-1 { background: #fef9c3; color: #854d0e; }
     .rank-badge-2 { background: #f1f5f9; color: #475569; }
@@ -1038,14 +1042,14 @@
         html += '<p style="color:#9ca3af;font-size:0.85rem;font-weight:500;margin-bottom:2px;">대학명 미입력</p>';
         html += '<p style="color:#d1d5db;font-size:0.75rem;">클릭하여 대학 정보를 입력하세요</p>';
       } else {
-        // 대학명
-        html += '<p style="font-weight:700;font-size:0.95rem;color:#111827;margin-bottom:6px;">' + _esc(row.univ) + '</p>';
+        // 대학명 & 학과
+        var deptText = row.dept ? ' ' + _esc(row.dept) : '';
+        html += '<p style="font-weight:700;font-size:0.95rem;color:#111827;margin-bottom:6px;">' + _esc(row.univ) + deptText + '</p>';
 
         // 정보 뱃지 행
         html += '<div class="card-info-row">';
         if (row.admsType) html += '<span class="card-badge badge-blue">📚 ' + _esc(row.admsType) + '</span>';
         if (row.admsKind) html += '<span class="card-badge badge-purple">🏷 ' + _esc(row.admsKind) + '</span>';
-        if (row.dept)     html += '<span class="card-badge badge-green">🎓 ' + _esc(row.dept) + '</span>';
         if (row.quota)    html += '<span class="card-badge badge-gray">👥 ' + _esc(row.quota) + '명</span>';
         html += '</div>';
 
