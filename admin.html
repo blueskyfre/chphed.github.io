@@ -931,7 +931,7 @@ var Admin = (function() {
   function _renderStudentList(students) {
     var ul = document.getElementById('student-list');
     if (!students || students.length === 0) {
-      ul.innerHTML = '<p class="text-gray-400 text-sm p-3 text-center">학생이 없습니다.</p>';
+      ul.innerHTML = '<p class="text-gray-400 text-sm p-3 text-center">학생 명단을 불러오는 중입니다.</p>';
       return;
     }
     ul.innerHTML = '';
