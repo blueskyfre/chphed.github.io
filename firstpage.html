@@ -235,6 +235,49 @@
           }
 
           var schedules = result.data || [];
+
+          // 관심대학 데이터에서 면접/실기 일정 추가
+          try {
+            var univResult = await _callAPI('univGetStudentData', {
+              studentId: _studentId,
+              name: _userName
+            });
+            if (univResult && univResult.success && univResult.data && univResult.data.data) {
+              var univRows = univResult.data.data.rows || [];
+              univRows.forEach(function(row) {
+                if (row.interview === '유') {
+                  schedules.push({
+                    schedule : '면접 응시',
+                    startDate: row.interviewStart || '',
+                    endDate  : row.interviewEnd   || '',
+                    content  : (row.univ || '') + ' ' + (row.dept || '') + ' 면접을 ' + (row.interviewRegion || '') + '에서 실시',
+                    remark   : ''
+                  });
+                }
+                if (row.practical === '유') {
+                  schedules.push({
+                    schedule : '실기 응시',
+                    startDate: row.practicalStart || '',
+                    endDate  : row.practicalEnd   || '',
+                    content  : (row.univ || '') + ' ' + (row.dept || '') + ' 실기를 ' + (row.practicalRegion || '') + '에서 실시',
+                    remark   : ''
+                  });
+                }
+              });
+            }
+          } catch (univErr) {
+            console.error('관심대학 데이터 로드 오류:', univErr);
+          }
+
+          // 시작날짜 기준 오름차순 정렬
+          schedules.sort(function(a, b) {
+            var da = a.startDate || '';
+            var db = b.startDate || '';
+            if (da < db) return -1;
+            if (da > db) return 1;
+            return 0;
+          });
+
           _renderUpcoming(schedules);
           _renderAllSchedules(schedules);
 
