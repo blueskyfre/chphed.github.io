@@ -151,7 +151,36 @@
       height: 60px;
     }
 
-    /* ── 액션 버튼 ── */
+    /* ══════════════════════════════════════════
+       버튼 디자인 시스템
+       ── 공통 베이스 ──
+    ══════════════════════════════════════════ */
+    .btn-base {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      border: 1px solid transparent;
+      letter-spacing: -0.01em;
+      white-space: nowrap;
+      line-height: 1;
+    }
+    .btn-base:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
+
+    /* ── 크기 변형 ── */
+    .btn-md {
+      padding: 8px 16px;
+      font-size: 0.83rem;
+    }
+    .btn-sm {
+      padding: 4px 11px;
+      font-size: 0.76rem;
+    }
+
+    /* ── 헤더 액션 버튼 (1순위 · Filled) ── */
     .header-action-btn {
       display: inline-flex;
       align-items: center;
@@ -166,6 +195,8 @@
       letter-spacing: -0.01em;
       white-space: nowrap;
     }
+
+    /* 다운로드 — 강조(Primary) */
     .btn-download {
       background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       color: #fff;
@@ -174,19 +205,104 @@
     }
     .btn-download:hover {
       transform: translateY(-1px);
-      box-shadow: 0 4px 10px -2px rgba(16, 185, 129, 0.4);
+      box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.45);
     }
+
+    /* 로그아웃 — Ghost */
     .btn-logout {
-      background: #fff;
+      background: transparent;
       color: #64748b;
       border-color: #e2e8f0;
     }
     .btn-logout:hover {
       transform: translateY(-1px);
-      background: #fff;
+      background: #fff5f5;
       color: #dc2626;
       border-color: #fecaca;
-      box-shadow: 0 4px 10px -2px rgba(220, 38, 38, 0.15);
+    }
+
+    /* ── 생기부 카드 버튼 (2순위 · Secondary) ──
+       생기부 작성 */
+    .gibu-write-btn {
+      background: #6366f1;
+      color: #fff;
+      border-color: #4f46e5;
+      box-shadow: 0 1px 4px rgba(99,102,241,0.25);
+    }
+    .gibu-write-btn:hover {
+      background: #4f46e5;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(99,102,241,0.35);
+    }
+
+    /* ── 생기부 카드 버튼 (3순위 · Tonal) ──
+       내용 복사 · 편집 복사 (gibu-copy-btn 통합) */
+    .gibu-copy-btn {
+      background: #f1f5f9;
+      color: #475569;
+      border-color: #cbd5e1;
+    }
+    .gibu-copy-btn:hover {
+      background: #e2e8f0;
+      border-color: #94a3b8;
+      color: #1e293b;
+      transform: translateY(-1px);
+    }
+
+    /* 저장 버튼 — 성공 강조 */
+    .gibu-save-btn {
+      background: #10b981;
+      color: #fff;
+      border-color: #059669;
+      box-shadow: 0 1px 4px rgba(16,185,129,0.25);
+    }
+    .gibu-save-btn:hover {
+      background: #059669;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(16,185,129,0.35);
+    }
+    .gibu-save-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    /* ── 펼치기/접기 (4순위 · Ghost-mini) ── */
+    .gibu-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 3px 9px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      border-radius: 6px;
+      border: 1px solid #e2e8f0;
+      background: transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s;
+      margin-left: auto;
+      flex-shrink: 0;
+      letter-spacing: -0.01em;
+    }
+    .gibu-toggle-btn:hover {
+      background: #f1f5f9;
+      border-color: #cbd5e1;
+      color: #475569;
+    }
+
+    /* 공통 크기 적용 — gibu 카드 내 버튼들 */
+    .gibu-copy-btn,
+    .gibu-write-btn,
+    .gibu-save-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px 12px;
+      font-size: 0.76rem;
+      font-weight: 600;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.18s ease;
+      white-space: nowrap;
+      line-height: 1;
     }
     .header-divider {
       width: 1px;
@@ -443,49 +559,7 @@
     }
     .student-item-all.active span { color: #fff !important; }
 
-    /* ── 복사 버튼 (생기부) ── */
-    .gibu-copy-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 12px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      border-radius: 7px;
-      background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      white-space: nowrap;
-    }
-    .gibu-copy-btn:hover {
-      background: #e2e8f0;
-      border-color: #94a3b8;
-      transform: translateY(-1px);
-    }
-    /* ── 저장 버튼 (생기부 편집창) ── */
-    .gibu-save-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 14px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      border-radius: 7px;
-      background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      white-space: nowrap;
-    }
-    .gibu-save-btn:hover {
-      background: #e2e8f0;
-      border-color: #94a3b8;
-      transform: translateY(-1px);
-    }
-    .gibu-save-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
 
     /* ── 생기부 개인별: 영역 구분 헤더 ── */
     .gibu-area-header {
@@ -657,45 +731,7 @@
       pointer-events: none;
     }
     .gibu-preview-text.expanded + .gibu-ellipsis-hint { display: none; }
-    .gibu-toggle-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      padding: 2px 8px;
-      font-size: 0.72rem;
-      font-weight: 700;
-      border-radius: 6px;
-      border: 1px solid #cbd5e1;
-      background: #f1f5f9;
-      color: #475569;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
-      margin-left: auto;
-      flex-shrink: 0;
-    }
-    .gibu-toggle-btn:hover { background: #e2e8f0; border-color: #94a3b8; }
-    /* ── 생기부 작성 버튼 ── */
-    .gibu-write-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 14px;
-      font-size: 0.78rem;
-      font-weight: 700;
-      border-radius: 7px;
-      background: #f1f5f9;
-      color: #334155;
-      border: 1px solid #cbd5e1;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      white-space: nowrap;
-    }
-    .gibu-write-btn:hover {
-      background: #e2e8f0;
-      border-color: #94a3b8;
-      transform: translateY(-1px);
-    }
+
     /* ── 생기부 작성 모달 ── */
     #gibu-write-modal {
       z-index: 200;
