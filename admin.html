@@ -1491,16 +1491,11 @@ var Admin = (function() {
       var editCard = bytesEl.closest('.bg-white');
       if (editCard) {
         var pDiv = editCard.querySelector('.gibu-preview-text[data-iseditor="1"]');
-        if (pDiv) {
-          if (pDiv.hasAttribute('data-raw-edit')) {
-            editedText = pDiv.getAttribute('data-raw-edit');
-          } else {
-            editedText = pDiv.innerText.trim();
-          }
-        }
+        if (pDiv) editedText = pDiv.getAttribute('data-raw-edit') || pDiv.innerText || '';
+        // clean up any placeholder text
+        if (editedText === '편집 내용 없음') editedText = '';
       }
     }
-    if (editedText === '편집 내용 없음') editedText = '';
     // Also try hidden textarea if exists
     var hiddenTa = document.getElementById('gibu-edit-' + areaKey);
     if (hiddenTa) editedText = hiddenTa.value || editedText;
@@ -1534,7 +1529,6 @@ var Admin = (function() {
     if (rightLabel)  rightLabel.textContent = area + ' — 내용 편집';
     if (ta) {
       ta.value = editedText;
-      _gibuModalState.savedText = editedText;
       _updateModalBytes();
     }
 
@@ -1626,6 +1620,12 @@ var Admin = (function() {
             if (hint) hint.style.display = '';
             if (pDiv) pDiv.classList.remove('expanded');
           }
+        }
+
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML =
+            '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
         }
         _showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
         _doCloseGibuModal();
