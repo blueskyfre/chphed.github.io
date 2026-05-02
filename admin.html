@@ -1648,7 +1648,7 @@ var Admin = (function() {
     var ta = document.getElementById('gibu-modal-textarea');
     var isDirty = ta && (ta.value !== _gibuModalState.savedText);
     if (isDirty) {
-      _showUnsavedModal('저장하지 않은 편집 내용이 사라집니다. 계속하시겠습니까?', function() {
+      _showUnsavedModal('저장하지 않은 편집 내용이 사라집니다. 저장하지 않고 나가시겠습니까?', function() {
         _state.hasUnsavedEdit = false;
         _doCloseGibuModal();
       });
@@ -2484,7 +2484,7 @@ var Admin = (function() {
         </button>
         <button onclick="Admin.confirmUnsaved()"
           class="flex-1 py-2.5 rounded-xl text-sm font-semibold bg-amber-500 text-white hover:bg-amber-600 transition-colors shadow-sm">
-          계속
+          나가기
         </button>
       </div>
     </div>
