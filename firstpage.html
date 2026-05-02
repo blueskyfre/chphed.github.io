@@ -236,6 +236,22 @@
 
           var schedules = result.data || [];
 
+          // 관심대학 날짜 정규화: 어떤 형식이든 YYYY-MM-DD로 변환
+          function _normalizeUnivDate(str) {
+            if (!str) return '';
+            // 숫자 4자리(연), 2자리(월), 2자리(일) 추출
+            var nums = str.match(/\d+/g);
+            if (!nums || nums.length < 3) return '';
+            var y = nums[0].length === 4 ? nums[0] : (nums[1] && nums[1].length === 4 ? nums[1] : '');
+            if (!y) return '';
+            // y가 첫 번째인 경우: [년,월,일], 아닌 경우: [월,일,년] 등 방어
+            var idx = nums.indexOf(y);
+            var m = String(nums[idx + 1] || '').padStart(2, '0');
+            var d = String(nums[idx + 2] || '').padStart(2, '0');
+            if (!m || !d) return '';
+            return y + '-' + m + '-' + d;
+          }
+
           // 관심대학 데이터에서 면접/실기 일정 추가
           try {
             var univResult = await _callAPI('univGetStudentData', {
@@ -248,8 +264,8 @@
                 if (row.interview === '유') {
                   schedules.push({
                     schedule : '면접 응시',
-                    startDate: row.interviewStart || '',
-                    endDate  : row.interviewEnd   || '',
+                    startDate: _normalizeUnivDate(row.interviewStart),
+                    endDate  : _normalizeUnivDate(row.interviewEnd),
                     content  : (row.univ || '') + ' ' + (row.dept || '') + ' 면접을 ' + (row.interviewRegion || '') + '에서 실시',
                     remark   : ''
                   });
@@ -257,8 +273,8 @@
                 if (row.practical === '유') {
                   schedules.push({
                     schedule : '실기 응시',
-                    startDate: row.practicalStart || '',
-                    endDate  : row.practicalEnd   || '',
+                    startDate: _normalizeUnivDate(row.practicalStart),
+                    endDate  : _normalizeUnivDate(row.practicalEnd),
                     content  : (row.univ || '') + ' ' + (row.dept || '') + ' 실기를 ' + (row.practicalRegion || '') + '에서 실시',
                     remark   : ''
                   });
@@ -451,10 +467,14 @@
 
       function _formatDisplay(dateStr) {
         if (!dateStr) return '-';
-        // "2026-04-09" → "4/9(목)" 형태로 표시
+        // "2026-04-09" → "2026.04.09.(목)" 형태로 표시
         var d = _parseDate(dateStr);
+        if (isNaN(d.getTime())) return '-';
         var dayNames = ['일', '월', '화', '수', '목', '금', '토'];
-        return (d.getMonth() + 1) + '/' + d.getDate() + '(' + dayNames[d.getDay()] + ')';
+        var y = d.getFullYear();
+        var m = String(d.getMonth() + 1).padStart(2, '0');
+        var day = String(d.getDate()).padStart(2, '0');
+        return y + '.' + m + '.' + day + '.(' + dayNames[d.getDay()] + ')';
       }
 
       function _escapeHtml(str) {
