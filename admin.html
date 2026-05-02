@@ -1529,6 +1529,7 @@ var Admin = (function() {
     if (rightLabel)  rightLabel.textContent = area + ' — 내용 편집';
     if (ta) {
       ta.value = editedText;
+      _gibuModalState.savedText = editedText;
       _updateModalBytes();
     }
 
