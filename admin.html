@@ -153,156 +153,128 @@
 
     /* ══════════════════════════════════════════
        버튼 디자인 시스템
-       ── 공통 베이스 ──
     ══════════════════════════════════════════ */
-    .btn-base {
-      display: inline-flex;
-      align-items: center;
-      gap: 5px;
-      font-weight: 600;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.18s ease;
-      border: 1px solid transparent;
-      letter-spacing: -0.01em;
-      white-space: nowrap;
-      line-height: 1;
-    }
-    .btn-base:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; }
 
-    /* ── 크기 변형 ── */
-    .btn-md {
-      padding: 8px 16px;
-      font-size: 0.83rem;
-    }
-    .btn-sm {
-      padding: 4px 11px;
-      font-size: 0.76rem;
-    }
-
-    /* ── 헤더 액션 버튼 (1순위 · Filled) ── */
+    /* ── 헤더 액션 버튼 공통 베이스 ── */
     .header-action-btn {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      padding: 8px 16px;
-      font-size: 0.83rem;
+      padding: 7px 15px;
+      font-size: 0.82rem;
       font-weight: 600;
-      border-radius: 9px;
+      border-radius: 8px;
       cursor: pointer;
       transition: all 0.18s ease;
-      border: 1px solid transparent;
+      border: 1.5px solid transparent;
       letter-spacing: -0.01em;
       white-space: nowrap;
     }
 
-    /* 다운로드 — 강조(Primary) */
+    /* 다운로드 — 초록 solid */
     .btn-download {
-      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+      background: #059669;
       color: #fff;
-      border-color: #059669;
-      box-shadow: 0 2px 6px -1px rgba(16, 185, 129, 0.3);
+      border-color: #047857;
+      box-shadow: 0 1px 3px rgba(5,150,105,0.25);
     }
     .btn-download:hover {
+      background: #047857;
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px -2px rgba(16, 185, 129, 0.45);
+      box-shadow: 0 4px 12px rgba(5,150,105,0.35);
     }
+    .btn-download:active { transform: translateY(0); }
 
-    /* 로그아웃 — Ghost */
+    /* 로그아웃 — 아웃라인 레드 */
     .btn-logout {
-      background: transparent;
-      color: #64748b;
-      border-color: #e2e8f0;
+      background: #fff;
+      color: #ef4444;
+      border-color: #fca5a5;
     }
     .btn-logout:hover {
+      background: #fef2f2;
+      border-color: #ef4444;
       transform: translateY(-1px);
-      background: #fff5f5;
-      color: #dc2626;
-      border-color: #fecaca;
+      box-shadow: 0 4px 10px rgba(239,68,68,0.15);
+    }
+    .btn-logout:active { transform: translateY(0); }
+
+    /* ── 생기부 카드 내 버튼 공통 베이스 ── */
+    .gibu-copy-btn,
+    .gibu-write-btn,
+    .gibu-save-btn,
+    .gibu-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 0.74rem;
+      font-weight: 600;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.16s ease;
+      white-space: nowrap;
+      letter-spacing: -0.01em;
+      line-height: 1;
+      border: 1.5px solid transparent;
     }
 
-    /* ── 생기부 카드 버튼 (2순위 · Secondary) ──
-       생기부 작성 */
-    .gibu-write-btn {
-      background: #6366f1;
-      color: #fff;
-      border-color: #4f46e5;
-      box-shadow: 0 1px 4px rgba(99,102,241,0.25);
-    }
-    .gibu-write-btn:hover {
-      background: #4f46e5;
-      transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(99,102,241,0.35);
-    }
-
-    /* ── 생기부 카드 버튼 (3순위 · Tonal) ──
-       내용 복사 · 편집 복사 (gibu-copy-btn 통합) */
+    /* 내용 복사 · 편집 복사 — 아웃라인 슬레이트 */
     .gibu-copy-btn {
-      background: #f1f5f9;
+      padding: 4px 10px;
+      background: #fff;
       color: #475569;
       border-color: #cbd5e1;
     }
     .gibu-copy-btn:hover {
-      background: #e2e8f0;
-      border-color: #94a3b8;
+      background: #f1f5f9;
+      border-color: #64748b;
       color: #1e293b;
-      transform: translateY(-1px);
     }
 
-    /* 저장 버튼 — 성공 강조 */
-    .gibu-save-btn {
-      background: #10b981;
+    /* 생기부 작성 — 인디고 solid (주요 액션) */
+    .gibu-write-btn {
+      padding: 4px 11px;
+      background: #4f46e5;
       color: #fff;
-      border-color: #059669;
-      box-shadow: 0 1px 4px rgba(16,185,129,0.25);
+      border-color: #4338ca;
+      box-shadow: 0 1px 3px rgba(79,70,229,0.3);
+    }
+    .gibu-write-btn:hover {
+      background: #4338ca;
+      transform: translateY(-1px);
+      box-shadow: 0 3px 8px rgba(79,70,229,0.4);
+    }
+    .gibu-write-btn:active { transform: translateY(0); }
+
+    /* 저장 — 에메랄드 solid */
+    .gibu-save-btn {
+      padding: 4px 11px;
+      background: #059669;
+      color: #fff;
+      border-color: #047857;
+      box-shadow: 0 1px 3px rgba(5,150,105,0.3);
     }
     .gibu-save-btn:hover {
-      background: #059669;
+      background: #047857;
       transform: translateY(-1px);
-      box-shadow: 0 3px 8px rgba(16,185,129,0.35);
+      box-shadow: 0 3px 8px rgba(5,150,105,0.4);
     }
-    .gibu-save-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .gibu-save-btn:active { transform: translateY(0); }
+    .gibu-save-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
 
-    /* ── 펼치기/접기 (4순위 · Ghost-mini) ── */
+    /* 펼치기 · 접기 — ghost 최소형 */
     .gibu-toggle-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-      padding: 3px 9px;
-      font-size: 0.72rem;
-      font-weight: 600;
-      border-radius: 6px;
-      border: 1px solid #e2e8f0;
+      padding: 3px 8px;
       background: transparent;
       color: #94a3b8;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s;
+      border-color: #e2e8f0;
       margin-left: auto;
       flex-shrink: 0;
-      letter-spacing: -0.01em;
     }
     .gibu-toggle-btn:hover {
-      background: #f1f5f9;
-      border-color: #cbd5e1;
+      background: #f8fafc;
+      border-color: #94a3b8;
       color: #475569;
-    }
-
-    /* 공통 크기 적용 — gibu 카드 내 버튼들 */
-    .gibu-copy-btn,
-    .gibu-write-btn,
-    .gibu-save-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 12px;
-      font-size: 0.76rem;
-      font-weight: 600;
-      border-radius: 7px;
-      cursor: pointer;
-      transition: all 0.18s ease;
-      white-space: nowrap;
-      line-height: 1;
     }
     .header-divider {
       width: 1px;
