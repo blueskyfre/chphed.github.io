@@ -2156,6 +2156,7 @@ var Admin = (function() {
           var editBytesTxt = editBytesSpan ? editBytesSpan.textContent.replace(/[()]/g,'').trim() : '';
           rows.push([areaName, bytesTxt, originalContent, editedContent, editBytesTxt]);
         });
+      }
 
       var ws = XLSX.utils.aoa_to_sheet(rows);
       // 내용 열 너비 넓게
