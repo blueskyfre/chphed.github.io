@@ -1491,11 +1491,16 @@ var Admin = (function() {
       var editCard = bytesEl.closest('.bg-white');
       if (editCard) {
         var pDiv = editCard.querySelector('.gibu-preview-text[data-iseditor="1"]');
-        if (pDiv) editedText = pDiv.getAttribute('data-raw-edit') || pDiv.innerText || '';
-        // clean up any placeholder text
-        if (editedText === '편집 내용 없음') editedText = '';
+        if (pDiv) {
+          if (pDiv.hasAttribute('data-raw-edit')) {
+            editedText = pDiv.getAttribute('data-raw-edit');
+          } else {
+            editedText = pDiv.innerText.trim();
+          }
+        }
       }
     }
+    if (editedText === '편집 내용 없음') editedText = '';
     // Also try hidden textarea if exists
     var hiddenTa = document.getElementById('gibu-edit-' + areaKey);
     if (hiddenTa) editedText = hiddenTa.value || editedText;
