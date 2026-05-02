@@ -1476,7 +1476,7 @@ var Admin = (function() {
     _gibuModalState.limit      = limit;
     _gibuModalState.scrollY    = document.querySelector('main.flex-1') ? document.querySelector('main.flex-1').scrollTop : window.scrollY;
 
-    // 원본 텍스트 (학생 작성 내용)
+    // 원본 텍스트 (학생 제출 내용)
     var originalEl = document.getElementById('gibu-original-' + areaKey);
     var originalText = originalEl ? (originalEl.getAttribute('data-raw') || '') : '';
     var originalBytes = originalEl ? (originalEl.closest('.bg-white') ? (function(){
@@ -1522,7 +1522,7 @@ var Admin = (function() {
       badge.textContent = stu ? (stu.studentId + ' ' + stu.name) : studentId;
     }
 
-    if (leftLabel)   leftLabel.textContent = area + ' — 학생 작성 내용';
+    if (leftLabel)   leftLabel.textContent = area + ' — 학생 제출 내용';
     if (leftBytes)   leftBytes.textContent = originalBytes;
     if (leftContent) leftContent.textContent = originalText || '학생이 제출한 내용이 없음';
 
@@ -1750,10 +1750,10 @@ var Admin = (function() {
               + '</div>'
               + '<div class="gibu-area-body">'
 
-              // ── 학생 작성 내용 카드
+              // ── 학생 제출 내용 카드
               +   '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
               +     '<div class="gibu-card-toolbar mb-2">'
-              +       '<span class="gibu-label">📄 학생 작성 내용</span>'
+              +       '<span class="gibu-label">📄 학생 제출 내용</span>'
               +       (bytes !== '' ? '<span class="gibu-bytes-info">(' + bytes + '바이트 / ' + limit + '바이트)</span>' : '<span class="gibu-bytes-info"></span>')
               +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
               +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
@@ -1773,10 +1773,10 @@ var Admin = (function() {
               +     '</div>'
               +   '</div>'
 
-              // ── 내용 편집창 카드
+              // ── 교사 작성 내용 카드
               +   '<div class="bg-white border border-blue-200 rounded-lg p-3">'
               +     '<div class="gibu-card-toolbar mb-2">'
-              +       '<span class="gibu-label">✏️ 내용 편집창</span>'
+              +       '<span class="gibu-label">✏️ 교사 작성 내용</span>'
               +       '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
               +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
               +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
@@ -1875,10 +1875,10 @@ var Admin = (function() {
             + '</div>'
             + '<div class="gibu-student-body">'
 
-            // ── 학생 작성 내용
+            // ── 학생 제출 내용
             +   '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
             +     '<div class="gibu-card-toolbar mb-2">'
-            +       '<span class="gibu-label">📄 학생 작성 내용</span>'
+            +       '<span class="gibu-label">📄 학생 제출 내용</span>'
             +       (row.bytes !== undefined && row.bytes !== '' ? '<span class="gibu-bytes-info">(' + row.bytes + '바이트 / ' + limit + '바이트)</span>' : '<span class="gibu-bytes-info"></span>')
             +       '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
             +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
@@ -1898,10 +1898,10 @@ var Admin = (function() {
             +     '</div>'
             +   '</div>'
 
-            // ── 내용 편집창
+            // ── 교사 작성 내용
             +   '<div class="bg-white border border-blue-200 rounded-lg p-3">'
             +     '<div class="gibu-card-toolbar mb-2">'
-            +       '<span class="gibu-label">✏️ 내용 편집창</span>'
+            +       '<span class="gibu-label">✏️ 교사 작성 내용</span>'
             +       '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
             +       '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
             +       '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
@@ -2514,13 +2514,13 @@ var Admin = (function() {
     </div>
     <!-- 모달 본문 (좌우 2분할) -->
     <div class="flex flex-1 min-h-0 overflow-hidden">
-      <!-- 좌측: 학생 작성 내용 (읽기 전용) -->
+      <!-- 좌측: 학생 제출 내용 (읽기 전용) -->
       <div class="flex flex-col" style="width:50%;border-right:1px solid #e2e8f0;min-height:0;">
         <div class="gibu-modal-pane-header" style="background:#eff6ff;">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
             <div>
               <div style="font-size:0.82rem;font-weight:800;color:#1e40af;margin-bottom:2px;">
-                📄 <span id="gibu-modal-left-label">학생 작성 내용</span>
+                📄 <span id="gibu-modal-left-label">학생 제출 내용</span>
               </div>
               <div style="display:flex;align-items:center;gap:6px;">
                 <span style="font-size:0.72rem;font-weight:600;color:#3b82f6;background:#dbeafe;padding:2px 8px;border-radius:999px;">읽기 전용</span>
