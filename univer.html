@@ -1371,7 +1371,7 @@ async function _saveDragOrder(newRows) {
 
         NaviComponent.hideLoading();
         if (failCount === 0) {
-          _showToast('✅ 순위가 변경되었습니다.', 'success');
+          _showToast('✅ 데이타가 변경되었습니다.', 'success');
         } else if (successCount > 0) {
           _showToast('⚠️ 일부 순위 저장 실패 (' + failCount + '건)', 'error');
         } else {
