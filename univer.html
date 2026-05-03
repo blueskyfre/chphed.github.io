@@ -1035,8 +1035,6 @@
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         handle: '.card-drag-handle',
-        filter: '.card-btn-group',
-        preventOnFilter: false,
         onEnd: function(evt) {
           _onDragEnd(evt);
         }
@@ -1070,7 +1068,7 @@
       else if (t === '하향') tendencyBadgeClass = 'badge-blue';
       else if (t === '확실한 안정') tendencyBadgeClass = 'badge-indigo';
 
-      var html = '<div style="display:flex;align-items:flex-start;gap:10px;">';
+      var html = '<div style="display:flex;align-items:flex-start;gap:10px;padding-right:120px;">';
       html += '<span class="card-drag-handle" title="드래그하여 순위 변경">⠿</span>';
       html += '<span class="' + rankClass + '">' + row.rank + '순위</span>';
       html += '<div style="flex:1;min-width:0;">';
