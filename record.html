@@ -271,7 +271,8 @@
   <!--  전체 내용 편집 모달 -->
   <!-- ============================================================ -->
   <div id="view-modal" class="modal-overlay hidden">
-    <div class="bg-white rounded-xl shadow-xl mx-4 max-w-xl w-full flex flex-col" style="max-height:90vh;">
+    <div class="bg-white rounded-xl shadow-xl mx-4 flex flex-col"
+         style="max-height:95vh; width:min(95vw, 960px);">
 
       <!-- 고정 헤더: 제목 + 글자수 + 닫기 + 저장 버튼 -->
       <div class="flex items-center justify-between px-5 pt-5 pb-3 border-b border-gray-200 flex-shrink-0">
@@ -279,7 +280,7 @@
         <div class="flex items-center gap-2">
           <span id="view-byte-info" class="text-sm font-semibold text-gray-500 mr-1"></span>
           <button onclick="Record.closeViewModal()"
-            class="py-1.5 px-4 rounded-lg border border-gray-300 text-sm text-gray-600 hover:bg-gray-50 transition">닫기</button>
+            class="py-1.5 px-4 rounded-lg border border-gray-300 text-sm text-gray-600 bg-gray-100 hover:bg-gray-200 transition">닫기</button>
           <button id="view-modal-save-btn" onclick="Record.saveViewModal()"
             class="bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold px-4 py-1.5 rounded-lg transition">
             저장
@@ -1099,22 +1100,28 @@
             // 활동별 초기 글자수 (prefix + 생기부내용)
             var initBytes = _calcBytes(prefix + e.생기부내용);
 
-            html += '<div class="border border-gray-200 rounded-lg overflow-hidden">';
+            html += '<div class="border border-blue-200 rounded-lg overflow-hidden">';
             // 활동명(날짜) 헤더 - 수정 불가, 오른쪽에 글자수 표시
-            html += '  <div class="bg-gray-50 px-3 py-2 text-sm font-semibold text-gray-700 border-b border-gray-200 flex items-center justify-between">';
+            html += '  <div class="bg-blue-100 px-3 py-2 text-sm font-semibold text-blue-800 border-b border-blue-200 flex items-center justify-between">';
             html += '    <span>' + headerText + '</span>';
-            html += '    <span id="view-item-bytes-' + idx + '" class="text-xs font-normal text-gray-500 ml-2 flex-shrink-0">(입력한 글자수: ' + initBytes + ' byte)</span>';
+            html += '    <span id="view-item-bytes-' + idx + '" class="text-xs font-normal text-blue-600 ml-2 flex-shrink-0">(입력한 글자수: ' + initBytes + ' byte)</span>';
             html += '  </div>';
             // 생기부내용 - 편집 가능, data-prefix에 글자수 계산용 prefix 저장
+            // 글자수 1500 이하면 전체 보이도록 자동 높이, 초과 시 고정 높이+스크롤
+            var contentLen = (e.생기부내용 || '').length;
+            var taStyle = contentLen <= 1500
+              ? 'border:none; overflow:hidden; resize:none;'
+              : 'border:none; height:400px; overflow-y:auto; resize:none;';
             html += '  <textarea'
                  +  '    id="view-edit-' + idx + '"'
                  +  '    data-view-idx="' + idx + '"'
                  +  '    data-activity-code="' + _escapeHtml(e.활동코드) + '"'
                  +  '    data-area="' + _escapeHtml(e.생기부영역) + '"'
                  +  '    data-prefix="' + _escapeHtml(prefix) + '"'
+                 +  '    data-auto-resize="' + (contentLen <= 1500 ? 'true' : 'false') + '"'
                  +  '    oninput="Record.onViewModalInput(this, ' + idx + ')"'
-                 +  '    class="w-full p-3 text-sm text-gray-700 leading-relaxed resize-vertical focus:outline-none focus:ring-2 focus:ring-purple-400 min-h-[80px]"'
-                 +  '    style="border:none;"'
+                 +  '    class="w-full p-3 text-sm text-gray-700 leading-relaxed focus:outline-none focus:ring-2 focus:ring-purple-400"'
+                 +  '    style="' + taStyle + '"'
                  +  '  >' + _escapeHtml(e.생기부내용) + '</textarea>';
             html += '</div>';
           });
@@ -1125,6 +1132,15 @@
         _updateViewModalBytes();
 
         document.getElementById('view-modal').classList.remove('hidden');
+
+        // 자동 높이 조정: 글자수 1500 이하인 textarea는 내용 전체가 보이도록 높이 설정
+        requestAnimationFrame(function() {
+          var tas = document.getElementById('view-modal-body').querySelectorAll('textarea[data-auto-resize="true"]');
+          tas.forEach(function(ta) {
+            ta.style.height = 'auto';
+            ta.style.height = ta.scrollHeight + 'px';
+          });
+        });
       }
 
       // 모달 내 전체 텍스트 합산하여 글자수 갱신
@@ -1157,6 +1173,11 @@
           var itemBytes = _calcBytes(prefix + ta.value);
           var itemEl = document.getElementById('view-item-bytes-' + idx);
           if (itemEl) itemEl.textContent = '(입력한 글자수: ' + itemBytes + ' byte)';
+        }
+        // 자동 높이 갱신 (1500자 이하 textarea)
+        if (ta && ta.getAttribute('data-auto-resize') === 'true') {
+          ta.style.height = 'auto';
+          ta.style.height = ta.scrollHeight + 'px';
         }
         // 전체 합산 글자수 갱신
         _updateViewModalBytes();
