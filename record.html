@@ -679,6 +679,15 @@
             if (personalEntry.중점역량) {
               pCard += '    <p class="text-xs text-gray-500 mt-0.5 truncate">' + _escapeHtml(personalEntry.중점역량) + '</p>';
             }
+
+            
+            if (personalEntry.생기부내용 && personalEntry.생기부내용.trim() !== '') {
+              pCard += '    <p class="text-xs text-gray-500 mt-0.5">' + _escapeHtml(personalEntry.생기부내용) + '</p>';
+            } else {
+              pCard += '    <p class="text-xs text-gray-500 mt-0.5">학교 공식 행사는 아니지만, 개인이 스스로 추가하여 진행한 활동 내용을 입력해 주세요.</p>';
+            }
+
+            
             pCard += '  </div>';
             pCard += '  <div class="text-blue-400 text-lg">›</div>';
             pCard += '</div>';
