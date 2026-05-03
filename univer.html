@@ -193,6 +193,15 @@
     }
     .card-edit-btn:hover { background: #dbeafe; }
 
+    .card-delete-btn {
+      position: absolute; right: 14px; top: 44px;
+      padding: 4px 10px; background: #fff5f5; color: #dc2626;
+      border: 1px solid #fecaca; border-radius: 8px;
+      font-size: 0.72rem; font-weight: 600; cursor: pointer;
+      transition: background 0.15s;
+    }
+    .card-delete-btn:hover { background: #fee2e2; }
+
     .univ-card-empty {
       border-style: dashed;
       border-color: #d1d5db;
@@ -613,6 +622,30 @@
         <button id="drag-confirm-ok"
           class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl transition text-sm shadow">
           저장
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 삭제 확인 모달 ── -->
+  <div id="delete-confirm-modal" class="warn-modal-bg hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+      <div class="bg-red-500 px-5 py-3 flex items-center gap-2">
+        <span class="text-2xl">🗑️</span>
+        <span class="text-white font-bold text-sm">대학 삭제 확인</span>
+      </div>
+      <div class="px-6 py-5">
+        <p id="delete-confirm-msg" class="text-gray-800 font-semibold text-sm mb-1"></p>
+        <p class="text-gray-500 text-xs leading-relaxed mt-1">삭제하면 해당 대학 정보가 초기화되고,<br>하위 순위가 한 칸씩 올라갑니다.</p>
+      </div>
+      <div class="px-5 pb-5 flex gap-2">
+        <button id="delete-confirm-cancel"
+          class="flex-1 border-2 border-gray-300 text-gray-600 hover:bg-gray-50 font-semibold py-2.5 rounded-xl transition text-sm">
+          취소
+        </button>
+        <button id="delete-confirm-ok"
+          class="flex-1 bg-red-500 hover:bg-red-600 text-white font-bold py-2.5 rounded-xl transition text-sm shadow">
+          삭제
         </button>
       </div>
     </div>
@@ -1104,11 +1137,16 @@
       // 수정 버튼
       html += '<button class="card-edit-btn" onclick="event.stopPropagation();UniverNS.openModal(' + row.rank + ')">✏️ 수정</button>';
 
+      // 삭제 버튼 (데이터가 있는 카드에만 표시)
+      if (hasData) {
+        html += '<button class="card-delete-btn" onclick="event.stopPropagation();UniverNS.deleteCard(' + row.rank + ')">🗑️ 삭제</button>';
+      }
+
       div.innerHTML = html;
 
       // 카드 클릭으로도 모달 열기 (빈 카드에서 유용)
       div.addEventListener('click', function(e) {
-        if (e.target.classList.contains('card-edit-btn') || e.target.closest('.card-drag-handle')) return;
+        if (e.target.classList.contains('card-edit-btn') || e.target.classList.contains('card-delete-btn') || e.target.closest('.card-drag-handle')) return;
         openModal(row.rank);
       });
 
@@ -1814,6 +1852,75 @@ async function _saveDragOrder(newRows) {
       await _saveDragOrder(newRows);
     }
 
+    // ── 카드 삭제 ────────────────────────────────────────────
+    function deleteCard(rank) {
+      var row = null;
+      for (var i = 0; i < univRows.length; i++) {
+        if (univRows[i].rank === rank) { row = univRows[i]; break; }
+      }
+      var univName = (row && row.univ) ? row.univ : (rank + '순위');
+
+      document.getElementById('delete-confirm-msg').textContent =
+        '「' + univName + '」를 삭제하시겠습니까?';
+
+      var modal = document.getElementById('delete-confirm-modal');
+      modal.classList.remove('hidden');
+
+      var okBtn     = document.getElementById('delete-confirm-ok');
+      var cancelBtn = document.getElementById('delete-confirm-cancel');
+
+      // 이전 이벤트 리스너 제거 (중복 방지)
+      var newOkBtn     = okBtn.cloneNode(true);
+      var newCancelBtn = cancelBtn.cloneNode(true);
+      okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+      cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+      newCancelBtn.addEventListener('click', function() {
+        modal.classList.add('hidden');
+      });
+
+      newOkBtn.addEventListener('click', async function() {
+        modal.classList.add('hidden');
+
+        // 삭제 대상 제거 후 하위 순위를 한 칸씩 올림
+        var newRows = [];
+        for (var s = 1; s <= 10; s++) {
+          var found = null;
+          for (var k = 0; k < univRows.length; k++) {
+            if (univRows[k].rank === s) { found = JSON.parse(JSON.stringify(univRows[k])); break; }
+          }
+          if (!found) {
+            found = { rank: s, univ: '', admsType: '', admsKind: '', dept: '',
+                      quota: '', csatMin: '', selType: '', interview: '', practical: '',
+                      interviewRegion: '', interviewStart: '', interviewEnd: '',
+                      practicalRegion: '', practicalStart: '', practicalEnd: '',
+                      tendency: '', remark: '' };
+          }
+          newRows.push(found);
+        }
+
+        // rank 위치에서 제거
+        newRows.splice(rank - 1, 1);
+
+        // 빈 슬롯 추가 (항상 10개 유지)
+        newRows.push({ rank: 10, univ: '', admsType: '', admsKind: '', dept: '',
+                       quota: '', csatMin: '', selType: '', interview: '', practical: '',
+                       interviewRegion: '', interviewStart: '', interviewEnd: '',
+                       practicalRegion: '', practicalStart: '', practicalEnd: '',
+                       tendency: '', remark: '' });
+
+        // rank 재번호
+        newRows = newRows.map(function(r, idx) {
+          var copy = JSON.parse(JSON.stringify(r));
+          copy.rank = idx + 1;
+          return copy;
+        });
+
+        univRows = newRows;
+        await _saveDragOrder(newRows);
+      });
+    }
+
     // ── 네비게이션 (미저장 경고 포함) ───────────────────────
     function navigateTo(page) {
       var doNav = function() {
@@ -1866,6 +1973,7 @@ async function _saveDragOrder(newRows) {
       setInterview   : setInterview,
       setPractical   : setPractical,
       saveRow        : saveRow,
+      deleteCard     : deleteCard,
       navigateTo     : navigateTo,
       doLogout       : doLogout,
       openEligibleTypeModal : openEligibleTypeModal,
