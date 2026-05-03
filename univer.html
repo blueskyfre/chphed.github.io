@@ -113,7 +113,7 @@
       border-radius: 16px;
       padding: 18px 20px;
       margin-bottom: 14px;
-      cursor: grab;
+      cursor: default;
       transition: box-shadow 0.2s, border-color 0.2s, transform 0.1s;
       position: relative;
       user-select: none;
@@ -206,6 +206,10 @@
       position: absolute; right: 14px; top: 14px;
       display: flex; gap: 5px; align-items: center;
       pointer-events: auto;
+      cursor: auto;
+    }
+    .univ-card .card-btn-group * {
+      cursor: pointer !important;
     }
 
     .univ-card-empty {
@@ -1038,6 +1042,8 @@
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         handle: '.card-drag-handle',
+        filter: '.card-btn-group, .card-edit-btn, .card-delete-btn',
+        preventOnFilter: false,
         onEnd: function(evt) {
           _onDragEnd(evt);
         }
