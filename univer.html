@@ -1899,60 +1899,72 @@ async function _saveDragOrder(newRows) {
       newOkBtn.addEventListener('click', async function() {
         modal.classList.add('hidden');
 
-        // 10개 슬롯을 rank 순으로 정렬된 배열로 확보
-        var newRows = [];
-        for (var s = 1; s <= 10; s++) {
-          var found = null;
-          for (var k = 0; k < univRows.length; k++) {
-            if (univRows[k].rank === s) { found = JSON.parse(JSON.stringify(univRows[k])); break; }
-          }
-          if (!found) {
-            found = { rank: s, univ: '', admsType: '', admsKind: '', dept: '',
-                      quota: '', csatMin: '', selType: '', interview: '', practical: '',
-                      interviewRegion: '', interviewStart: '', interviewEnd: '',
-                      practicalRegion: '', practicalStart: '', practicalEnd: '',
-                      tendency: '', remark: '' };
-          }
-          newRows.push(found);
+        // 현재 데이터가 있는 행만 rank 순으로 추출
+        var dataRows = univRows
+          .filter(function(r) { return r.univ || r.admsType || r.dept || r.admsKind; })
+          .slice()
+          .sort(function(a, b) { return a.rank - b.rank; });
+
+        // 삭제 대상 행의 index (dataRows 내)
+        var delIdx = -1;
+        for (var i = 0; i < dataRows.length; i++) {
+          if (dataRows[i].rank === rank) { delIdx = i; break; }
+        }
+        if (delIdx === -1) { await _reloadData(); return; }
+
+        // 마지막 데이터 슬롯의 rank (삭제 전)
+        var lastDataRank = dataRows[dataRows.length - 1].rank;
+
+        NaviComponent.showLoading();
+
+        // 삭제 대상 뒤 행들을 순서대로 한 칸씩 앞으로 덮어쓰기
+        // 예) 3위 삭제 시: 4위→3위 저장, 5위→4위 저장
+        for (var j = delIdx + 1; j < dataRows.length; j++) {
+          var src = dataRows[j];
+          var targetRank = dataRows[j - 1].rank;
+          try {
+            await _callPostAPI('univSaveRow', {
+              studentId       : studentId,
+              originalRank    : targetRank,
+              rank            : targetRank,
+              univ            : src.univ            || '',
+              admsType        : src.admsType        || '',
+              admsKind        : src.admsKind        || '',
+              dept            : src.dept            || '',
+              quota           : src.quota           || '',
+              csatMin         : src.csatMin         || '',
+              selType         : src.selType         || '',
+              interview       : src.interview       || '',
+              interviewRegion : src.interviewRegion || '',
+              interviewStart  : src.interviewStart  || '',
+              interviewEnd    : src.interviewEnd    || '',
+              practical       : src.practical       || '',
+              practicalRegion : src.practicalRegion || '',
+              practicalStart  : src.practicalStart  || '',
+              practicalEnd    : src.practicalEnd    || '',
+              tendency        : src.tendency        || '',
+              remark          : src.remark          || ''
+            });
+          } catch(e2) { /* 실패해도 계속 */ }
         }
 
-        // 삭제 대상 위치(rank-1)에서 제거 후, 뒤에 빈 슬롯 추가
-        newRows.splice(rank - 1, 1);
-        newRows.push({ rank: 10, univ: '', admsType: '', admsKind: '', dept: '',
-                       quota: '', csatMin: '', selType: '', interview: '', practical: '',
-                       interviewRegion: '', interviewStart: '', interviewEnd: '',
-                       practicalRegion: '', practicalStart: '', practicalEnd: '',
-                       tendency: '', remark: '' });
-
-        // rank 재번호
-        newRows = newRows.map(function(r, idx) {
-          var copy = JSON.parse(JSON.stringify(r));
-          copy.rank = idx + 1;
-          return copy;
-        });
-
-        univRows = newRows;
-
-        // 데이터가 있는 행 중 가장 마지막 순위를 찾아 서버에 빈 값으로 명시 초기화
-        // (_saveDragOrder는 데이터 있는 행만 저장하므로, 밀려난 마지막 데이터 슬롯을 직접 비워야 함)
-        var dataRows = newRows.filter(function(r) { return r.univ || r.admsType || r.dept || r.admsKind; });
-        var clearRank = dataRows.length + 1; // 데이터 있는 행 바로 다음 슬롯이 초기화 대상
-        NaviComponent.showLoading();
+        // 마지막 데이터 슬롯을 빈 값으로 초기화
         try {
           await _callPostAPI('univSaveRow', {
             studentId: studentId,
-            originalRank: clearRank,
-            rank: clearRank,
+            originalRank: lastDataRank,
+            rank: lastDataRank,
             univ: '', admsType: '', admsKind: '', dept: '',
             quota: '', csatMin: '', selType: '', interview: '',
             interviewRegion: '', interviewStart: '', interviewEnd: '',
             practical: '', practicalRegion: '', practicalStart: '', practicalEnd: '',
             tendency: '', remark: ''
           });
-        } catch(e2) { /* 실패해도 계속 진행 */ }
+        } catch(e2) { /* 실패해도 계속 */ }
+
         NaviComponent.hideLoading();
 
-        await _saveDragOrder(newRows);
+        await _reloadData();
       });
     }
 
