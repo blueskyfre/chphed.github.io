@@ -185,22 +185,25 @@
       white-space: nowrap; margin-top: 1px;
     }
     .card-edit-btn {
-      position: absolute; right: 14px; top: 14px;
       padding: 4px 10px; background: #eff6ff; color: #2563eb;
       border: 1px solid #bfdbfe; border-radius: 8px;
       font-size: 0.72rem; font-weight: 600; cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s; white-space: nowrap;
     }
     .card-edit-btn:hover { background: #dbeafe; }
 
     .card-delete-btn {
-      position: absolute; right: 14px; top: 44px;
       padding: 4px 10px; background: #fff5f5; color: #dc2626;
       border: 1px solid #fecaca; border-radius: 8px;
       font-size: 0.72rem; font-weight: 600; cursor: pointer;
-      transition: background 0.15s;
+      transition: background 0.15s; white-space: nowrap;
     }
     .card-delete-btn:hover { background: #fee2e2; }
+
+    .card-btn-group {
+      position: absolute; right: 14px; top: 14px;
+      display: flex; gap: 5px; align-items: center;
+    }
 
     .univ-card-empty {
       border-style: dashed;
@@ -1134,20 +1137,34 @@
 
       html += '</div></div>'; // flex 닫기
 
-      // 수정 버튼
+      // 버튼 그룹 (수정 + 삭제 나란히)
+      html += '<div class="card-btn-group">';
       html += '<button class="card-edit-btn" onclick="event.stopPropagation();UniverNS.openModal(' + row.rank + ')">✏️ 수정</button>';
-
-      // 삭제 버튼 (데이터가 있는 카드에만 표시)
       if (hasData) {
         html += '<button class="card-delete-btn" onclick="event.stopPropagation();UniverNS.deleteCard(' + row.rank + ')">🗑️ 삭제</button>';
       }
+      html += '</div>';
 
       div.innerHTML = html;
 
-      // 카드 클릭으로도 모달 열기 (빈 카드에서 유용)
+      // 카드 클릭 시 드래그핸들 시각 효과 (모달 열지 않음, 빈 카드만 수정 모달 열기)
       div.addEventListener('click', function(e) {
-        if (e.target.classList.contains('card-edit-btn') || e.target.classList.contains('card-delete-btn') || e.target.closest('.card-drag-handle')) return;
-        openModal(row.rank);
+        if (e.target.closest('.card-btn-group') || e.target.closest('.card-drag-handle')) return;
+        if (!row.univ) {
+          // 빈 카드는 클릭 시 수정 모달 열기 유지
+          openModal(row.rank);
+          return;
+        }
+        // 데이터 있는 카드: 드래그핸들 강조 효과
+        var handle = div.querySelector('.card-drag-handle');
+        if (handle) {
+          handle.style.background = '#e0e7ff';
+          handle.style.color = '#3730a3';
+          setTimeout(function() {
+            handle.style.background = '';
+            handle.style.color = '';
+          }, 600);
+        }
       });
 
       return div;
@@ -1882,7 +1899,7 @@ async function _saveDragOrder(newRows) {
       newOkBtn.addEventListener('click', async function() {
         modal.classList.add('hidden');
 
-        // 삭제 대상 제거 후 하위 순위를 한 칸씩 올림
+        // 10개 슬롯을 rank 순으로 정렬된 배열로 확보
         var newRows = [];
         for (var s = 1; s <= 10; s++) {
           var found = null;
@@ -1899,10 +1916,8 @@ async function _saveDragOrder(newRows) {
           newRows.push(found);
         }
 
-        // rank 위치에서 제거
+        // 삭제 대상 위치(rank-1)에서 제거 후, 뒤에 빈 슬롯 추가
         newRows.splice(rank - 1, 1);
-
-        // 빈 슬롯 추가 (항상 10개 유지)
         newRows.push({ rank: 10, univ: '', admsType: '', admsKind: '', dept: '',
                        quota: '', csatMin: '', selType: '', interview: '', practical: '',
                        interviewRegion: '', interviewStart: '', interviewEnd: '',
@@ -1917,6 +1932,24 @@ async function _saveDragOrder(newRows) {
         });
 
         univRows = newRows;
+
+        // 마지막 슬롯(rank=10)을 서버에 빈 값으로 명시 초기화
+        // (_saveDragOrder는 데이터 있는 행만 저장하므로 빈 슬롯은 별도 처리)
+        NaviComponent.showLoading();
+        try {
+          await _callPostAPI('univSaveRow', {
+            studentId: studentId,
+            originalRank: 10,
+            rank: 10,
+            univ: '', admsType: '', admsKind: '', dept: '',
+            quota: '', csatMin: '', selType: '', interview: '',
+            interviewRegion: '', interviewStart: '', interviewEnd: '',
+            practical: '', practicalRegion: '', practicalStart: '', practicalEnd: '',
+            tendency: '', remark: ''
+          });
+        } catch(e2) { /* 실패해도 계속 진행 */ }
+        NaviComponent.hideLoading();
+
         await _saveDragOrder(newRows);
       });
     }
