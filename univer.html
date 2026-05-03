@@ -1035,6 +1035,8 @@
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
         handle: '.card-drag-handle',
+        filter: '.card-btn-group',
+        preventOnFilter: false,
         onEnd: function(evt) {
           _onDragEnd(evt);
         }
