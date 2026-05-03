@@ -142,6 +142,29 @@
     }
     .card-drag-handle:hover { background: #e0e7ff; color: #3730a3; }
 
+    /* ── 투명 드래그 오버레이 ── */
+    .card-drag-overlay {
+      position: absolute;
+      inset: 0;
+      /* 우측 상단 버튼 그룹 영역 제외 (right:0, top:0 ~ height:46px, width:130px) */
+      clip-path: polygon(
+        0% 0%,
+        calc(100% - 130px) 0%,
+        calc(100% - 130px) 46px,
+        100% 46px,
+        100% 100%,
+        0% 100%
+      );
+      cursor: grab;
+      z-index: 1;
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      border-radius: 16px;
+    }
+    .card-drag-overlay:active { cursor: grabbing; }
+
     .card-info-row {
       display: flex; flex-wrap: wrap; gap: 6px 10px;
       align-items: center; margin-top: 8px;
@@ -1041,7 +1064,7 @@
         animation: 180,
         ghostClass: 'sortable-ghost',
         chosenClass: 'sortable-chosen',
-        handle: '.card-drag-handle',
+        handle: '.card-drag-overlay',
         filter: '.card-btn-group, .card-edit-btn, .card-delete-btn',
         preventOnFilter: false,
         onEnd: function(evt) {
@@ -1170,9 +1193,21 @@
 
       div.appendChild(btnGroup);
 
+      // 투명 드래그 오버레이 (수정/삭제 버튼 영역 제외한 카드 전체를 덮는 드래그 핸들)
+      var dragOverlay = document.createElement('button');
+      dragOverlay.className = 'card-drag-overlay';
+      dragOverlay.setAttribute('aria-label', '드래그하여 순위 변경');
+      dragOverlay.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+      dragOverlay.addEventListener('click', function(e) {
+        e.stopPropagation();
+        // 빈 카드는 오버레이 클릭 시에도 수정 모달 열기
+        if (!row.univ) { openModal(row.rank); }
+      });
+      div.appendChild(dragOverlay);
+
       // 카드 클릭 시 드래그핸들 시각 효과 (모달 열지 않음, 빈 카드만 수정 모달 열기)
       div.addEventListener('click', function(e) {
-        if (e.target.closest('.card-btn-group') || e.target.closest('.card-drag-handle')) return;
+        if (e.target.closest('.card-btn-group') || e.target.closest('.card-drag-handle') || e.target.closest('.card-drag-overlay')) return;
         if (!row.univ) {
           // 빈 카드는 클릭 시 수정 모달 열기 유지
           openModal(row.rank);
