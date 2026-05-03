@@ -142,8 +142,12 @@
        ============================================================ */
     tbody tr { transition: background 0.12s; }
     tbody tr:hover { background: #eff6ff !important; }
-    .row-past { opacity: 0.55; }
-    .row-past td { text-decoration: line-through; }
+    .row-past td {
+      color: #9ca3af !important;
+      text-decoration: line-through;
+      text-decoration-color: #1d4ed8;
+      text-decoration-thickness: 1.5px;
+    }
 
     /* ============================================================
        모바일 카드
@@ -231,25 +235,11 @@
     <!-- ============================================================ -->
     <section id="all-schedule-section">
 
-      <!-- 섹션 헤더 + 필터 바 -->
-      <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+      <!-- 섹션 헤더 -->
+      <div class="flex flex-wrap items-center gap-3 mb-3">
         <h2 class="text-lg font-semibold text-gray-700 flex items-center gap-2">
           📋 <span>전체 일정</span>
         </h2>
-
-        <!-- 필터 탭 묶음 -->
-        <div class="flex flex-wrap gap-2 items-center">
-          <!-- 일정 필터 -->
-          <div class="filter-bar" id="filter-schedule">
-            <button class="filter-tab active" data-val="all"  onclick="Firstpage.setScheduleFilter('all')">전체</button>
-            <button class="filter-tab"        data-val="upcoming" onclick="Firstpage.setScheduleFilter('upcoming')">예정</button>
-          </div>
-          <!-- 비고 필터 -->
-          <div class="filter-bar" id="filter-remark">
-            <button class="filter-tab active" data-val="all"      onclick="Firstpage.setRemarkFilter('all')">전체</button>
-            <button class="filter-tab"        data-val="personal" onclick="Firstpage.setRemarkFilter('personal')">개인</button>
-          </div>
-        </div>
       </div>
 
       <!-- 스켈레톤 -->
@@ -269,10 +259,14 @@
             <table class="w-full text-sm">
               <thead>
                 <tr>
-                  <!-- 일정 헤더: 필터 탭 표시 -->
-                  <th class="th-blue" style="min-width:120px">
-                    <div class="flex flex-col items-center gap-1">
+                  <!-- 일정 헤더: 필터 탭 포함 -->
+                  <th class="th-blue" style="min-width:190px">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
                       <span>일정</span>
+                      <div class="filter-bar" id="filter-schedule" style="padding:2px 4px; gap:2px;">
+                        <button class="filter-tab active" data-val="all"      onclick="Firstpage.setScheduleFilter('all')"      style="padding:2px 9px; font-size:0.70rem; line-height:1.4;">전체</button>
+                        <button class="filter-tab"        data-val="upcoming" onclick="Firstpage.setScheduleFilter('upcoming')" style="padding:2px 9px; font-size:0.70rem; line-height:1.4;">예정</button>
+                      </div>
                     </div>
                   </th>
                   <!-- 시작날짜: 정렬 버튼 -->
@@ -288,10 +282,14 @@
                     </button>
                   </th>
                   <th class="th-blue" style="min-width:160px">내용</th>
-                  <!-- 비고 헤더: 필터 탭 표시 -->
-                  <th class="th-blue" style="min-width:110px">
-                    <div class="flex flex-col items-center gap-1">
+                  <!-- 비고 헤더: 필터 탭 포함 -->
+                  <th class="th-blue" style="min-width:170px">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap;">
                       <span>비고</span>
+                      <div class="filter-bar" id="filter-remark" style="padding:2px 4px; gap:2px;">
+                        <button class="filter-tab active" data-val="all"      onclick="Firstpage.setRemarkFilter('all')"      style="padding:2px 9px; font-size:0.70rem; line-height:1.4;">전체</button>
+                        <button class="filter-tab"        data-val="personal" onclick="Firstpage.setRemarkFilter('personal')" style="padding:2px 9px; font-size:0.70rem; line-height:1.4;">개인</button>
+                      </div>
                     </div>
                   </th>
                 </tr>
@@ -387,17 +385,17 @@
       // 🔢 정렬 로직 (기본 정렬)
       // ============================================================
       // 기본 정렬 규칙:
-      //  1) 마감날짜 있는 것 → 마감날짜 내림차순
+      //  1) 마감날짜 있는 것 → 마감날짜 오름차순
       //  2) 시작날짜만 있는 것 → 시작날짜 오름차순
-      //  3) 날짜 없는 것 → 일정명 내림차순
+      //  3) 날짜 없는 것 → 일정명 오름차순
       function _defaultSort(list) {
         var withEnd   = list.filter(function(i){ return !!i.endDate; });
         var startOnly = list.filter(function(i){ return !i.endDate && !!i.startDate; });
         var noDate    = list.filter(function(i){ return !i.endDate && !i.startDate; });
 
-        withEnd.sort(function(a,b){ return b.endDate.localeCompare(a.endDate); });
+        withEnd.sort(function(a,b){ return a.endDate.localeCompare(b.endDate); });
         startOnly.sort(function(a,b){ return a.startDate.localeCompare(b.startDate); });
-        noDate.sort(function(a,b){ return b.schedule.localeCompare(a.schedule); });
+        noDate.sort(function(a,b){ return a.schedule.localeCompare(b.schedule); });
 
         return withEnd.concat(startOnly).concat(noDate);
       }
@@ -477,10 +475,10 @@
 
           html += '<tr class="border-t border-gray-100 ' + bgClass + ' ' + rowClass + ' fade-in">';
           html += '  <td class="px-4 py-3 font-medium whitespace-nowrap">' + _escapeHtml(item.schedule) + '</td>';
-          html += '  <td class="px-4 py-3 text-center whitespace-nowrap text-gray-600">' + _dateCell(item.startDate) + '</td>';
-          html += '  <td class="px-4 py-3 text-center whitespace-nowrap text-gray-600">' + _dateCell(item.endDate) + '</td>';
-          html += '  <td class="px-4 py-3 text-gray-600">' + _escapeHtml(item.content) + '</td>';
-          html += '  <td class="px-4 py-3"><div class="flex flex-wrap items-center gap-1">' + remarkHtml + '</div></td>';
+          html += '  <td class="px-4 py-3 text-center whitespace-nowrap" style="color:#111827;">' + _dateCell(item.startDate) + '</td>';
+          html += '  <td class="px-4 py-3 text-center whitespace-nowrap" style="color:#111827;">' + _dateCell(item.endDate) + '</td>';
+          html += '  <td class="px-4 py-3" style="color:#111827;">' + _escapeHtml(item.content) + '</td>';
+          html += '  <td class="px-4 py-3 text-center"><div style="display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:4px;">' + remarkHtml + '</div></td>';
           html += '</tr>';
         });
         tbody.innerHTML = html;
