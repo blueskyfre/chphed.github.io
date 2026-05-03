@@ -1933,14 +1933,16 @@ async function _saveDragOrder(newRows) {
 
         univRows = newRows;
 
-        // 마지막 슬롯(rank=10)을 서버에 빈 값으로 명시 초기화
-        // (_saveDragOrder는 데이터 있는 행만 저장하므로 빈 슬롯은 별도 처리)
+        // 데이터가 있는 행 중 가장 마지막 순위를 찾아 서버에 빈 값으로 명시 초기화
+        // (_saveDragOrder는 데이터 있는 행만 저장하므로, 밀려난 마지막 데이터 슬롯을 직접 비워야 함)
+        var dataRows = newRows.filter(function(r) { return r.univ || r.admsType || r.dept || r.admsKind; });
+        var clearRank = dataRows.length + 1; // 데이터 있는 행 바로 다음 슬롯이 초기화 대상
         NaviComponent.showLoading();
         try {
           await _callPostAPI('univSaveRow', {
             studentId: studentId,
-            originalRank: 10,
-            rank: 10,
+            originalRank: clearRank,
+            rank: clearRank,
             univ: '', admsType: '', admsKind: '', dept: '',
             quota: '', csatMin: '', selType: '', interview: '',
             interviewRegion: '', interviewStart: '', interviewEnd: '',
