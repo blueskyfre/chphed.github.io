@@ -215,19 +215,6 @@
       border-color: #93c5fd;
       background: #eff6ff;
     }
-
-    .card-edit-btn, .card-delete-btn {
-        cursor: pointer !important;
-        display: inline-flex !important; 
-        align-items: center;
-        justify-content: center;
-        pointer-events: auto !important; 
-    }
-    .card-edit-btn *, .card-delete-btn * {
-        pointer-events: none !important;
-    }
-
-    
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -1081,8 +1068,8 @@
       else if (t === '하향') tendencyBadgeClass = 'badge-blue';
       else if (t === '확실한 안정') tendencyBadgeClass = 'badge-indigo';
 
-      var html = '<div style="display:flex;align-items:flex-start;gap:10px;padding-right:120px;">';
-      html += '<span class="card-drag-handle" title="드래그하여 순위 변경">⠿</span>';
+      var html = '<div style="display:flex;align-items:flex-start;gap:10px;padding-right:120px;pointer-events:none;">';
+      html += '<span class="card-drag-handle" style="pointer-events:auto;" title="드래그하여 순위 변경">⠿</span>';
       html += '<span class="' + rankClass + '">' + row.rank + '순위</span>';
       html += '<div style="flex:1;min-width:0;">';
 
