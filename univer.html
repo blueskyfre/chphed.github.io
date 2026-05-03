@@ -1137,15 +1137,29 @@
 
       html += '</div></div>'; // flex 닫기
 
-      // 버튼 그룹 (수정 + 삭제 나란히)
-      html += '<div class="card-btn-group">';
-      html += '<button class="card-edit-btn" onclick="event.stopPropagation();UniverNS.openModal(' + row.rank + ')">✏️ 수정</button>';
-      if (hasData) {
-        html += '<button class="card-delete-btn" onclick="event.stopPropagation();UniverNS.deleteCard(' + row.rank + ')">🗑️ 삭제</button>';
-      }
-      html += '</div>';
-
       div.innerHTML = html;
+
+      // 버튼 그룹을 DOM으로 직접 생성 (SortableJS mousedown 간섭 방지)
+      var btnGroup = document.createElement('div');
+      btnGroup.className = 'card-btn-group';
+
+      var editBtn = document.createElement('button');
+      editBtn.className = 'card-edit-btn';
+      editBtn.textContent = '✏️ 수정';
+      editBtn.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+      editBtn.addEventListener('click',     function(e) { e.stopPropagation(); UniverNS.openModal(row.rank); });
+      btnGroup.appendChild(editBtn);
+
+      if (hasData) {
+        var delBtn = document.createElement('button');
+        delBtn.className = 'card-delete-btn';
+        delBtn.textContent = '🗑️ 삭제';
+        delBtn.addEventListener('mousedown', function(e) { e.stopPropagation(); });
+        delBtn.addEventListener('click',     function(e) { e.stopPropagation(); UniverNS.deleteCard(row.rank); });
+        btnGroup.appendChild(delBtn);
+      }
+
+      div.appendChild(btnGroup);
 
       // 카드 클릭 시 드래그핸들 시각 효과 (모달 열지 않음, 빈 카드만 수정 모달 열기)
       div.addEventListener('click', function(e) {
