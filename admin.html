@@ -2058,42 +2058,76 @@ var Admin = (function() {
   // ─── 다운로드 ─────────────────────────────────────────────────
 
   // 안내 토스트 (파란색, 자동닫힘)
-  var _infoToastTimer = null;
-  function _showInfoToast(msg) {
-    var existing = document.getElementById('_info-toast');
-    if (existing) existing.remove();
-    var toast = document.createElement('div');
-    toast.id = '_info-toast';
-    toast.style.cssText = [
-      'position:fixed',
-      'top:70px',          // 헤더(60px) 바로 아래에 나타나도록 설정
-      'right:28px',        // 다운로드 버튼이 있는 우측 여백에 맞춤
-      'z-index:9999',
-      'background:linear-gradient(135deg,#3b82f6,#2563eb)',
-      'color:#fff',
-      'font-size:0.88rem',
-      'font-weight:600',
-      'padding:10px 20px',
-      'border-radius:10px',
-      'box-shadow:0 8px 24px -4px rgba(37,99,235,0.4)',
-      'letter-spacing:-0.01em',
-      'white-space:nowrap',
-      'transition:opacity 0.3s ease, transform 0.3s ease', // 애니메이션 추가
-      'opacity:0',
-      'transform:translateY(-10px)' // 위에서 아래로 살짝 내려오는 효과
-    ].join(';');
-    toast.textContent = msg;
-    document.body.appendChild(toast);
-    requestAnimationFrame(function() { 
-      toast.style.opacity = '1'; 
-      toast.style.transform = 'translateY(0)'; 
-    });
-    if (_infoToastTimer) clearTimeout(_infoToastTimer);
-    _infoToastTimer = setTimeout(function() {
-      toast.style.opacity = '0';
-      setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 320);
-    }, 3000);
+var _infoToastTimer = null;
+
+function _showInfoToast(msg) {
+  var existing = document.getElementById('_info-toast');
+  if (existing) existing.remove();
+
+  // 1. 기준이 되는 다운로드 버튼 찾기 (클래스명을 .btn-download 또는 실제 사용 중인 버튼 클래스로 확인하세요)
+  var downloadBtn = document.querySelector('.btn-download') || document.querySelector('.download-btn') || document.querySelector('button[title*="다운로드"]');
+  
+  var toast = document.createElement('div');
+  toast.id = '_info-toast';
+
+  // 기본 스타일 설정
+  var styles = [
+    'position:fixed',
+    'z-index:9999',
+    'background:linear-gradient(135deg,#3b82f6,#2563eb)',
+    'color:#fff',
+    'font-size:0.88rem',
+    'font-weight:600',
+    'padding:10px 20px',
+    'border-radius:10px',
+    'box-shadow:0 8px 24px -4px rgba(37,99,235,0.4)',
+    'letter-spacing:-0.01em',
+    'white-space:nowrap',
+    'transition:opacity 0.3s ease, transform 0.3s ease',
+    'opacity:0'
+  ];
+
+  if (downloadBtn) {
+    // 2. 버튼 위치에 따른 동적 좌표 계산
+    var rect = downloadBtn.getBoundingClientRect();
+    var topPos = rect.bottom + 10; // 버튼 아래 10px
+    var leftPos = rect.right;      // 버튼의 오른쪽 끝 지점
+    
+    styles.push('top:' + topPos + 'px');
+    styles.push('left:' + leftPos + 'px');
+    // transform의 핵심: 기준점(버튼오른쪽끝)에서 왼쪽으로 자신의 너비만큼(-100%) 이동
+    styles.push('transform:translateY(-10px) translateX(-100%)'); 
+  } else {
+    // 버튼을 못 찾을 경우를 대비한 기본 위치
+    styles.push('top:70px');
+    styles.push('right:28px');
+    styles.push('transform:translateY(-10px)');
   }
+
+  toast.style.cssText = styles.join(';');
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+
+  // 애니메이션 실행
+  requestAnimationFrame(function() { 
+    toast.style.opacity = '1'; 
+    // transform 상태를 유지하며 위치만 이동
+    if (downloadBtn) {
+      toast.style.transform = 'translateY(0) translateX(-100%)';
+    } else {
+      toast.style.transform = 'translateY(0)';
+    }
+  });
+
+  if (_infoToastTimer) clearTimeout(_infoToastTimer);
+  _infoToastTimer = setTimeout(function() {
+    toast.style.opacity = '0';
+    setTimeout(function() { 
+      if (toast.parentNode) toast.parentNode.removeChild(toast); 
+    }, 320);
+  }, 3000);
+}
+
 
   function _openDownloadModal() {
     var menu = _state.currentMenu;
