@@ -2065,16 +2065,29 @@ var Admin = (function() {
     var toast = document.createElement('div');
     toast.id = '_info-toast';
     toast.style.cssText = [
-      'position:fixed','bottom:32px','left:50%','transform:translateX(-50%)',
-      'z-index:9999','background:linear-gradient(135deg,#3b82f6,#2563eb)',
-      'color:#fff','font-size:0.88rem','font-weight:600','padding:12px 24px',
-      'border-radius:12px','box-shadow:0 8px 24px -4px rgba(37,99,235,0.4)',
-      'letter-spacing:-0.01em','white-space:nowrap',
-      'transition:opacity 0.3s ease','opacity:0'
+      'position:fixed',
+      'top:70px',          // 헤더(60px) 바로 아래에 나타나도록 설정
+      'right:28px',        // 다운로드 버튼이 있는 우측 여백에 맞춤
+      'z-index:9999',
+      'background:linear-gradient(135deg,#3b82f6,#2563eb)',
+      'color:#fff',
+      'font-size:0.88rem',
+      'font-weight:600',
+      'padding:10px 20px',
+      'border-radius:10px',
+      'box-shadow:0 8px 24px -4px rgba(37,99,235,0.4)',
+      'letter-spacing:-0.01em',
+      'white-space:nowrap',
+      'transition:opacity 0.3s ease, transform 0.3s ease', // 애니메이션 추가
+      'opacity:0',
+      'transform:translateY(-10px)' // 위에서 아래로 살짝 내려오는 효과
     ].join(';');
     toast.textContent = msg;
     document.body.appendChild(toast);
-    requestAnimationFrame(function() { toast.style.opacity = '1'; });
+    requestAnimationFrame(function() { 
+      toast.style.opacity = '1'; 
+      toast.style.transform = 'translateY(0)'; 
+    });
     if (_infoToastTimer) clearTimeout(_infoToastTimer);
     _infoToastTimer = setTimeout(function() {
       toast.style.opacity = '0';
