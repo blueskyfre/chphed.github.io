@@ -1158,8 +1158,8 @@ var Admin = (function() {
 
       // ── 지원가능전형: 모든 row에 동일하게 들어있는 값을 한 번만 추출 ──
       // (10개 중복 데이터에서 유일값을 뽑기 위해 Set 사용)
-      var availTypeText = (data['지원가능전형'] && String(data['지원가능전형']).trim() !== '')
-        ? String(data['지원가능전형']).trim()
+      var availTypeText = (data['availType'] && String(data['availType']).trim() !== '')
+        ? String(data['availType']).trim()
         : '-';
 
       // ── 선호전형: row의 '선호전형' 컬럼 우선, 없으면 data.prefType ──
