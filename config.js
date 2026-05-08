@@ -7,8 +7,8 @@
 var Config = (function() {
   'use strict';
   return {
-    SS_ID          : '1I3btm5xEypE52QrcPwRZ-G4_6FIrYLZBikVKGO84mZc',
-    DEPLOY         : 'https://script.google.com/macros/s/AKfycbyO3vxKX6ihkilmLaNvyxaM1yUWd3ocTWVTs848Rvv9JbWoHOggT9Wy96xuLaG978L2vQ/exec',
+    SS_ID          : '1f14LDZ4EWPokoRswVRNVcqh71K3VOCLO_XNCWni8MVY',
+    DEPLOY         : 'https://script.google.com/macros/s/AKfycbwOuK_GEc9i_tLBxKiCh98ku94y8_vFoDxlfmxpAx8zmJspbOy1vo9o8PU9l4PDOQCjfg/exec',
     GITHUB         : 'https://blueskyfre.github.io/chphed.github.io/',
     BACKGROUND_IMG : 'https://blueskyfre.github.io/chphed.github.io/back.png'
   };
