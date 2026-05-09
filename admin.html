@@ -459,13 +459,15 @@ var AdminCore = (function () {
 
   // ─── API 호출 (POST) ─────────────────────────────────────────
   // 파일 데이터 등 큰 payload 전송 시 사용.
+  // GAS는 CORS preflight(OPTIONS)를 지원하지 않으므로
+  // Content-Type을 text/plain으로 설정해 simple request로 전송.
   async function apiPost(action, params) {
     params = params || {};
     var body = Object.assign({ action: action }, params);
     var res = await fetch(_WEB_APP_URL, {
       method:   'POST',
       redirect: 'follow',
-      headers:  { 'Content-Type': 'application/json' },
+      headers:  { 'Content-Type': 'text/plain' },
       body:     JSON.stringify(body)
     });
     if (!res.ok) throw new Error('서버 응답 오류: ' + res.status);
