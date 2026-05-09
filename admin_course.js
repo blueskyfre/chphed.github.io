@@ -1,0 +1,560 @@
+// ============================================================
+// AdminCourse 네임스페이스 (IIFE)
+// 역할: 교과관리 메뉴 — 교과개설, 교과목 클릭, 학생 공지, 학생 카드 표시
+// 의존: AdminCore (공유 상태·API), XLSX 라이브러리
+// ============================================================
+var AdminCourse = (function () {
+
+  // ─── 모듈 내부 상태 ──────────────────────────────────────────
+  var _state = {
+    courses: [],            // 현재 관리자의 개설 교과목 목록
+    selectedCourse: null,   // 현재 선택된 교과목 이름
+    pendingSaveFile: null,  // 업로드 대기 중인 학생명단 File 객체
+    pendingSaveFileName: '',// 파일명 표시용
+    noticeUploadFile: null, // 학생개별공지 업로드 File
+    driveRootFolderId: '',  // 구글드라이브 관리자 폴더 ID (캐시)
+  };
+
+  // ─── 열 인덱스 → 문자 변환 (0-based) ────────────────────────
+  function _colLetter(idx) {
+    var letter = '';
+    idx = idx + 1;
+    while (idx > 0) {
+      var mod = (idx - 1) % 26;
+      letter = String.fromCharCode(65 + mod) + letter;
+      idx = Math.floor((idx - 1) / 26);
+    }
+    return letter;
+  }
+
+  // ─── 사이드바 렌더링 ─────────────────────────────────────────
+  function renderSidebar() {
+    var ul = document.getElementById('student-list');
+    if (!ul) return;
+
+    var html = '';
+
+    // 교과개설 버튼
+    html += '<div class="px-2 pt-3 pb-2">'
+          + '<button onclick="AdminCourse.showOpenCourseForm()"'
+          + ' class="course-open-btn w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl'
+          + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-sm'
+          + ' shadow-md hover:from-indigo-700 hover:to-indigo-600 transition-all active:scale-95">'
+          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+          + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>'
+          + '</svg>교과개설</button></div>';
+
+    // 구분선
+    if (_state.courses.length > 0) {
+      html += '<div class="mx-3 my-1 border-t border-gray-100"></div>'
+            + '<p class="px-4 py-1 text-xs font-bold text-gray-400 uppercase tracking-widest">개설 교과목</p>';
+    }
+
+    // 개설된 교과목 버튼 목록
+    _state.courses.forEach(function (course) {
+      var isActive = _state.selectedCourse === course;
+      html += '<div class="px-2 py-0.5">'
+            + '<button onclick="AdminCourse.selectCourse(\'' + AdminCore.escapeHtml(course) + '\')"'
+            + ' class="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all'
+            + (isActive
+                ? ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md'
+                : ' text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 border border-transparent hover:border-indigo-100') + '">'
+            + '<svg class="w-4 h-4 shrink-0 ' + (isActive ? 'text-indigo-200' : 'text-indigo-400') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+            + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'
+            + '</svg>'
+            + '<span class="truncate">' + AdminCore.escapeHtml(course) + '</span>'
+            + '</button></div>';
+    });
+
+    ul.innerHTML = html;
+  }
+
+  // ─── 초기 진입: 교과관리 메뉴 활성화 ────────────────────────
+  function init() {
+    document.getElementById('sidebar-title').textContent = '교과관리';
+    _state.selectedCourse = null;
+    _loadCourses();
+  }
+
+  // ─── 개설 교과목 목록 로드 (GS action: courseGetList) ────────
+  async function _loadCourses() {
+    renderSidebar();
+    try {
+      var res = await AdminCore.apiGet('courseGetList', {
+        adminId: AdminCore.state.adminId
+      });
+      if (res && res.success) {
+        _state.courses = res.data || [];
+      } else {
+        _state.courses = [];
+      }
+    } catch (e) {
+      _state.courses = [];
+    }
+    renderSidebar();
+    _showWelcome();
+  }
+
+  // ─── 환영/안내 메시지 ────────────────────────────────────────
+  function _showWelcome() {
+    var ca = document.getElementById('content-area');
+    if (!ca) return;
+    ca.innerHTML =
+      '<div class="flex flex-col items-center justify-center h-72 gap-4 px-6">'
+      + '<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center shadow-sm">'
+      + '<svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+      + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'
+      + '</svg></div>'
+      + '<p class="text-center text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-3 shadow-sm max-w-sm leading-relaxed">'
+      + '교과를 개설하면, 개설한 교과의 수행평가 양식 제공이나 파일 수합, 성적 공지 등이 가능합니다.<br>'
+      + '좌측에 있는 <strong>교과개설</strong>을 이용하여 관리할 교과를 생성하거나 생성된 교과를 클릭하세요.'
+      + '</p></div>';
+  }
+
+  // ─── 1. 교과개설 폼 표시 ─────────────────────────────────────
+  function showOpenCourseForm() {
+    _state.selectedCourse = null;
+    _state.pendingSaveFile = null;
+    _state.pendingSaveFileName = '';
+    renderSidebar();
+
+    var ca = document.getElementById('content-area');
+    ca.innerHTML =
+      '<div class="p-5 max-w-2xl mx-auto">'
+
+      // 제목 카드
+      + '<div class="flex items-center gap-3 mb-6">'
+      + '<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow">'
+      + '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>'
+      + '</div><h2 class="text-xl font-bold text-gray-800">교과 개설</h2></div>'
+
+      // 교과목명 입력
+      + '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">'
+      + '<label class="block text-sm font-bold text-gray-700 mb-2">교과목명</label>'
+      + '<input id="course-name-input" type="text" placeholder="예: 국어, 수학, 영어..."'
+      + ' class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"/>'
+      + '</div>'
+
+      // 수강학생 명단 업로드
+      + '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">'
+      + '<label class="block text-sm font-bold text-gray-700 mb-1">수강학생 명단 업로드</label>'
+      + '<p class="text-xs text-gray-500 mb-3">수강학생을 <span class="font-semibold text-indigo-600">수강학생명단</span> 파일에 입력한 후 업로드해주세요.</p>'
+
+      // 양식 다운로드 버튼
+      + '<button onclick="AdminCourse.downloadStudentTemplate()"'
+      + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold mb-4'
+      + ' bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow hover:from-emerald-600 hover:to-emerald-700 transition-all">'
+      + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
+      + '수강학생_학번이름.xlsx 다운로드</button>'
+
+      // 파일 업로드 영역
+      + '<div id="course-upload-zone"'
+      + ' class="border-2 border-dashed border-indigo-200 rounded-xl p-6 text-center bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer"'
+      + ' onclick="document.getElementById(\'course-file-input\').click()"'
+      + ' ondragover="event.preventDefault()" ondrop="AdminCourse.handleFileDrop(event)">'
+      + '<svg class="w-8 h-8 text-indigo-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+      + '<p class="text-sm text-indigo-500 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
+      + '<p class="text-xs text-gray-400 mt-1">.xlsx 형식</p>'
+      + '</div>'
+      + '<input id="course-file-input" type="file" accept=".xlsx,.xls" class="hidden" onchange="AdminCourse.handleFileSelect(event)"/>'
+
+      // 선택된 파일 표시
+      + '<div id="course-file-selected" class="hidden mt-3 flex items-center gap-3 bg-indigo-50 rounded-xl px-4 py-3">'
+      + '<svg class="w-5 h-5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
+      + '<span id="course-file-name" class="text-sm font-semibold text-indigo-700 flex-1 truncate"></span>'
+      + '<button onclick="AdminCourse.clearFile()" class="text-gray-400 hover:text-gray-600 transition-colors text-xs">✕ 취소</button>'
+      + '</div>'
+      + '</div>'
+
+      // 저장 버튼
+      + '<div id="course-save-btn-wrap" class="hidden">'
+      + '<button onclick="AdminCourse.saveCourse()"'
+      + ' class="w-full py-3 rounded-xl text-sm font-bold text-white'
+      + ' bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-md hover:from-indigo-700 hover:to-indigo-600 transition-all flex items-center justify-center gap-2">'
+      + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+      + '저장 (교과 개설)</button></div>'
+
+      + '</div>';
+  }
+
+  // ─── 파일 선택 핸들러 ────────────────────────────────────────
+  function handleFileSelect(e) {
+    var file = e.target.files && e.target.files[0];
+    _applyFile(file);
+  }
+
+  function handleFileDrop(e) {
+    e.preventDefault();
+    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    _applyFile(file);
+  }
+
+  function _applyFile(file) {
+    if (!file) return;
+    _state.pendingSaveFile = file;
+    _state.pendingSaveFileName = file.name;
+    var nameEl = document.getElementById('course-file-name');
+    var selEl  = document.getElementById('course-file-selected');
+    var btnWrap = document.getElementById('course-save-btn-wrap');
+    if (nameEl) nameEl.textContent = file.name;
+    if (selEl)  selEl.classList.remove('hidden');
+    if (btnWrap) btnWrap.classList.remove('hidden');
+  }
+
+  function clearFile() {
+    _state.pendingSaveFile = null;
+    _state.pendingSaveFileName = '';
+    var nameEl = document.getElementById('course-file-name');
+    var selEl  = document.getElementById('course-file-selected');
+    var btnWrap = document.getElementById('course-save-btn-wrap');
+    var fileInput = document.getElementById('course-file-input');
+    if (nameEl) nameEl.textContent = '';
+    if (selEl)  selEl.classList.add('hidden');
+    if (btnWrap) btnWrap.classList.add('hidden');
+    if (fileInput) fileInput.value = '';
+  }
+
+  // ─── 수강학생 양식 다운로드 ──────────────────────────────────
+  function downloadStudentTemplate() {
+    // XLSX로 학번/이름 헤더만 있는 양식 파일 생성
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.aoa_to_sheet([['학번', '이름']]);
+    // 열 너비 설정
+    ws['!cols'] = [{ wch: 15 }, { wch: 15 }];
+    XLSX.utils.book_append_sheet(wb, ws, '수강학생명단');
+    XLSX.writeFile(wb, '수강학생_학번이름.xlsx');
+  }
+
+  // ─── 교과 저장 (GS + 스프레드시트 조작) ─────────────────────
+  async function saveCourse() {
+    var nameInput = document.getElementById('course-name-input');
+    var courseName = nameInput ? nameInput.value.trim() : '';
+    if (!courseName) {
+      alert('교과목명을 입력해주세요.');
+      nameInput && nameInput.focus();
+      return;
+    }
+    if (!_state.pendingSaveFile) {
+      alert('수강학생 명단 파일을 업로드해주세요.');
+      return;
+    }
+
+    var adminName = AdminCore.state.adminName;
+    var saveBtn = document.querySelector('[onclick="AdminCourse.saveCourse()"]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '저장 중...'; }
+
+    try {
+      // 엑셀 파일 파싱
+      var wb = await _readXlsx(_state.pendingSaveFile);
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var data  = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      // 헤더 행 찾기 (학번, 이름)
+      var headerRowIdx = -1;
+      var sidColIdx = -1, nameColIdx = -1;
+      for (var ri = 0; ri < Math.min(data.length, 5); ri++) {
+        var row = data[ri];
+        for (var ci = 0; ci < row.length; ci++) {
+          var val = String(row[ci] || '').trim();
+          if (val === '학번') sidColIdx = ci;
+          if (val === '이름') nameColIdx = ci;
+        }
+        if (sidColIdx !== -1 && nameColIdx !== -1) { headerRowIdx = ri; break; }
+      }
+
+      // 학생 목록 추출
+      var students = [];
+      if (headerRowIdx !== -1) {
+        for (var di = headerRowIdx + 1; di < data.length; di++) {
+          var row = data[di];
+          var sid  = String(row[sidColIdx]  || '').trim();
+          var sname= String(row[nameColIdx] || '').trim();
+          if (sid && sname) students.push({ studentId: sid, name: sname });
+        }
+      }
+
+      // GS 서버에 저장 요청
+      var res = await AdminCore.apiGet('courseSave', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  adminName,
+        courseName: courseName,
+        students:   JSON.stringify(students)
+      });
+
+      if (res && res.success) {
+        // 교과목 목록 갱신
+        if (_state.courses.indexOf(courseName) === -1) {
+          _state.courses.push(courseName);
+        }
+        renderSidebar();
+        _showSaveSuccess(courseName);
+      } else {
+        alert('저장 중 오류가 발생했습니다: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch (err) {
+      alert('오류: ' + err.message);
+    } finally {
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML =
+        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장 (교과 개설)';
+      }
+    }
+  }
+
+  function _showSaveSuccess(courseName) {
+    var ca = document.getElementById('content-area');
+    ca.innerHTML =
+      '<div class="flex flex-col items-center justify-center h-64 gap-4">'
+      + '<div class="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center ring-4 ring-emerald-100">'
+      + '<svg class="w-9 h-9 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>'
+      + '</div>'
+      + '<p class="text-lg font-bold text-gray-800">교과 개설 완료!</p>'
+      + '<p class="text-sm text-gray-500"><span class="font-bold text-indigo-600">' + AdminCore.escapeHtml(courseName) + '</span> 교과가 개설되었습니다.</p>'
+      + '<button onclick="AdminCourse.selectCourse(\'' + AdminCore.escapeHtml(courseName) + '\')"'
+      + ' class="mt-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow">'
+      + '개설된 교과 보기</button>'
+      + '</div>';
+  }
+
+  // ─── XLSX 파일 읽기 (Promise) ────────────────────────────────
+  function _readXlsx(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function (e) {
+        try {
+          var wb = XLSX.read(e.target.result, { type: 'binary' });
+          resolve(wb);
+        } catch (err) { reject(err); }
+      };
+      reader.onerror = function () { reject(new Error('파일 읽기 실패')); };
+      reader.readAsBinaryString(file);
+    });
+  }
+
+  // ─── 3. 개설 교과목 선택 ─────────────────────────────────────
+  function selectCourse(courseName) {
+    _state.selectedCourse = courseName;
+    renderSidebar();
+    _renderCourseDetail(courseName);
+  }
+
+  async function _renderCourseDetail(courseName) {
+    var ca = document.getElementById('content-area');
+    var adminName = AdminCore.state.adminName;
+
+    // 로딩 스켈레톤
+    ca.innerHTML = '<div class="p-5"><div class="skeleton-box h-20 w-full mb-4"></div><div class="skeleton-box h-64 w-full"></div></div>';
+
+    // 학생 목록 로드
+    var students = [];
+    try {
+      var res = await AdminCore.apiGet('courseGetStudents', {
+        adminId:    AdminCore.state.adminId,
+        courseName: courseName
+      });
+      if (res && res.success) students = res.data || [];
+    } catch (e) {}
+
+    var escapedCourse = AdminCore.escapeHtml(courseName);
+
+    var html = '<div class="p-4 sm:p-5 max-w-4xl mx-auto">';
+
+    // ── 상단 카드: 학생개별공지 버튼 ──
+    html += '<div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4 mb-5 flex flex-col sm:flex-row sm:items-center gap-3">'
+          + '<button onclick="AdminCourse.openNoticeModal(\'' + escapedCourse + '\')"'
+          + ' class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold'
+          + ' bg-gradient-to-r from-amber-500 to-amber-400 text-white shadow hover:from-amber-600 hover:to-amber-500 transition-all shrink-0">'
+          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>'
+          + escapedCourse + '과목 학생개별공지</button>'
+          + '<p class="text-sm text-gray-500">성적 등 학생 개인별로 공지할 내용을 입력할 수 있습니다.</p>'
+          + '</div>';
+
+    // ── 교과목 제목 ──
+    html += '<div class="flex items-center gap-3 mb-4">'
+          + '<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow">'
+          + '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
+          + '</div>'
+          + '<h3 class="text-base font-bold text-gray-800">수강 학생 목록 <span class="text-indigo-600">(' + students.length + '명)</span></h3>'
+          + '</div>';
+
+    // ── 학생 카드 그리드 ──
+    if (students.length === 0) {
+      html += '<div class="text-center text-gray-400 text-sm py-16">수강 학생 데이터가 없습니다.</div>';
+    } else {
+      html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
+      students.forEach(function (s) {
+        var sid   = AdminCore.escapeHtml(s.studentId || '');
+        var sname = AdminCore.escapeHtml(s.name || '');
+        var submitContent = AdminCore.escapeHtml(s.submitContent || '');
+        var submitFile    = AdminCore.escapeHtml(s.submitFile    || '');
+        var teacherNote   = AdminCore.escapeHtml(s.teacherNote  || '');
+
+        html += '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">'
+              // 카드 헤더
+              + '<div class="px-4 py-3 bg-gradient-to-r from-indigo-50 to-indigo-100 border-b border-indigo-100 flex items-center gap-2">'
+              + '<span class="text-xs text-indigo-400 font-mono">' + sid + '</span>'
+              + '<span class="text-sm font-bold text-indigo-800">' + sname + '</span>'
+              + '</div>'
+              // 학생 제출 내용
+              + '<div class="px-4 py-3 border-b border-gray-50">'
+              + '<p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">학생 제출 내용</p>'
+              + '<p class="text-sm text-gray-700 ' + (!submitContent ? 'text-gray-300 italic' : '') + '">'
+              + (submitContent || '미제출') + '</p>'
+              + '</div>'
+              // 학생 제출 파일
+              + '<div class="px-4 py-3 border-b border-gray-50">'
+              + '<p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">학생 제출 파일</p>'
+              + (submitFile
+                  ? '<a href="' + submitFile + '" target="_blank" class="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">'
+                  + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>'
+                  + '파일 보기</a>'
+                  : '<span class="text-sm text-gray-300 italic">미제출</span>')
+              + '</div>'
+              // 교사 작성 내용
+              + '<div class="px-4 py-3">'
+              + '<p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">교사 작성 내용</p>'
+              + '<p class="text-sm text-gray-700 ' + (!teacherNote ? 'text-gray-300 italic' : '') + '">'
+              + (teacherNote || '미작성') + '</p>'
+              + '</div>'
+              + '</div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+    ca.innerHTML = html;
+  }
+
+  // ─── 학생개별공지 모달 ───────────────────────────────────────
+  function openNoticeModal(courseName) {
+    _state.noticeUploadFile = null;
+    var modal = document.getElementById('course-notice-modal');
+    var titleEl = document.getElementById('course-notice-modal-title');
+    if (titleEl) titleEl.textContent = courseName + '과목 학생개별공지';
+
+    // 모달 내부 상태 초기화
+    var fileNameEl = document.getElementById('notice-file-name');
+    var fileSelEl  = document.getElementById('notice-file-selected');
+    var uploadBtn  = document.getElementById('notice-upload-btn-wrap');
+    if (fileNameEl) fileNameEl.textContent = '';
+    if (fileSelEl)  fileSelEl.classList.add('hidden');
+    if (uploadBtn)  uploadBtn.classList.add('hidden');
+
+    // 현재 교과목 저장
+    document.getElementById('course-notice-modal').dataset.course = courseName;
+
+    if (modal) modal.classList.remove('hidden');
+    setTimeout(function () {
+      var card = document.getElementById('course-notice-modal-card');
+      if (card) { card.classList.remove('scale-95', 'opacity-0'); card.classList.add('scale-100', 'opacity-100'); }
+    }, 10);
+  }
+
+  function closeNoticeModal() {
+    var modal = document.getElementById('course-notice-modal');
+    var card  = document.getElementById('course-notice-modal-card');
+    if (card) { card.classList.remove('scale-100', 'opacity-100'); card.classList.add('scale-95', 'opacity-0'); }
+    setTimeout(function () { if (modal) modal.classList.add('hidden'); }, 180);
+  }
+
+  function downloadNoticeTmpl() {
+    // 학생개별공지 양식 다운로드
+    var wb = XLSX.utils.book_new();
+    var ws = XLSX.utils.aoa_to_sheet([
+      ['학번', '이름', '선택형 점수', '서술형 점수', '총점', '비고'],
+      ['', '', '', '', '', '']
+    ]);
+    ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(wb, ws, '학생개별공지');
+    XLSX.writeFile(wb, '학생개별공지.xlsx');
+  }
+
+  function handleNoticeFileSelect(e) {
+    var file = e.target.files && e.target.files[0];
+    _applyNoticeFile(file);
+  }
+
+  function _applyNoticeFile(file) {
+    if (!file) return;
+    _state.noticeUploadFile = file;
+    var nameEl  = document.getElementById('notice-file-name');
+    var selEl   = document.getElementById('notice-file-selected');
+    var btnWrap = document.getElementById('notice-upload-btn-wrap');
+    if (nameEl) nameEl.textContent = file.name;
+    if (selEl)  selEl.classList.remove('hidden');
+    if (btnWrap) btnWrap.classList.remove('hidden');
+  }
+
+  async function uploadNoticeFile() {
+    if (!_state.noticeUploadFile) return;
+    var courseName = document.getElementById('course-notice-modal').dataset.course || '';
+    if (!courseName) { alert('교과목 정보가 없습니다.'); return; }
+
+    var btn = document.getElementById('notice-upload-exec-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '업로드 중...'; }
+
+    try {
+      var wb = await _readXlsx(_state.noticeUploadFile);
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var data  = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+      // 1행 C~F열: 헤더 레이블
+      var headers = (data[0] || []).slice(2, 6);
+
+      // 학생별 데이터 (2행부터)
+      var rows = [];
+      for (var ri = 1; ri < data.length; ri++) {
+        var row = data[ri];
+        var sid  = String(row[0] || '').trim();
+        var sname= String(row[1] || '').trim();
+        if (!sid) continue;
+        rows.push({
+          studentId: sid, name: sname,
+          c3: String(row[2] || '').trim(),
+          c4: String(row[3] || '').trim(),
+          c5: String(row[4] || '').trim(),
+          c6: String(row[5] || '').trim()
+        });
+      }
+
+      var res = await AdminCore.apiGet('courseUploadNotice', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName,
+        headers:    JSON.stringify(headers),
+        rows:       JSON.stringify(rows)
+      });
+
+      if (res && res.success) {
+        closeNoticeModal();
+        Admin.showSaveSuccess('학생 개별 공지가 업데이트되었습니다.');
+        // 학생 카드 새로고침
+        _renderCourseDetail(courseName);
+      } else {
+        alert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch (err) {
+      alert('오류: ' + err.message);
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '업로드 & 저장'; }
+    }
+  }
+
+  // ─── 공개 API ────────────────────────────────────────────────
+  return {
+    init:                init,
+    renderSidebar:       renderSidebar,
+    showOpenCourseForm:  showOpenCourseForm,
+    downloadStudentTemplate: downloadStudentTemplate,
+    handleFileSelect:    handleFileSelect,
+    handleFileDrop:      handleFileDrop,
+    clearFile:           clearFile,
+    saveCourse:          saveCourse,
+    selectCourse:        selectCourse,
+    openNoticeModal:     openNoticeModal,
+    closeNoticeModal:    closeNoticeModal,
+    downloadNoticeTmpl:  downloadNoticeTmpl,
+    handleNoticeFileSelect: handleNoticeFileSelect,
+    uploadNoticeFile:    uploadNoticeFile
+  };
+
+})();
