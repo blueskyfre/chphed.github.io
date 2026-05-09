@@ -496,10 +496,27 @@ var AdminCourse = (function () {
     });
   }
 
-  function handleNoticeFileSelect(e) {
-    var file = e.target.files && e.target.files[0];
-    _applyNoticeFile(file);
-  }
+    function handleNoticeFileSelect(e) {
+      var file = e.target.files && e.target.files[0];
+      _applyNoticeFile(file);
+    }
+    
+    function handleNoticeFileDrop(e) {
+      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+      _applyNoticeFile(file);
+    }
+    
+    function clearNoticeFile() {
+      _state.noticeUploadFile = null;
+      var nameEl  = document.getElementById('notice-file-name');
+      var selEl   = document.getElementById('notice-file-selected');
+      var btnWrap = document.getElementById('notice-upload-btn-wrap');
+      var input   = document.getElementById('notice-file-input');
+      if (nameEl)  nameEl.textContent = '';
+      if (selEl)   selEl.classList.add('hidden');
+      if (btnWrap) btnWrap.classList.add('hidden');
+      if (input)   input.value = '';
+    }
 
   function _applyNoticeFile(file) {
     if (!file) return;
@@ -614,6 +631,8 @@ var AdminCourse = (function () {
     closeNoticeModal:    closeNoticeModal,
     downloadNoticeTmpl:  downloadNoticeTmpl,
     handleNoticeFileSelect: handleNoticeFileSelect,
+    handleNoticeFileDrop:   handleNoticeFileDrop,
+    clearNoticeFile:        clearNoticeFile,
     uploadNoticeFile:    uploadNoticeFile
   };
 
