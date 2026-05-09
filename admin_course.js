@@ -442,7 +442,8 @@ var AdminCourse = (function () {
     if (fileNameEl) fileNameEl.textContent = '';
     if (fileSelEl)  fileSelEl.classList.add('hidden');
     if (uploadBtn)  uploadBtn.classList.add('hidden');
-
+    var noticeInput = document.getElementById('notice-file-input');
+    if (noticeInput) noticeInput.value = '';
     // 현재 교과목 저장
     document.getElementById('course-notice-modal').dataset.course = courseName;
 
