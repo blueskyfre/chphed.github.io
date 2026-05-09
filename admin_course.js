@@ -724,10 +724,11 @@ function downloadStudentTemplate() {
     return new Promise(function(resolve, reject) {
       var reader = new FileReader();
       reader.onload = function(e) {
-        // data:mime;base64,XXX 에서 XXX 부분만 추출
         var result = e.target.result;
         var base64 = result.split(',')[1] || result;
-        resolve(base64);
+        // URL 전송 시 깨지는 문자 치환 (URL-safe Base64)
+        var safe = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+        resolve(safe);
       };
       reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
       reader.readAsDataURL(file);
