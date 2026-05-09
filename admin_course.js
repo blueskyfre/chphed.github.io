@@ -702,8 +702,17 @@ function downloadStudentTemplate() {
       var reader = new FileReader();
       reader.onload = function(e) {
         var result = e.target.result;
-        // data:mime;base64,XXX 에서 XXX 부분만 추출 (표준 Base64 그대로 사용)
-        var base64 = result.split(',')[1] || result;
+        // "data:mime;base64,XXXX" 형태에서 콤마 뒤 Base64 부분만 추출
+        var commaIdx = result.indexOf(',');
+        if (commaIdx === -1) {
+          reject(new Error('파일 읽기 형식 오류'));
+          return;
+        }
+        var base64 = result.substring(commaIdx + 1);
+        if (!base64) {
+          reject(new Error('파일 내용이 비어있습니다.'));
+          return;
+        }
         resolve(base64);
       };
       reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
