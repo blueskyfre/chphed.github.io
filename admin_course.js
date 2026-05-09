@@ -425,8 +425,8 @@ function downloadStudentTemplate() {
           + '삭제</button>'
           + '</div>'
 
-          // 파일 업로드 영역 (저장 후 표시)
-          + '<div id="all-notice-file-section" class="hidden">'
+          // 파일 업로드 영역
+          + '<div id="all-notice-file-section">'
           + '<div class="border-t border-gray-100 pt-4 mb-3">'
           + '<p class="text-xs font-bold text-gray-500 mb-2">드라이브에 파일 업로드 (선택)</p>'
           + '</div>'
@@ -588,9 +588,6 @@ function downloadStudentTemplate() {
         noticeText: noticeText
       });
       if (res && res.success) {
-        // 파일 업로드 섹션 표시
-        var fileSection = document.getElementById('all-notice-file-section');
-        if (fileSection) fileSection.classList.remove('hidden');
         Admin.showSaveSuccess('전체공지가 저장되었습니다.');
       } else {
         alert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
@@ -619,8 +616,6 @@ function downloadStudentTemplate() {
       });
       if (res && res.success) {
         if (textarea) textarea.value = '';
-        var fileSection = document.getElementById('all-notice-file-section');
-        if (fileSection) fileSection.classList.add('hidden');
         Admin.showSaveSuccess('전체공지가 삭제되었습니다.');
       } else {
         alert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
@@ -677,13 +672,36 @@ function downloadStudentTemplate() {
       // 파일을 Base64로 변환
       var base64Data = await _fileToBase64(_state.allNoticeUploadFile);
 
-      var res = await AdminCore.apiGet('uploadFileToDriveAdminFolder', {
-        adminId:   AdminCore.state.adminId,
-        adminName: AdminCore.state.adminName,
-        fileName:  _state.allNoticeUploadFileName,
-        fileData:  base64Data,
-        mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
-      });
+      // POST로 전송 (파일 데이터가 커서 GET URL 길이 제한 우회)
+      var appUrl = AdminCore.getAppUrl ? AdminCore.getAppUrl() : (typeof APP_URL !== 'undefined' ? APP_URL : '');
+      var res;
+
+      if (appUrl) {
+        // GAS 배포 URL이 있으면 직접 POST fetch
+        var postBody = JSON.stringify({
+          action:    'uploadFileToDriveAdminFolder',
+          adminId:   AdminCore.state.adminId,
+          adminName: AdminCore.state.adminName,
+          fileName:  _state.allNoticeUploadFileName,
+          fileData:  base64Data,
+          mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
+        });
+        var resp = await fetch(appUrl, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    postBody
+        });
+        res = await resp.json();
+      } else {
+        // fallback: AdminCore.apiGet 사용 (파일 크기 작을 때)
+        res = await AdminCore.apiGet('uploadFileToDriveAdminFolder', {
+          adminId:   AdminCore.state.adminId,
+          adminName: AdminCore.state.adminName,
+          fileName:  _state.allNoticeUploadFileName,
+          fileData:  base64Data,
+          mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
+        });
+      }
 
       if (res && res.success) {
         clearAllNoticeFile();
