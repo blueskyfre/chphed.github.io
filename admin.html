@@ -457,6 +457,21 @@ var AdminCore = (function () {
     return await res.json();
   }
 
+  // ─── API 호출 (POST) ─────────────────────────────────────────
+  // 파일 데이터 등 큰 payload 전송 시 사용.
+  async function apiPost(action, params) {
+    params = params || {};
+    var body = Object.assign({ action: action }, params);
+    var res = await fetch(_WEB_APP_URL, {
+      method:   'POST',
+      redirect: 'follow',
+      headers:  { 'Content-Type': 'application/json' },
+      body:     JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('서버 응답 오류: ' + res.status);
+    return await res.json();
+  }
+
   // ─── 유틸: 바이트 계산 ───────────────────────────────────────
   function calcBytes(str) {
     if (!str) return 0;
@@ -499,6 +514,7 @@ var AdminCore = (function () {
     state:        state,
     BYTE_LIMIT:   BYTE_LIMIT,
     apiGet:       apiGet,
+    apiPost:      apiPost,
     calcBytes:    calcBytes,
     escapeHtml:   escapeHtml,
     fallbackCopy: fallbackCopy
