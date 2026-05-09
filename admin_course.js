@@ -29,45 +29,49 @@ var AdminCourse = (function () {
 
   // ─── 사이드바 렌더링 ─────────────────────────────────────────
   function renderSidebar() {
-    var ul = document.getElementById('student-list');
-    if (!ul) return;
+  var ul = document.getElementById('student-list');
+  if (!ul) return;
 
-    var html = '';
+  var html = '';
 
-    // 교과개설 버튼
-    html += '<div class="px-2 pt-3 pb-2">'
-          + '<button onclick="AdminCourse.showOpenCourseForm()"'
-          + ' class="course-open-btn w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl'
-          + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-sm'
-          + ' shadow-md hover:from-indigo-700 hover:to-indigo-600 transition-all active:scale-95">'
-          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-          + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>'
-          + '</svg>교과개설</button></div>';
+  html += '<div class="px-2 pt-3 pb-2">'
+        + '<button onclick="AdminCourse.showOpenCourseForm()"'
+        + ' class="course-open-btn w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl'
+        + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-sm'
+        + ' shadow-md hover:from-indigo-700 hover:to-indigo-600 transition-all active:scale-95">'
+        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+        + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>'
+        + '</svg>교과개설</button></div>';
 
-    // 구분선
-    if (_state.courses.length > 0) {
-      html += '<div class="mx-3 my-1 border-t border-gray-100"></div>'
-            + '<p class="px-4 py-1 text-xs font-bold text-gray-400 uppercase tracking-widest">개설 교과목</p>';
-    }
-
-    // 개설된 교과목 버튼 목록
-    _state.courses.forEach(function (course) {
-      var isActive = _state.selectedCourse === course;
-      html += '<div class="px-2 py-0.5">'
-            + '<button onclick="AdminCourse.selectCourse(\'' + AdminCore.escapeHtml(course) + '\')"'
-            + ' class="w-full text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all'
-            + (isActive
-                ? ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md'
-                : ' text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 border border-transparent hover:border-indigo-100') + '">'
-            + '<svg class="w-4 h-4 shrink-0 ' + (isActive ? 'text-indigo-200' : 'text-indigo-400') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-            + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'
-            + '</svg>'
-            + '<span class="truncate">' + AdminCore.escapeHtml(course) + '</span>'
-            + '</button></div>';
-    });
-
-    ul.innerHTML = html;
+  if (_state.courses.length > 0) {
+    html += '<div class="mx-3 my-1 border-t border-gray-100"></div>'
+          + '<p class="px-4 py-1 text-xs font-bold text-gray-400 uppercase tracking-widest">개설 교과목</p>';
   }
+
+  _state.courses.forEach(function (course) {
+    var isActive = _state.selectedCourse === course;
+    var escapedCourse = AdminCore.escapeHtml(course);
+    html += '<div class="px-2 py-0.5 flex items-center gap-1">'
+          + '<button onclick="AdminCourse.selectCourse(\'' + escapedCourse + '\')"'
+          + ' class="flex-1 text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all'
+          + (isActive
+              ? ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md'
+              : ' text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 border border-transparent hover:border-indigo-100') + '">'
+          + '<svg class="w-4 h-4 shrink-0 ' + (isActive ? 'text-indigo-200' : 'text-indigo-400') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+          + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'
+          + '</svg>'
+          + '<span class="truncate">' + escapedCourse + '</span>'
+          + '</button>'
+          + '<button onclick="AdminCourse.confirmDeleteCourse(\'' + escapedCourse + '\')"'
+          + ' title="교과 삭제"'
+          + ' class="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all">'
+          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+          + '</button>'
+          + '</div>';
+  });
+
+  ul.innerHTML = html;
+}
 
   // ─── 초기 진입: 교과관리 메뉴 활성화 ────────────────────────
   function init() {
@@ -539,10 +543,42 @@ var AdminCourse = (function () {
     }
   }
 
+// ─── 교과 삭제 ───────────────────────────────────────────────
+  function confirmDeleteCourse(courseName) {
+    if (!confirm('「' + courseName + '」 교과를 삭제하시겠습니까?\n\nSH사용자 탭의 수강학생 표시 열과\nSH교과관리 탭의 해당 교과 데이터가 모두 삭제됩니다.')) return;
+    deleteCourse(courseName);
+  }
+
+  async function deleteCourse(courseName) {
+    try {
+      var res = await AdminCore.apiGet('courseDelete', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName
+      });
+      if (res && res.success) {
+        _state.courses = _state.courses.filter(function(c) { return c !== courseName; });
+        if (_state.selectedCourse === courseName) {
+          _state.selectedCourse = null;
+          var ca = document.getElementById('content-area');
+          if (ca) ca.innerHTML = '';
+          _showWelcome();
+        }
+        renderSidebar();
+      } else {
+        alert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch (err) {
+      alert('오류: ' + err.message);
+    }
+  }
+  
   // ─── 공개 API ────────────────────────────────────────────────
   return {
     init:                init,
     renderSidebar:       renderSidebar,
+    confirmDeleteCourse: confirmDeleteCourse,
+    deleteCourse:        deleteCourse,
     showOpenCourseForm:  showOpenCourseForm,
     downloadStudentTemplate: downloadStudentTemplate,
     handleFileSelect:    handleFileSelect,
