@@ -220,14 +220,27 @@ var AdminCourse = (function () {
 
   // ─── 수강학생 양식 다운로드 ──────────────────────────────────
   function downloadStudentTemplate() {
-    // XLSX로 학번/이름 헤더만 있는 양식 파일 생성
-    var wb = XLSX.utils.book_new();
-    var ws = XLSX.utils.aoa_to_sheet([['학번', '이름']]);
-    // 열 너비 설정
-    ws['!cols'] = [{ wch: 15 }, { wch: 15 }];
-    XLSX.utils.book_append_sheet(wb, ws, '수강학생명단');
-    XLSX.writeFile(wb, '수강학생_학번이름.xlsx');
+    var FOLDER_NAME = '양식파일';
+    AdminCore.apiGet('getDriveFileUrl', {
+      adminId: AdminCore.state.adminId,
+      folderName: FOLDER_NAME,
+      fileName: '수강학생_학번이름.xlsx'
+    }).then(function(res) {
+      if (res && res.success && res.url) {
+        var a = document.createElement('a');
+        a.href = res.url;
+        a.target = '_blank';
+        a.download = '수강학생_학번이름.xlsx';
+        a.click();
+      } else {
+        alert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
+      }
+    }).catch(function(err) {
+      alert('오류: ' + err.message);
+    });
   }
+
+  
 
   // ─── 교과 저장 (GS + 스프레드시트 조작) ─────────────────────
   async function saveCourse() {
@@ -430,29 +443,30 @@ var AdminCourse = (function () {
 
   // ─── 학생개별공지 모달 ───────────────────────────────────────
   function openNoticeModal(courseName) {
-    _state.noticeUploadFile = null;
-    var modal = document.getElementById('course-notice-modal');
-    var titleEl = document.getElementById('course-notice-modal-title');
-    if (titleEl) titleEl.textContent = courseName + '과목 학생개별공지';
+  _state.noticeUploadFile = null;
+  var modal = document.getElementById('course-notice-modal');
+  var titleEl = document.getElementById('course-notice-modal-title');
+  if (titleEl) titleEl.textContent = courseName + '과목 학생개별공지';
 
-    // 모달 내부 상태 초기화
-    var fileNameEl = document.getElementById('notice-file-name');
-    var fileSelEl  = document.getElementById('notice-file-selected');
-    var uploadBtn  = document.getElementById('notice-upload-btn-wrap');
-    if (fileNameEl) fileNameEl.textContent = '';
-    if (fileSelEl)  fileSelEl.classList.add('hidden');
-    if (uploadBtn)  uploadBtn.classList.add('hidden');
-    var noticeInput = document.getElementById('notice-file-input');
-    if (noticeInput) noticeInput.value = '';
-    // 현재 교과목 저장
-    document.getElementById('course-notice-modal').dataset.course = courseName;
+  // 모달 내부 상태 초기화
+  var fileNameEl = document.getElementById('notice-file-name');
+  var fileSelEl  = document.getElementById('notice-file-selected');
+  var uploadBtn  = document.getElementById('notice-upload-btn-wrap');
+  if (fileNameEl) fileNameEl.textContent = '';
+  if (fileSelEl)  fileSelEl.classList.add('hidden');
+  if (uploadBtn)  uploadBtn.classList.add('hidden');
+  var noticeInput = document.getElementById('notice-file-input');
+  if (noticeInput) noticeInput.value = '';
 
-    if (modal) modal.classList.remove('hidden');
-    setTimeout(function () {
-      var card = document.getElementById('course-notice-modal-card');
-      if (card) { card.classList.remove('scale-95', 'opacity-0'); card.classList.add('scale-100', 'opacity-100'); }
-    }, 10);
-  }
+  // 현재 교과목 저장
+  document.getElementById('course-notice-modal').dataset.course = courseName;
+
+  if (modal) modal.classList.remove('hidden');
+  setTimeout(function () {
+    var card = document.getElementById('course-notice-modal-card');
+    if (card) { card.classList.remove('scale-95', 'opacity-0'); card.classList.add('scale-100', 'opacity-100'); }
+  }, 10);
+}
 
   function closeNoticeModal() {
     var modal = document.getElementById('course-notice-modal');
@@ -462,15 +476,24 @@ var AdminCourse = (function () {
   }
 
   function downloadNoticeTmpl() {
-    // 학생개별공지 양식 다운로드
-    var wb = XLSX.utils.book_new();
-    var ws = XLSX.utils.aoa_to_sheet([
-      ['학번', '이름', '선택형 점수', '서술형 점수', '총점', '비고'],
-      ['', '', '', '', '', '']
-    ]);
-    ws['!cols'] = [{ wch: 14 }, { wch: 12 }, { wch: 14 }, { wch: 14 }, { wch: 10 }, { wch: 20 }];
-    XLSX.utils.book_append_sheet(wb, ws, '학생개별공지');
-    XLSX.writeFile(wb, '학생개별공지.xlsx');
+    var FOLDER_NAME = '양식파일';
+    AdminCore.apiGet('getDriveFileUrl', {
+      adminId: AdminCore.state.adminId,
+      folderName: FOLDER_NAME,
+      fileName: '학생개별공지.xlsx'
+    }).then(function(res) {
+      if (res && res.success && res.url) {
+        var a = document.createElement('a');
+        a.href = res.url;
+        a.target = '_blank';
+        a.download = '학생개별공지.xlsx';
+        a.click();
+      } else {
+        alert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
+      }
+    }).catch(function(err) {
+      alert('오류: ' + err.message);
+    });
   }
 
   function handleNoticeFileSelect(e) {
