@@ -669,39 +669,16 @@ function downloadStudentTemplate() {
     if (btn) { btn.disabled = true; btn.textContent = '업로드 중...'; }
 
     try {
-      // 파일을 Base64로 변환
       var base64Data = await _fileToBase64(_state.allNoticeUploadFile);
 
-      // POST로 전송 (파일 데이터가 커서 GET URL 길이 제한 우회)
-      var appUrl = AdminCore.getAppUrl ? AdminCore.getAppUrl() : (typeof APP_URL !== 'undefined' ? APP_URL : '');
-      var res;
-
-      if (appUrl) {
-        // GAS 배포 URL이 있으면 직접 POST fetch
-        var postBody = JSON.stringify({
-          action:    'uploadFileToDriveAdminFolder',
-          adminId:   AdminCore.state.adminId,
-          adminName: AdminCore.state.adminName,
-          fileName:  _state.allNoticeUploadFileName,
-          fileData:  base64Data,
-          mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
-        });
-        var resp = await fetch(appUrl, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    postBody
-        });
-        res = await resp.json();
-      } else {
-        // fallback: AdminCore.apiGet 사용 (파일 크기 작을 때)
-        res = await AdminCore.apiGet('uploadFileToDriveAdminFolder', {
-          adminId:   AdminCore.state.adminId,
-          adminName: AdminCore.state.adminName,
-          fileName:  _state.allNoticeUploadFileName,
-          fileData:  base64Data,
-          mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
-        });
-      }
+      // 파일 데이터가 크므로 POST 방식으로 전송
+      var res = await AdminCore.apiPost('uploadFileToDriveAdminFolder', {
+        adminId:   AdminCore.state.adminId,
+        adminName: AdminCore.state.adminName,
+        fileName:  _state.allNoticeUploadFileName,
+        fileData:  base64Data,
+        mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
+      });
 
       if (res && res.success) {
         clearAllNoticeFile();
@@ -725,10 +702,9 @@ function downloadStudentTemplate() {
       var reader = new FileReader();
       reader.onload = function(e) {
         var result = e.target.result;
+        // data:mime;base64,XXX 에서 XXX 부분만 추출 (표준 Base64 그대로 사용)
         var base64 = result.split(',')[1] || result;
-        // URL 전송 시 깨지는 문자 치환 (URL-safe Base64)
-        var safe = base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-        resolve(safe);
+        resolve(base64);
       };
       reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
       reader.readAsDataURL(file);
