@@ -13,6 +13,10 @@ var AdminCourse = (function () {
     pendingSaveFileName: '',// 파일명 표시용
     noticeUploadFile: null, // 학생개별공지 업로드 File
     driveRootFolderId: '',  // 구글드라이브 관리자 폴더 ID (캐시)
+    allNoticeText: '',      // 전체공지 글상자 텍스트
+    allNoticeUploadFile: null,   // 전체공지 드라이브 업로드 File 객체
+    allNoticeUploadFileName: '', // 전체공지 드라이브 업로드 파일명
+    driveFiles: [],         // 관리자 폴더 내 파일 목록
   };
 
   // ─── 열 인덱스 → 문자 변환 (0-based) ────────────────────────
@@ -376,14 +380,80 @@ function downloadStudentTemplate() {
 
     var html = '<div class="p-4 sm:p-5 max-w-4xl mx-auto">';
 
-    // ── 상단 카드: 학생개별공지 버튼 ──
-    html += '<div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4 mb-5 flex flex-col sm:flex-row sm:items-center gap-3">'
+    // ── 상단 카드: 학생개별공지 버튼 + 전체공지 ──
+    html += '<div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4 mb-5">'
+
+          // 학생개별공지 버튼 행
+          + '<div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">'
           + '<button onclick="AdminCourse.openNoticeModal(\'' + escapedCourse + '\')"'
           + ' class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold'
           + ' bg-gradient-to-r from-amber-500 to-amber-400 text-white shadow hover:from-amber-600 hover:to-amber-500 transition-all shrink-0">'
           + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>'
           + escapedCourse + '과목 학생개별공지</button>'
           + '<p class="text-sm text-gray-500">성적 등 학생 개인별로 공지할 내용을 입력할 수 있습니다.</p>'
+          + '</div>'
+
+          // 구분선
+          + '<div class="border-t border-gray-100 mb-4"></div>'
+
+          // 전체공지 섹션 제목
+          + '<p class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">'
+          + '<svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>'
+          + '전체공지</p>'
+
+          // 관리자 폴더 파일 목록
+          + '<div id="all-notice-drive-files" class="mb-3">'
+          + '<p class="text-xs text-gray-400 mb-1">드라이브 폴더 파일 목록을 불러오는 중...</p>'
+          + '</div>'
+
+          // 전체공지 글상자
+          + '<textarea id="all-notice-textarea" rows="3"'
+          + ' placeholder="수업 대상자 전체에게 보내는 공지사항"'
+          + ' class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all resize-none mb-3"></textarea>'
+
+          // 저장·삭제 버튼
+          + '<div class="flex gap-2 mb-4">'
+          + '<button onclick="AdminCourse.saveAllNotice(\'' + escapedCourse + '\')"'
+          + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
+          + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow hover:from-indigo-700 hover:to-indigo-600 transition-all">'
+          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+          + '저장</button>'
+          + '<button onclick="AdminCourse.deleteAllNotice(\'' + escapedCourse + '\')"'
+          + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
+          + ' bg-gradient-to-r from-red-500 to-red-400 text-white shadow hover:from-red-600 hover:to-red-500 transition-all">'
+          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+          + '삭제</button>'
+          + '</div>'
+
+          // 파일 업로드 영역 (저장 후 표시)
+          + '<div id="all-notice-file-section" class="hidden">'
+          + '<div class="border-t border-gray-100 pt-4 mb-3">'
+          + '<p class="text-xs font-bold text-gray-500 mb-2">드라이브에 파일 업로드 (선택)</p>'
+          + '</div>'
+          + '<div id="all-notice-drive-file-list-wrap" class="mb-3 hidden">'
+          + '<p class="text-xs font-bold text-gray-400 mb-1">관리자 폴더 내 파일:</p>'
+          + '<ul id="all-notice-drive-file-list" class="text-xs text-gray-600 space-y-1 pl-2"></ul>'
+          + '</div>'
+          + '<div id="all-notice-upload-zone"'
+          + ' class="border-2 border-dashed border-indigo-200 rounded-xl p-4 text-center bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer mb-2"'
+          + ' onclick="document.getElementById(\'all-notice-file-input\').click()"'
+          + ' ondragover="event.preventDefault()" ondrop="AdminCourse.handleAllNoticeFileDrop(event)">'
+          + '<svg class="w-6 h-6 text-indigo-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+          + '<p class="text-xs text-indigo-500 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
+          + '</div>'
+          + '<input id="all-notice-file-input" type="file" class="hidden" onchange="AdminCourse.handleAllNoticeFileSelect(event)"/>'
+          + '<div id="all-notice-file-selected" class="hidden flex items-center gap-3 bg-indigo-50 rounded-xl px-4 py-2 mb-2">'
+          + '<svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
+          + '<span id="all-notice-file-name" class="text-xs font-semibold text-indigo-700 flex-1 truncate"></span>'
+          + '<button onclick="AdminCourse.clearAllNoticeFile()" class="text-gray-400 hover:text-gray-600 transition-colors text-xs">✕ 취소</button>'
+          + '</div>'
+          + '<button id="all-notice-drive-save-btn" onclick="AdminCourse.uploadAllNoticeToDrive()"'
+          + ' class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
+          + ' bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow hover:from-emerald-600 hover:to-emerald-700 transition-all">'
+          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+          + '드라이브에 저장</button>'
+          + '</div>'
+
           + '</div>';
 
     // ── 교과목 제목 ──
@@ -440,6 +510,210 @@ function downloadStudentTemplate() {
 
     html += '</div>';
     ca.innerHTML = html;
+
+    // 전체공지 기존 내용 로드 및 드라이브 파일 목록 로드
+    _loadAllNoticeAndDriveFiles(courseName);
+  }
+
+  // ─── 전체공지 & 드라이브 파일 목록 로드 ─────────────────────
+  async function _loadAllNoticeAndDriveFiles(courseName) {
+    // 기존 전체공지 내용 로드
+    try {
+      var res = await AdminCore.apiGet('getAllNotice', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName
+      });
+      var textarea = document.getElementById('all-notice-textarea');
+      if (textarea && res && res.success) {
+        textarea.value = res.data || '';
+      }
+    } catch(e) {}
+
+    // 드라이브 관리자 폴더 파일 목록 로드
+    _refreshDriveFileList();
+  }
+
+  async function _refreshDriveFileList() {
+    var filesWrap = document.getElementById('all-notice-drive-files');
+    if (!filesWrap) return;
+    try {
+      var res = await AdminCore.apiGet('getDriveAdminFiles', {
+        adminId:   AdminCore.state.adminId,
+        adminName: AdminCore.state.adminName
+      });
+      _state.driveFiles = (res && res.success && res.files) ? res.files : [];
+    } catch(e) {
+      _state.driveFiles = [];
+    }
+    _renderDriveFileList();
+  }
+
+  function _renderDriveFileList() {
+    var filesWrap = document.getElementById('all-notice-drive-files');
+    if (!filesWrap) return;
+    if (_state.driveFiles.length === 0) {
+      filesWrap.innerHTML = '<p class="text-xs text-gray-400 italic">드라이브 폴더에 파일이 없습니다.</p>';
+    } else {
+      var listHtml = '<p class="text-xs font-bold text-gray-500 mb-1">드라이브 폴더 파일 목록:</p><ul class="text-xs text-gray-600 space-y-1 pl-2">';
+      _state.driveFiles.forEach(function(f) {
+        listHtml += '<li class="flex items-center gap-1">'
+          + '<svg class="w-3 h-3 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
+          + AdminCore.escapeHtml(f.name || f)
+          + '</li>';
+      });
+      listHtml += '</ul>';
+      filesWrap.innerHTML = listHtml;
+    }
+  }
+
+  // ─── 전체공지 저장 (시트 기록 → 파일 업로드 UI 표시) ─────────
+  async function saveAllNotice(courseName) {
+    var textarea = document.getElementById('all-notice-textarea');
+    var noticeText = textarea ? textarea.value.trim() : '';
+    if (!noticeText) {
+      alert('공지사항 내용을 입력해주세요.');
+      if (textarea) textarea.focus();
+      return;
+    }
+
+    var saveBtn = document.querySelector('[onclick="AdminCourse.saveAllNotice(\'' + courseName + '\')"]');
+    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '저장 중...'; }
+
+    try {
+      var res = await AdminCore.apiGet('saveAllNotice', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName,
+        noticeText: noticeText
+      });
+      if (res && res.success) {
+        // 파일 업로드 섹션 표시
+        var fileSection = document.getElementById('all-notice-file-section');
+        if (fileSection) fileSection.classList.remove('hidden');
+        Admin.showSaveSuccess('전체공지가 저장되었습니다.');
+      } else {
+        alert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch(err) {
+      alert('오류: ' + err.message);
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
+      }
+    }
+  }
+
+  // ─── 전체공지 삭제 ───────────────────────────────────────────
+  async function deleteAllNotice(courseName) {
+    if (!confirm('전체공지 내용을 삭제하시겠습니까?')) return;
+    var textarea = document.getElementById('all-notice-textarea');
+
+    try {
+      var res = await AdminCore.apiGet('saveAllNotice', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName,
+        noticeText: ''
+      });
+      if (res && res.success) {
+        if (textarea) textarea.value = '';
+        var fileSection = document.getElementById('all-notice-file-section');
+        if (fileSection) fileSection.classList.add('hidden');
+        Admin.showSaveSuccess('전체공지가 삭제되었습니다.');
+      } else {
+        alert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch(err) {
+      alert('오류: ' + err.message);
+    }
+  }
+
+  // ─── 전체공지 드라이브 파일 업로드 핸들러 ───────────────────
+  function handleAllNoticeFileSelect(e) {
+    var file = e.target.files && e.target.files[0];
+    _applyAllNoticeFile(file);
+  }
+
+  function handleAllNoticeFileDrop(e) {
+    e.preventDefault();
+    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    _applyAllNoticeFile(file);
+  }
+
+  function _applyAllNoticeFile(file) {
+    if (!file) return;
+    _state.allNoticeUploadFile = file;
+    _state.allNoticeUploadFileName = file.name;
+    var nameEl  = document.getElementById('all-notice-file-name');
+    var selEl   = document.getElementById('all-notice-file-selected');
+    var saveBtn = document.getElementById('all-notice-drive-save-btn');
+    if (nameEl)  nameEl.textContent = file.name;
+    if (selEl)   selEl.classList.remove('hidden');
+    if (saveBtn) saveBtn.classList.remove('hidden');
+  }
+
+  function clearAllNoticeFile() {
+    _state.allNoticeUploadFile = null;
+    _state.allNoticeUploadFileName = '';
+    var nameEl  = document.getElementById('all-notice-file-name');
+    var selEl   = document.getElementById('all-notice-file-selected');
+    var saveBtn = document.getElementById('all-notice-drive-save-btn');
+    var input   = document.getElementById('all-notice-file-input');
+    if (nameEl)  nameEl.textContent = '';
+    if (selEl)   selEl.classList.add('hidden');
+    if (saveBtn) saveBtn.classList.add('hidden');
+    if (input)   input.value = '';
+  }
+
+  // ─── 드라이브에 파일 저장 (관리자이름 폴더) ─────────────────
+  async function uploadAllNoticeToDrive() {
+    if (!_state.allNoticeUploadFile) return;
+    var btn = document.getElementById('all-notice-drive-save-btn');
+    if (btn) { btn.disabled = true; btn.textContent = '업로드 중...'; }
+
+    try {
+      // 파일을 Base64로 변환
+      var base64Data = await _fileToBase64(_state.allNoticeUploadFile);
+
+      var res = await AdminCore.apiGet('uploadFileToDriveAdminFolder', {
+        adminId:   AdminCore.state.adminId,
+        adminName: AdminCore.state.adminName,
+        fileName:  _state.allNoticeUploadFileName,
+        fileData:  base64Data,
+        mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
+      });
+
+      if (res && res.success) {
+        clearAllNoticeFile();
+        Admin.showSaveSuccess('파일이 드라이브에 저장되었습니다.');
+        await _refreshDriveFileList();
+      } else {
+        alert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch(err) {
+      alert('오류: ' + err.message);
+    } finally {
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>드라이브에 저장';
+      }
+    }
+  }
+
+  function _fileToBase64(file) {
+    return new Promise(function(resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        // data:mime;base64,XXX 에서 XXX 부분만 추출
+        var result = e.target.result;
+        var base64 = result.split(',')[1] || result;
+        resolve(base64);
+      };
+      reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
+      reader.readAsDataURL(file);
+    });
   }
 
   // ─── 학생개별공지 모달 ───────────────────────────────────────
@@ -637,7 +911,13 @@ function downloadStudentTemplate() {
     handleNoticeFileSelect: handleNoticeFileSelect,
     handleNoticeFileDrop:   handleNoticeFileDrop,
     clearNoticeFile:        clearNoticeFile,
-    uploadNoticeFile:    uploadNoticeFile
+    uploadNoticeFile:    uploadNoticeFile,
+    saveAllNotice:              saveAllNotice,
+    deleteAllNotice:            deleteAllNotice,
+    handleAllNoticeFileSelect:  handleAllNoticeFileSelect,
+    handleAllNoticeFileDrop:    handleAllNoticeFileDrop,
+    clearAllNoticeFile:         clearAllNoticeFile,
+    uploadAllNoticeToDrive:     uploadAllNoticeToDrive
   };
 
 })();
