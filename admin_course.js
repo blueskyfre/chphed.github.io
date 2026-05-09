@@ -227,7 +227,6 @@ var AdminCourse = (function () {
       if (res && res.success && res.url) {
         var a = document.createElement('a');
         a.href = res.url;
-        a.target = '_blank';
         a.download = '수강학생_학번이름.xlsx';
         a.click();
       } else {
@@ -481,7 +480,6 @@ var AdminCourse = (function () {
       if (res && res.success && res.url) {
         var a = document.createElement('a');
         a.href = res.url;
-        a.target = '_blank';
         a.download = '학생개별공지.xlsx';
         a.click();
       } else {
