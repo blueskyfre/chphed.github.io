@@ -220,10 +220,8 @@ var AdminCourse = (function () {
 
   // ─── 수강학생 양식 다운로드 ──────────────────────────────────
   function downloadStudentTemplate() {
-    var FOLDER_NAME = '양식파일';
-    AdminCore.apiGet('getDriveFileUrl', {
+      AdminCore.apiGet('getDriveFileUrl', {
       adminId: AdminCore.state.adminId,
-      folderName: FOLDER_NAME,
       fileName: '수강학생_학번이름.xlsx'
     }).then(function(res) {
       if (res && res.success && res.url) {
@@ -476,10 +474,8 @@ var AdminCourse = (function () {
   }
 
   function downloadNoticeTmpl() {
-    var FOLDER_NAME = '양식파일';
-    AdminCore.apiGet('getDriveFileUrl', {
+      AdminCore.apiGet('getDriveFileUrl', {
       adminId: AdminCore.state.adminId,
-      folderName: FOLDER_NAME,
       fileName: '학생개별공지.xlsx'
     }).then(function(res) {
       if (res && res.success && res.url) {
