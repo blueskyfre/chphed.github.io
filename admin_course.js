@@ -380,77 +380,79 @@ function downloadStudentTemplate() {
 
     var html = '<div class="p-4 sm:p-5 max-w-4xl mx-auto">';
 
-    // ── 상단 카드: 학생개별공지 버튼 + 전체공지 ──
-    html += '<div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4 mb-5">'
+    // ── 상단 카드: 학생개별공지 + 전체공지 + 드라이브 파일목록 + 파일업로드 ──
+    html += '<div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4 mb-4">'
 
-          // 학생개별공지 버튼 행
-          + '<div class="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">'
+          // ① 학생개별공지 박스
+          + '<div class="border border-amber-200 rounded-xl bg-amber-50 px-3 py-2.5 mb-3 flex flex-col sm:flex-row sm:items-center gap-2">'
           + '<button onclick="AdminCourse.openNoticeModal(\'' + escapedCourse + '\')"'
-          + ' class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold'
+          + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
           + ' bg-gradient-to-r from-amber-500 to-amber-400 text-white shadow hover:from-amber-600 hover:to-amber-500 transition-all shrink-0">'
           + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>'
           + escapedCourse + '과목 학생개별공지</button>'
-          + '<p class="text-sm text-gray-500">성적 등 학생 개인별로 공지할 내용을 입력할 수 있습니다.</p>'
+          + '<p class="text-xs text-amber-700">성적 등 학생 개인별로 공지할 내용을 입력할 수 있습니다.</p>'
           + '</div>'
 
-          // 구분선
-          + '<div class="border-t border-gray-100 mb-4"></div>'
-
-          // 전체공지 섹션 제목
-          + '<p class="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2">'
-          + '<svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>'
+          // ② 전체공지 박스
+          + '<div class="border border-indigo-200 rounded-xl bg-indigo-50 px-3 py-2.5 mb-3">'
+          + '<p class="text-xs font-bold text-indigo-700 mb-2 flex items-center gap-1.5">'
+          + '<svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>'
           + '전체공지</p>'
-
-          // 관리자 폴더 파일 목록
-          + '<div id="all-notice-drive-files" class="mb-3">'
-          + '<p class="text-xs text-gray-400 mb-1">드라이브 폴더 파일 목록을 불러오는 중...</p>'
-          + '</div>'
-
-          // 전체공지 글상자
-          + '<textarea id="all-notice-textarea" rows="3"'
+          + '<div class="flex gap-2 items-start">'
+          + '<textarea id="all-notice-textarea" rows="2"'
           + ' placeholder="수업 대상자 전체에게 보내는 공지사항"'
-          + ' class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all resize-none mb-3"></textarea>'
-
-          // 저장·삭제 버튼
-          + '<div class="flex gap-2 mb-4">'
+          + ' class="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all resize-none bg-white"></textarea>'
+          + '<div class="flex flex-col gap-1.5 shrink-0">'
           + '<button onclick="AdminCourse.saveAllNotice(\'' + escapedCourse + '\')"'
-          + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
+          + ' class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold'
           + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow hover:from-indigo-700 hover:to-indigo-600 transition-all">'
-          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
+          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
           + '저장</button>'
           + '<button onclick="AdminCourse.deleteAllNotice(\'' + escapedCourse + '\')"'
-          + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
+          + ' class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold'
           + ' bg-gradient-to-r from-red-500 to-red-400 text-white shadow hover:from-red-600 hover:to-red-500 transition-all">'
-          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
           + '삭제</button>'
           + '</div>'
-
-          // 파일 업로드 영역
-          + '<div id="all-notice-file-section">'
-          + '<div class="border-t border-gray-100 pt-4 mb-3">'
-          + '<p class="text-xs font-bold text-gray-500 mb-2">드라이브에 파일 업로드 (선택)</p>'
           + '</div>'
-          + '<div id="all-notice-drive-file-list-wrap" class="mb-3 hidden">'
+          + '</div>'
+
+          // ③ 드라이브 폴더 파일 목록 박스
+          + '<div class="border border-gray-200 rounded-xl bg-gray-50 px-3 py-2.5 mb-3">'
+          + '<p class="text-xs font-bold text-gray-600 mb-2 flex items-center gap-1.5">'
+          + '<svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>'
+          + '드라이브 폴더 파일 목록</p>'
+          + '<div id="all-notice-drive-files">'
+          + '<p class="text-xs text-gray-400 italic">드라이브 폴더 파일 목록을 불러오는 중...</p>'
+          + '</div>'
+          + '</div>'
+
+          // ④ 드라이브 파일 업로드 박스
+          + '<div id="all-notice-file-section" class="border border-emerald-200 rounded-xl bg-emerald-50 px-3 py-2.5">'
+          + '<p class="text-xs font-bold text-emerald-700 mb-2 flex items-center gap-1.5">'
+          + '<svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+          + '드라이브에 파일 업로드</p>'
+          + '<div id="all-notice-drive-file-list-wrap" class="mb-2 hidden">'
           + '<p class="text-xs font-bold text-gray-400 mb-1">관리자 폴더 내 파일:</p>'
           + '<ul id="all-notice-drive-file-list" class="text-xs text-gray-600 space-y-1 pl-2"></ul>'
           + '</div>'
           + '<div id="all-notice-upload-zone"'
-          + ' class="border-2 border-dashed border-indigo-200 rounded-xl p-4 text-center bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer mb-2"'
+          + ' class="border-2 border-dashed border-emerald-300 rounded-lg p-3 text-center bg-white hover:bg-emerald-50 transition-colors cursor-pointer mb-2"'
           + ' onclick="document.getElementById(\'all-notice-file-input\').click()"'
           + ' ondragover="event.preventDefault()" ondrop="AdminCourse.handleAllNoticeFileDrop(event)">'
-          + '<svg class="w-6 h-6 text-indigo-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
-          + '<p class="text-xs text-indigo-500 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
+          + '<svg class="w-5 h-5 text-emerald-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+          + '<p class="text-xs text-emerald-600 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
           + '</div>'
           + '<input id="all-notice-file-input" type="file" class="hidden" onchange="AdminCourse.handleAllNoticeFileSelect(event)"/>'
-          + '<div id="all-notice-file-selected" class="hidden flex items-center gap-3 bg-indigo-50 rounded-xl px-4 py-2 mb-2">'
-          + '<svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
-          + '<span id="all-notice-file-name" class="text-xs font-semibold text-indigo-700 flex-1 truncate"></span>'
+          + '<div id="all-notice-file-selected" class="hidden flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-1.5 mb-2">'
+          + '<svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
+          + '<span id="all-notice-file-name" class="text-xs font-semibold text-emerald-700 flex-1 truncate"></span>'
           + '<button onclick="AdminCourse.clearAllNoticeFile()" class="text-gray-400 hover:text-gray-600 transition-colors text-xs">✕ 취소</button>'
           + '</div>'
           + '<button id="all-notice-drive-save-btn" onclick="AdminCourse.uploadAllNoticeToDrive()"'
-          + ' class="hidden inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
+          + ' class="hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold'
           + ' bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow hover:from-emerald-600 hover:to-emerald-700 transition-all">'
-          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
           + '드라이브에 저장</button>'
           + '</div>'
 
@@ -555,18 +557,22 @@ function downloadStudentTemplate() {
     if (_state.driveFiles.length === 0) {
       filesWrap.innerHTML = '<p class="text-xs text-gray-400 italic">드라이브 폴더에 파일이 없습니다.</p>';
     } else {
-      var courseLabel = AdminCore.escapeHtml(_state.selectedCourse || '');
-      var listHtml = '<p class="text-xs font-bold text-gray-500 mb-1">드라이브 폴더 파일 목록 (' + courseLabel + '):</p><ul class="text-xs text-gray-600 space-y-1 pl-2">';
+      var listHtml = '<ul class="text-xs text-gray-600 space-y-1">';
       _state.driveFiles.forEach(function(f) {
         var fileId   = AdminCore.escapeHtml(f.id   || '');
         var fileName = AdminCore.escapeHtml(f.name || '');
         var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
-        listHtml += '<li class="flex items-center gap-1.5">'
+        listHtml += '<li class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2 py-1.5">'
           + '<svg class="w-3 h-3 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
-          + '<a href="' + downloadUrl + '" target="_blank" class="flex-1 truncate text-blue-600 hover:underline">' + fileName + '</a>'
-          + '<button onclick="AdminCourse.deleteDriveFile(\''+fileId+'\',\''+fileName+'\')" title="파일 삭제" class="shrink-0 text-gray-300 hover:text-red-400 transition-colors ml-1">'
-          + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
-          + '</button>'
+          + '<span class="flex-1 truncate text-gray-700">' + fileName + '</span>'
+          + '<a href="' + downloadUrl + '" target="_blank" title="파일 저장"'
+          + ' class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors">'
+          + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
+          + '저장</a>'
+          + '<button onclick="AdminCourse.deleteDriveFile(\''+fileId+'\',\''+fileName+'\')" title="파일 삭제"'
+          + ' class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-50 text-red-500 hover:bg-red-100 border border-red-200 transition-colors">'
+          + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
+          + '삭제</button>'
           + '</li>';
       });
       listHtml += '</ul>';
