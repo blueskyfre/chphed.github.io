@@ -454,7 +454,16 @@ var AdminCore = (function () {
     }
     var res = await fetch(url.toString(), { method: 'GET', redirect: 'follow' });
     if (!res.ok) throw new Error('서버 응답 오류: ' + res.status);
-    return await res.json();
+    var text = await res.text();
+    if (!text || !text.trim()) {
+      // GAS 리다이렉트 후 빈 body가 오는 경우 — 작업은 성공한 것으로 간주
+      return { success: true };
+    }
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error('응답 파싱 오류: ' + e.message + ' / 응답내용: ' + text.substring(0, 100));
+    }
   }
 
   // ─── API 호출 (POST) ─────────────────────────────────────────
@@ -471,7 +480,15 @@ var AdminCore = (function () {
       body:     JSON.stringify(body)
     });
     if (!res.ok) throw new Error('서버 응답 오류: ' + res.status);
-    return await res.json();
+    var text = await res.text();
+    if (!text || !text.trim()) {
+      return { success: true };
+    }
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error('응답 파싱 오류: ' + e.message + ' / 응답내용: ' + text.substring(0, 100));
+    }
   }
 
   // ─── 유틸: 바이트 계산 ───────────────────────────────────────
