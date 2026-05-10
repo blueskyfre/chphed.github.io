@@ -466,48 +466,88 @@ function downloadStudentTemplate() {
           + '<h3 class="text-base font-bold text-gray-800">수강 학생 목록 <span class="text-indigo-600">(' + students.length + '명)</span></h3>'
           + '</div>';
 
-    // ── 학생 카드 그리드 ──
+    // ── 학생 카드 목록 (개인별 상세 카드) ──
     if (students.length === 0) {
       html += '<div class="text-center text-gray-400 text-sm py-16">수강 학생 데이터가 없습니다.</div>';
     } else {
-      html += '<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">';
       students.forEach(function (s) {
-        var sid   = AdminCore.escapeHtml(s.studentId || '');
-        var sname = AdminCore.escapeHtml(s.name || '');
-        var submitContent = AdminCore.escapeHtml(s.submitContent || '');
-        var submitFile    = AdminCore.escapeHtml(s.submitFile    || '');
-        var teacherNote   = AdminCore.escapeHtml(s.teacherNote  || '');
+        var sid   = s.studentId || '';
+        var sname = s.name || '';
+        var submitContent = s.submitContent || '';
+        var teacherNote   = s.teacherNote  || '';
 
-        html += '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow">'
-              // 카드 헤더
-              + '<div class="px-4 py-3 bg-gradient-to-r from-indigo-50 to-indigo-100 border-b border-indigo-100 flex items-center gap-2">'
-              + '<span class="text-xs text-indigo-400 font-mono">' + sid + '</span>'
-              + '<span class="text-sm font-bold text-indigo-800">' + sname + '</span>'
+        // 카드 고유 키 (areaKey 방식과 동일)
+        var cardKey = 'c_' + encodeURIComponent(sid).replace(/%/g, '_');
+        var sidAttr  = AdminCore.escapeHtml(sid);
+        var courseAttr = AdminCore.escapeHtml(courseName);
+
+        html += '<div class="gibu-area-block">'
+
+              // ── 카드 배너 (학번 + 이름) ──
+              + '<div class="gibu-page-banner">'
+              + '<div class="gibu-page-banner-icon">'
+              + '<svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'
+              + '</div><div>'
+              + '<div class="gibu-page-banner-title">' + AdminCore.escapeHtml(sid) + ' ' + AdminCore.escapeHtml(sname) + '</div>'
+              + '<div class="gibu-page-banner-sub">' + AdminCore.escapeHtml(courseName) + ' 교과 학습 기록</div>'
+              + '</div></div>'
+
+              + '<div class="gibu-area-body">'
+
+              // ── ① 학생 제출 내용 카드 ──
+              + '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
+              + '<div class="gibu-card-toolbar mb-2">'
+              + '<span class="gibu-label">📄 학생 제출 내용</span>'
+              + '<span id="copy-feedback-' + cardKey + '" class="gibu-spacer"></span>'
+              + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="AdminCourse.copyCardContent(\'' + cardKey + '\')">'
+              + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
+              + '내용 복사</button>'
+              + '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+              + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+              + '<span>펼치기</span></button>'
               + '</div>'
-              // 학생 제출 내용
-              + '<div class="px-4 py-3 border-b border-gray-50">'
-              + '<p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">학생 제출 내용</p>'
-              + '<p class="text-sm text-gray-700 ' + (!submitContent ? 'text-gray-300 italic' : '') + '">'
-              + (submitContent || '미제출') + '</p>'
+              + '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+              + '<div id="course-submit-' + cardKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-raw="' + AdminCore.escapeHtml(submitContent) + '">'
+              + (submitContent ? AdminCore.escapeHtml(submitContent) : '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
               + '</div>'
-              // 학생 제출 파일
-              + '<div class="px-4 py-3 border-b border-gray-50">'
-              + '<p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">학생 제출 파일</p>'
-              + (submitFile
-                  ? '<a href="' + submitFile + '" target="_blank" class="inline-flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">'
-                  + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>'
-                  + '파일 보기</a>'
-                  : '<span class="text-sm text-gray-300 italic">미제출</span>')
+              + (submitContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
+              + '</div></div>'
+
+              // ── ② 학생 제출 파일 카드 ──
+              + '<div class="bg-white border border-indigo-200 rounded-lg p-3 mb-3">'
+              + '<div class="gibu-card-toolbar mb-2">'
+              + '<span class="gibu-label">📁 학생 제출 파일</span>'
+              + '<button type="button" id="course-dl-btn-' + cardKey + '" class="gibu-copy-btn" style="margin-left:4px;" onclick="AdminCourse.downloadStudentFiles(\'' + sidAttr + '\',\'' + AdminCore.escapeHtml(sname) + '\',\'' + courseAttr + '\')" disabled>'
+              + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
+              + '압축 다운로드</button>'
               + '</div>'
-              // 교사 작성 내용
-              + '<div class="px-4 py-3">'
-              + '<p class="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">교사 작성 내용</p>'
-              + '<p class="text-sm text-gray-700 ' + (!teacherNote ? 'text-gray-300 italic' : '') + '">'
-              + (teacherNote || '미작성') + '</p>'
+              + '<div id="course-files-' + cardKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-400 italic">파일 목록 로딩 중...</div>'
               + '</div>'
-              + '</div>';
+
+              // ── ③ 교사 작성 내용 카드 ──
+              + '<div class="bg-white border border-blue-200 rounded-lg p-3">'
+              + '<div class="gibu-card-toolbar mb-2">'
+              + '<span class="gibu-label">✏️ 교사 작성 내용</span>'
+              + '<span id="copy-feedback-edit-' + cardKey + '" class="gibu-spacer"></span>'
+              + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="AdminCourse.copyCardEdit(\'' + cardKey + '\')">'
+              + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
+              + '편집 복사</button>'
+              + '<button type="button" class="gibu-write-btn" style="margin-left:4px;" onclick="AdminCourse.openCourseWriteModal(\'' + cardKey + '\',\'' + sidAttr + '\',\'' + AdminCore.escapeHtml(sname) + '\',\'' + courseAttr + '\')">'
+              + '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+              + '교사 내용 작성</button>'
+              + '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+              + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+              + '<span>펼치기</span></button>'
+              + '</div>'
+              + '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+              + '<div id="course-teacher-' + cardKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-iseditor="1" data-raw-edit="' + AdminCore.escapeHtml(teacherNote) + '">'
+              + (teacherNote ? AdminCore.escapeHtml(teacherNote) : '<span class="text-gray-400 italic">편집 내용 없음</span>')
+              + '</div>'
+              + (teacherNote ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
+              + '</div></div>'
+
+              + '</div></div>';
       });
-      html += '</div>';
     }
 
     html += '</div>';
@@ -515,6 +555,12 @@ function downloadStudentTemplate() {
 
     // 전체공지 기존 내용 로드 및 드라이브 파일 목록 로드
     _loadAllNoticeAndDriveFiles(courseName);
+
+    // 각 학생 카드의 제출 파일 목록 비동기 로드
+    students.forEach(function(s) {
+      var cardKey = 'c_' + encodeURIComponent(s.studentId || '').replace(/%/g, '_');
+      _loadStudentDriveFiles(s.studentId, s.name, courseName, cardKey);
+    });
   }
 
   // ─── 전체공지 & 드라이브 파일 목록 로드 ─────────────────────
@@ -898,6 +944,173 @@ function downloadStudentTemplate() {
     }
   }
 
+// ─── 학생 제출 파일 목록 로드 (구글드라이브 담당교사\교과\학생제출 폴더) ──
+  async function _loadStudentDriveFiles(studentId, studentName, courseName, cardKey) {
+    var filesEl = document.getElementById('course-files-' + cardKey);
+    var dlBtn   = document.getElementById('course-dl-btn-' + cardKey);
+    if (!filesEl) return;
+
+    try {
+      var res = await AdminCore.apiGet('courseGetStudentFiles', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName,
+        studentId:  studentId,
+        studentName: studentName
+      });
+
+      var files = (res && res.success && res.files) ? res.files : [];
+
+      if (files.length === 0) {
+        filesEl.innerHTML = '<span class="text-gray-400 italic">제출한 파일 없음</span>';
+        if (dlBtn) { dlBtn.disabled = true; dlBtn.style.opacity = '0.4'; dlBtn.style.cursor = 'not-allowed'; }
+        return;
+      }
+
+      // 파일 목록 렌더링: 파일명에서 _ 기준 뒷글자만 표시
+      var listHtml = '<ul class="space-y-1">';
+      files.forEach(function(f) {
+        var displayName = f.name;
+        var underIdx = f.name.indexOf('_');
+        if (underIdx !== -1) displayName = f.name.substring(underIdx + 1);
+        var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + AdminCore.escapeHtml(f.id);
+        listHtml += '<li class="flex items-center gap-1.5">'
+          + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
+          + '<span class="text-sm text-gray-700 flex-1 truncate">' + AdminCore.escapeHtml(displayName) + '</span>'
+          + '<a href="' + downloadUrl + '" target="_blank" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors">'
+          + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>저장</a>'
+          + '</li>';
+      });
+      listHtml += '</ul>';
+      filesEl.className = 'w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm';
+      filesEl.innerHTML = listHtml;
+
+      // 다운로드 버튼 활성화
+      if (dlBtn) { dlBtn.disabled = false; dlBtn.style.opacity = ''; dlBtn.style.cursor = ''; }
+
+    } catch(e) {
+      filesEl.innerHTML = '<span class="text-red-400 italic">파일 목록 조회 오류</span>';
+    }
+  }
+
+  // ─── 학생 제출 파일 압축 다운로드 ────────────────────────────
+  async function downloadStudentFiles(studentId, studentName, courseName) {
+    try {
+      var res = await AdminCore.apiGet('courseGetStudentFiles', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName,
+        studentId:  studentId,
+        studentName: studentName
+      });
+      var files = (res && res.success && res.files) ? res.files : [];
+      if (files.length === 0) { alert('다운로드할 파일이 없습니다.'); return; }
+
+      // 접두어(학번+이름+교과목)가 일치하는 파일만 필터링하여 GS에 압축 요청
+      var prefix = studentId + studentName + courseName;
+      var matchedFiles = files.filter(function(f) {
+        var underIdx = f.name.indexOf('_');
+        var filePre = underIdx !== -1 ? f.name.substring(0, underIdx) : f.name;
+        return filePre === prefix;
+      });
+      if (matchedFiles.length === 0) { alert('조건에 맞는 파일이 없습니다.'); return; }
+
+      var res2 = await AdminCore.apiGet('courseZipStudentFiles', {
+        adminId:   AdminCore.state.adminId,
+        adminName: AdminCore.state.adminName,
+        courseName: courseName,
+        studentId:  studentId,
+        studentName: studentName,
+        fileIds:   JSON.stringify(matchedFiles.map(function(f){ return f.id; })),
+        zipName:   studentId + studentName + courseName
+      });
+
+      if (res2 && res2.success && res2.url) {
+        var a = document.createElement('a');
+        a.href = res2.url;
+        a.download = studentId + studentName + courseName + '.zip';
+        a.click();
+      } else {
+        alert('압축 다운로드 오류: ' + (res2 && res2.message ? res2.message : '알 수 없는 오류'));
+      }
+    } catch(e) {
+      alert('오류: ' + e.message);
+    }
+  }
+
+  // ─── 카드 내용 복사 (학생 제출 내용) ─────────────────────────
+  function copyCardContent(cardKey) {
+    var el = document.getElementById('course-submit-' + cardKey);
+    if (!el) return;
+    var text = el.getAttribute('data-raw') || el.textContent || '';
+    navigator.clipboard.writeText(text).then(function() {
+      var fb = document.getElementById('copy-feedback-' + cardKey);
+      if (fb) { fb.textContent = '✓ 복사됨'; setTimeout(function(){ fb.textContent = ''; }, 1500); }
+    });
+  }
+
+  // ─── 카드 편집 복사 (교사 작성 내용) ─────────────────────────
+  function copyCardEdit(cardKey) {
+    var el = document.getElementById('course-teacher-' + cardKey);
+    if (!el) return;
+    var text = el.getAttribute('data-raw-edit') || el.textContent || '';
+    navigator.clipboard.writeText(text).then(function() {
+      var fb = document.getElementById('copy-feedback-edit-' + cardKey);
+      if (fb) { fb.textContent = '✓ 복사됨'; setTimeout(function(){ fb.textContent = ''; }, 1500); }
+    });
+  }
+
+  // ─── 교사 내용 작성 모달 열기 ────────────────────────────────
+  function openCourseWriteModal(cardKey, studentId, studentName, courseName) {
+    var teacherEl = document.getElementById('course-teacher-' + cardKey);
+    var currentText = teacherEl ? (teacherEl.getAttribute('data-raw-edit') || '') : '';
+
+    // 기존 생기부 작성 모달 재활용 (AdminGibuModal 등이 있으면 활용, 없으면 간단 prompt)
+    if (typeof Admin !== 'undefined' && typeof Admin.openGibuWriteModal === 'function') {
+      // AdminGibuModal과 동일한 방식으로 모달 오픈, 저장 콜백만 교체
+      Admin.openCourseWriteModal(cardKey, studentId, studentName, courseName, currentText);
+    } else {
+      var newText = prompt(studentId + ' ' + studentName + ' (' + courseName + ') 교사 작성 내용:', currentText);
+      if (newText === null) return;
+      saveCourseTeacherNote(cardKey, studentId, courseName, newText);
+    }
+  }
+
+  // ─── 교사 내용 저장 (11번째 열 = 편집내용 열) ────────────────
+  async function saveCourseTeacherNote(cardKey, studentId, courseName, newText) {
+    try {
+      var res = await AdminCore.apiGet('courseSaveTeacherNote', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName,
+        studentId:  studentId,
+        noteText:   newText
+      });
+      if (res && res.success) {
+        // 카드 UI 갱신
+        var teacherEl = document.getElementById('course-teacher-' + cardKey);
+        if (teacherEl) {
+          teacherEl.setAttribute('data-raw-edit', newText);
+          teacherEl.innerHTML = newText
+            ? AdminCore.escapeHtml(newText)
+            : '<span class="text-gray-400 italic">편집 내용 없음</span>';
+          // 줄임표 힌트
+          var hint = teacherEl.nextElementSibling;
+          if (hint && hint.classList.contains('gibu-ellipsis-hint')) {
+            hint.style.display = newText ? '' : 'none';
+          }
+        }
+        if (typeof Admin !== 'undefined' && typeof Admin.showSaveSuccess === 'function') {
+          Admin.showSaveSuccess('교사 작성 내용이 저장되었습니다.');
+        }
+      } else {
+        alert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch(e) {
+      alert('오류: ' + e.message);
+    }
+  }
+
 // ─── 교과 삭제 ───────────────────────────────────────────────
   function confirmDeleteCourse(courseName) {
     if (!confirm('「' + courseName + '」 교과를 삭제하시겠습니까?\n\nSH사용자 탭의 수강학생 표시 열과\nSH교과관리 탭의 해당 교과 데이터가 모두 삭제됩니다.')) return;
@@ -954,7 +1167,13 @@ function downloadStudentTemplate() {
     handleAllNoticeFileDrop:    handleAllNoticeFileDrop,
     clearAllNoticeFile:         clearAllNoticeFile,
     uploadAllNoticeToDrive:     uploadAllNoticeToDrive,
-    deleteDriveFile:            deleteDriveFile
+    deleteDriveFile:            deleteDriveFile,
+    // ── 교과 학생 카드 기능 ──
+    copyCardContent:            copyCardContent,
+    copyCardEdit:               copyCardEdit,
+    openCourseWriteModal:       openCourseWriteModal,
+    saveCourseTeacherNote:      saveCourseTeacherNote,
+    downloadStudentFiles:       downloadStudentFiles
   };
 
 })();
