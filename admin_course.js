@@ -539,9 +539,8 @@ function downloadStudentTemplate() {
     if (!filesWrap) return;
     try {
       var res = await AdminCore.apiGet('getDriveAdminFiles', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: _state.selectedCourse || ''
+        adminId:   AdminCore.state.adminId,
+        adminName: AdminCore.state.adminName + '||' + (_state.selectedCourse || '')
       });
       _state.driveFiles = (res && res.success && res.files) ? res.files : [];
     } catch(e) {
@@ -681,12 +680,11 @@ function downloadStudentTemplate() {
 
       // 파일 데이터가 크므로 POST 방식으로 전송
       var res = await AdminCore.apiPost('uploadFileToDriveAdminFolder', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: _state.selectedCourse || '',
-        fileName:   _state.allNoticeUploadFileName,
-        fileData:   base64Data,
-        mimeType:   _state.allNoticeUploadFile.type || 'application/octet-stream'
+        adminId:   AdminCore.state.adminId,
+        adminName: AdminCore.state.adminName,
+        fileName:  (_state.selectedCourse || '') + '||' + _state.allNoticeUploadFileName,
+        fileData:  base64Data,
+        mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
       });
 
       if (res && res.success) {
