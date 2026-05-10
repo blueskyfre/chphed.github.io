@@ -539,8 +539,9 @@ function downloadStudentTemplate() {
     if (!filesWrap) return;
     try {
       var res = await AdminCore.apiGet('getDriveAdminFiles', {
-        adminId:   AdminCore.state.adminId,
-        adminName: AdminCore.state.adminName
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: _state.selectedCourse || ''
       });
       _state.driveFiles = (res && res.success && res.files) ? res.files : [];
     } catch(e) {
@@ -555,11 +556,18 @@ function downloadStudentTemplate() {
     if (_state.driveFiles.length === 0) {
       filesWrap.innerHTML = '<p class="text-xs text-gray-400 italic">드라이브 폴더에 파일이 없습니다.</p>';
     } else {
-      var listHtml = '<p class="text-xs font-bold text-gray-500 mb-1">드라이브 폴더 파일 목록:</p><ul class="text-xs text-gray-600 space-y-1 pl-2">';
+      var courseLabel = AdminCore.escapeHtml(_state.selectedCourse || '');
+      var listHtml = '<p class="text-xs font-bold text-gray-500 mb-1">드라이브 폴더 파일 목록 (' + courseLabel + '):</p><ul class="text-xs text-gray-600 space-y-1 pl-2">';
       _state.driveFiles.forEach(function(f) {
-        listHtml += '<li class="flex items-center gap-1">'
+        var fileId   = AdminCore.escapeHtml(f.id   || '');
+        var fileName = AdminCore.escapeHtml(f.name || '');
+        var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
+        listHtml += '<li class="flex items-center gap-1.5">'
           + '<svg class="w-3 h-3 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
-          + AdminCore.escapeHtml(f.name || f)
+          + '<a href="' + downloadUrl + '" target="_blank" class="flex-1 truncate text-blue-600 hover:underline">' + fileName + '</a>'
+          + '<button onclick="AdminCourse.deleteDriveFile(''+fileId+'', ''+fileName+'')" title="파일 삭제" class="shrink-0 text-gray-300 hover:text-red-400 transition-colors ml-1">'
+          + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+          + '</button>'
           + '</li>';
       });
       listHtml += '</ul>';
@@ -673,11 +681,12 @@ function downloadStudentTemplate() {
 
       // 파일 데이터가 크므로 POST 방식으로 전송
       var res = await AdminCore.apiPost('uploadFileToDriveAdminFolder', {
-        adminId:   AdminCore.state.adminId,
-        adminName: AdminCore.state.adminName,
-        fileName:  _state.allNoticeUploadFileName,
-        fileData:  base64Data,
-        mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: _state.selectedCourse || '',
+        fileName:   _state.allNoticeUploadFileName,
+        fileData:   base64Data,
+        mimeType:   _state.allNoticeUploadFile.type || 'application/octet-stream'
       });
 
       if (res && res.success) {
@@ -694,6 +703,25 @@ function downloadStudentTemplate() {
         btn.disabled = false;
         btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>드라이브에 저장';
       }
+    }
+  }
+
+  // ─── 드라이브 파일 삭제 ─────────────────────────────────────
+  async function deleteDriveFile(fileId, fileName) {
+    if (!confirm('「' + fileName + '」 파일을 드라이브에서 삭제하시겠습니까?')) return;
+    try {
+      var res = await AdminCore.apiGet('deleteDriveAdminFile', {
+        adminId: AdminCore.state.adminId,
+        fileId:  fileId
+      });
+      if (res && res.success) {
+        Admin.showSaveSuccess('파일이 삭제되었습니다.');
+        await _refreshDriveFileList();
+      } else {
+        alert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+      }
+    } catch(err) {
+      alert('오류: ' + err.message);
     }
   }
 
@@ -921,7 +949,8 @@ function downloadStudentTemplate() {
     handleAllNoticeFileSelect:  handleAllNoticeFileSelect,
     handleAllNoticeFileDrop:    handleAllNoticeFileDrop,
     clearAllNoticeFile:         clearAllNoticeFile,
-    uploadAllNoticeToDrive:     uploadAllNoticeToDrive
+    uploadAllNoticeToDrive:     uploadAllNoticeToDrive,
+    deleteDriveFile:            deleteDriveFile
   };
 
 })();
