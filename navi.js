@@ -45,15 +45,20 @@ var NaviComponent = (function () {
     { key: 'schedule',   label: '일정',        color: 'blue' },
     { key: 'suneung',    label: '수능과목선택', color: 'blue' },
     { key: 'university', label: '관심대학',     color: 'blue' },
-    { key: 'record',     label: '생기부 기초자료', color: 'blue' }
+    { key: 'record',     label: '생기부 기초자료', color: 'blue' },
+    { key: 'class',      label: '수업자료',     color: 'blue' }
   ];
+
+  /* ── 교과별메뉴 권한에서 보이는 메뉴 키 목록 ── */
+  var NAV_ITEMS_SUBJECT = ['class'];
 
   /* ── 페이지 URL 맵 ── */
   var PAGE_FILES = {
     schedule  : 'firstpage.html',
     suneung   : 'susel.html',
     university: 'univer.html',
-    record    : 'record.html'
+    record    : 'record.html',
+    class     : 'class.html'
   };
 
   /* ── 언더라인 색상 맵 (활성/비활성 hover용) ── */
@@ -173,6 +178,7 @@ var NaviComponent = (function () {
       userName   : options.userName    || '',
       studentId  : options.studentId   || '',
       githubUrl  : options.githubUrl   || defaultGithub,
+      menuAuth   : options.menuAuth    || '모든메뉴',
       onSave     : options.onSave      || null,
       onLogout   : options.onLogout    || null
     };
@@ -208,7 +214,11 @@ var NaviComponent = (function () {
     _injectStyle();
 
     /* ── 버튼 HTML 생성 ── */
-    var btnHTML = NAV_ITEMS.map(function (item) {
+    var visibleItems = (_cfg.menuAuth === '교과별메뉴')
+      ? NAV_ITEMS.filter(function(item) { return NAV_ITEMS_SUBJECT.indexOf(item.key) >= 0; })
+      : NAV_ITEMS;
+
+    var btnHTML = visibleItems.map(function (item) {
       var isActive = (item.key === _cfg.activePage);
       var activeClass = isActive ? ' navi-active' : '';
 
@@ -269,7 +279,8 @@ var NaviComponent = (function () {
   function _doNavTo(pageKey) {
     var params = new URLSearchParams({
       studentId : _cfg.studentId,
-      name      : _cfg.userName
+      name      : _cfg.userName,
+      menuAuth  : _cfg.menuAuth
     });
     var fileName = PAGE_FILES[pageKey];
     if (fileName) {
