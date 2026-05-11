@@ -1160,6 +1160,24 @@ function copyCardContent(cardKey) {
     var main = document.querySelector('main.flex-1');
     var _scrollY = main ? main.scrollTop : window.scrollY;
 
+var leftCopyFb = document.getElementById('gibu-modal-left-copy-fb');
+if (leftCopyFb) {
+  var leftCopyBtn = leftCopyFb.previousElementSibling;
+  if (leftCopyBtn) {
+    leftCopyBtn.onclick = function() {
+      var text = submitText || '';
+      var fb = document.getElementById('gibu-modal-left-copy-fb');
+      function show() {
+        if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function(){ fb.textContent = ''; }, 2000); }
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(show, function(){ AdminCore.fallbackCopy(text); show(); });
+      } else { AdminCore.fallbackCopy(text); show(); }
+    };
+  }
+}
+
+   
     modal.classList.remove('hidden');
     if (ta) ta.focus();
 
