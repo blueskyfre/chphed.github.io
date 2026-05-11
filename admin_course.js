@@ -1042,22 +1042,10 @@ function downloadStudentTemplate() {
   function copyCardContent(cardKey) {
     var el = document.getElementById('course-submit-' + cardKey);
     if (!el) return;
-  
-    // data-raw 우선하되, 비어있으면 textContent 사용
-    var rawData = el.getAttribute('data-raw');
-    var text = (rawData && rawData.trim().length > 0) ? rawData : el.textContent;
-    
-    if (!text || text.trim() === '') {
-        console.warn("복사할 내용이 없습니다.");
-        return;
-    }
-  
-    navigator.clipboard.writeText(text.trim()).then(function() {
+    var text = el.getAttribute('data-raw') || el.textContent || '';
+    navigator.clipboard.writeText(text).then(function() {
       var fb = document.getElementById('copy-feedback-' + cardKey);
-      if (fb) { 
-        fb.textContent = '✓ 복사됨'; 
-        setTimeout(function(){ fb.textContent = ''; }, 1500); 
-      }
+      if (fb) { fb.textContent = '✓ 복사됨'; setTimeout(function(){ fb.textContent = ''; }, 1500); }
     });
   }
 
