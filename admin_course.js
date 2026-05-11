@@ -1039,15 +1039,49 @@ function downloadStudentTemplate() {
   }
 
   // ─── 카드 내용 복사 (학생 제출 내용) ─────────────────────────
-  function copyCardContent(cardKey) {
-    var el = document.getElementById('course-submit-' + cardKey);
-    if (!el) return;
-    var text = el.getAttribute('data-raw') || el.textContent || '';
-    navigator.clipboard.writeText(text).then(function() {
-      var fb = document.getElementById('copy-feedback-' + cardKey);
-      if (fb) { fb.textContent = '✓ 복사됨'; setTimeout(function(){ fb.textContent = ''; }, 1500); }
-    });
+function copyCardContent(cardKey) {
+  var el = document.getElementById('course-submit-' + cardKey);
+  if (!el) return;
+  // data-raw 값을 우선 사용
+  var text = el.getAttribute('data-raw');
+  // 없으면 textContent fallback
+  if (text == null || text === '') {
+    text = el.textContent || '';
   }
+  // 공백 제거
+  text = text.trim();
+  // 최신 clipboard API
+  navigator.clipboard.writeText(text).then(function() {
+    var fb = document.getElementById('copy-feedback-' + cardKey);
+    if (fb) {
+      fb.textContent = '✓ 복사됨';
+      setTimeout(function() {
+        fb.textContent = '';
+      }, 1500);
+    }
+  }).catch(function() {
+    // fallback 복사
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, 99999);
+    try {
+      document.execCommand('copy');
+      var fb = document.getElementById('copy-feedback-' + cardKey);
+      if (fb) {
+        fb.textContent = '✓ 복사됨';
+        setTimeout(function() {
+          fb.textContent = '';
+        }, 1500);
+      }
+    } catch(e) {
+      alert('복사 실패');
+    }
+    document.body.removeChild(ta);
+  });
+}
 
   // ─── 카드 편집 복사 (교사 작성 내용) ─────────────────────────
   function copyCardEdit(cardKey) {
