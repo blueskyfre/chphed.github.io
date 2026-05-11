@@ -1127,6 +1127,7 @@ function copyCardContent(cardKey) {
     if (leftLabel)   leftLabel.textContent   = courseName + ' — 학생 제출 내용';
     if (leftBytes)   leftBytes.textContent   = '';
     if (leftContent) leftContent.textContent = submitText || '학생이 제출한 내용이 없습니다.';
+    _modalState.originalText = submitText || '';
 
     // 우측 — 교사 작성
     if (rightLabel) rightLabel.textContent = courseName + ' — 교사 작성 내용';
