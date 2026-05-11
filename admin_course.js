@@ -1061,211 +1061,141 @@ function downloadStudentTemplate() {
   }
 
   // ─── 교사 내용 작성 모달 열기 ─────────────────────────────────────────────────
+  // admin_repoarea.js 의 gibu-write-modal DOM을 그대로 재활용.
   // 좌측: 학생 제출 내용(읽기 전용) / 우측: 교사 작성(textarea) + 실시간 글자수
+  // 저장만 courseSaveTeacherNote 로 교체, 닫기·바이트카운트는 Admin(AdminRepoArea) 공통 함수 사용.
   // ──────────────────────────────────────────────────────────────────────────────
   function openCourseWriteModal(cardKey, studentId, studentName, courseName) {
-    // 현재 카드에서 데이터 수집
     var submitEl  = document.getElementById('course-submit-'  + cardKey);
     var teacherEl = document.getElementById('course-teacher-' + cardKey);
     var submitText  = submitEl  ? (submitEl.getAttribute('data-raw')       || '') : '';
     var currentText = teacherEl ? (teacherEl.getAttribute('data-raw-edit') || '') : '';
 
-    // 바이트 한도 (교과관리는 한도 없이 사용하되 실시간 표시만 제공; 필요 시 조정)
-    var BYTE_LIMIT = 2000;
+    // ── gibu-write-modal DOM 요소 채우기 ──────────────────────
+    var modal       = document.getElementById('gibu-write-modal');
+    var leftLabel   = document.getElementById('gibu-modal-left-label');
+    var leftBytes   = document.getElementById('gibu-modal-left-bytes');
+    var leftContent = document.getElementById('gibu-modal-left-content');
+    var rightLabel  = document.getElementById('gibu-modal-right-label');
+    var ta          = document.getElementById('gibu-modal-textarea');
+    var badge       = document.getElementById('gibu-modal-student-badge');
+    var saveBtn     = document.getElementById('gibu-modal-save-btn');
 
-    // ── 기존 모달 제거 후 재생성 ──
-    var oldModal = document.getElementById('course-write-modal');
-    if (oldModal) oldModal.parentNode.removeChild(oldModal);
-
-    var modal = document.createElement('div');
-    modal.id = 'course-write-modal';
-    modal.style.cssText = [
-      'position:fixed', 'inset:0', 'z-index:9999',
-      'display:flex', 'align-items:center', 'justify-content:center',
-      'background:rgba(0,0,0,0.45)', 'padding:16px'
-    ].join(';');
-
-    // ESC 키로 닫기
-    modal.addEventListener('keydown', function(e) {
-      if (e.key === 'Escape') _closeCourseWriteModal();
-    });
-    // 배경 클릭으로 닫기
-    modal.addEventListener('mousedown', function(e) {
-      if (e.target === modal) _closeCourseWriteModal();
-    });
-
-    // ── 초기 바이트 계산 ──
-    function _countBytes(str) {
-      var count = 0;
-      for (var i = 0; i < str.length; i++) {
-        count += (str.charCodeAt(i) > 127) ? 3 : 1;
-      }
-      return count;
+    if (!modal) {
+      alert('생기부 작성 모달을 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+      return;
     }
-    var initBytes = _countBytes(currentText);
 
-    // ── 모달 내부 HTML ──
-    modal.innerHTML =
-      '<div id="course-write-modal-card" style="'
-      + 'background:#fff; border-radius:16px; box-shadow:0 20px 60px rgba(0,0,0,0.25);'
-      + 'width:100%; max-width:860px; max-height:90vh;'
-      + 'display:flex; flex-direction:column; overflow:hidden;'
-      + 'transform:scale(0.95); opacity:0; transition:transform 0.18s ease, opacity 0.18s ease;">'
+    // 학생 뱃지
+    if (badge) badge.textContent = studentId + ' ' + studentName;
 
-      // ── 모달 헤더 ──
-      + '<div style="display:flex;align-items:center;justify-content:space-between;'
-      + 'padding:14px 20px; border-bottom:1px solid #e5e7eb;'
-      + 'background:linear-gradient(to right,#eef2ff,#e0e7ff);">'
-      + '<div style="display:flex;align-items:center;gap:10px;">'
-      + '<div style="width:32px;height:32px;border-radius:10px;background:linear-gradient(135deg,#6366f1,#4f46e5);'
-      + 'display:flex;align-items:center;justify-content:center;box-shadow:0 2px 6px rgba(99,102,241,.4);">'
-      + '<svg width="16" height="16" fill="none" stroke="#fff" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
-      + '</div>'
-      + '<div>'
-      + '<div style="font-size:14px;font-weight:700;color:#1e1b4b;">'
-      + AdminCore.escapeHtml(studentId) + ' ' + AdminCore.escapeHtml(studentName)
-      + ' — ' + AdminCore.escapeHtml(courseName) + ' 교사 내용 작성'
-      + '</div>'
-      + '<div style="font-size:11px;color:#6366f1;margin-top:1px;">좌측: 학생 제출 내용 &nbsp;|&nbsp; 우측: 교사 작성 내용</div>'
-      + '</div></div>'
-      + '<button onclick="AdminCourse.closeCourseWriteModal()" style="'
-      + 'width:28px;height:28px;border-radius:8px;border:none;background:#f1f5f9;cursor:pointer;'
-      + 'display:flex;align-items:center;justify-content:center;color:#64748b;font-size:16px;'
-      + 'transition:background 0.15s;" title="닫기">✕</button>'
-      + '</div>'
+    // 좌측 — 학생 제출 내용
+    if (leftLabel)   leftLabel.textContent   = courseName + ' — 학생 제출 내용';
+    if (leftBytes)   leftBytes.textContent   = '';
+    if (leftContent) leftContent.textContent = submitText || '학생이 제출한 내용이 없습니다.';
 
-      // ── 모달 바디: 좌/우 분할 ──
-      + '<div style="display:flex;flex:1;overflow:hidden;min-height:0;">'
-
-      // 좌측 — 학생 제출 내용 (읽기 전용)
-      + '<div style="flex:1;display:flex;flex-direction:column;border-right:1px solid #e5e7eb;min-width:0;">'
-      + '<div style="padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e5e7eb;'
-      + 'font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;gap:6px;">'
-      + '<span style="font-size:13px;">📄</span> 학생 제출 내용 <span style="font-weight:400;color:#94a3b8;font-size:11px;">(읽기 전용)</span>'
-      + '</div>'
-      + '<div style="flex:1;overflow-y:auto;padding:14px 16px;">'
-      + '<div id="course-modal-submit-text" style="'
-      + 'font-size:13px;line-height:1.75;color:#374151;white-space:pre-wrap;word-break:break-word;">'
-      + (submitText
-          ? AdminCore.escapeHtml(submitText)
-          : '<span style="color:#9ca3af;font-style:italic;">학생이 제출한 내용이 없습니다.</span>')
-      + '</div>'
-      + '</div></div>'
-
-      // 우측 — 교사 작성
-      + '<div style="flex:1;display:flex;flex-direction:column;min-width:0;">'
-      + '<div style="padding:10px 16px;background:#f8fafc;border-bottom:1px solid #e5e7eb;'
-      + 'font-size:12px;font-weight:700;color:#475569;display:flex;align-items:center;justify-content:space-between;">'
-      + '<span style="display:flex;align-items:center;gap:6px;"><span style="font-size:13px;">✏️</span> 교사 작성 내용</span>'
-      + '<span id="course-modal-byte-info" style="font-size:11px;color:#6366f1;font-weight:600;">'
-      + initBytes + '바이트 / ' + BYTE_LIMIT + '바이트'
-      + '</span>'
-      + '</div>'
-      + '<div style="flex:1;display:flex;flex-direction:column;padding:12px 14px;gap:10px;">'
-      + '<textarea id="course-modal-textarea" style="'
-      + 'flex:1;width:100%;border:1.5px solid #c7d2fe;border-radius:10px;padding:12px 14px;'
-      + 'font-size:13px;line-height:1.75;color:#1e293b;resize:none;outline:none;'
-      + 'background:#fafafa;font-family:inherit;box-sizing:border-box;'
-      + 'transition:border-color 0.15s,box-shadow 0.15s;"'
-      + ' placeholder="교사 작성 내용을 입력하세요...">'
-      + AdminCore.escapeHtml(currentText)
-      + '</textarea>'
-      // 진행 바
-      + '<div style="height:4px;border-radius:9999px;background:#e0e7ff;overflow:hidden;">'
-      + '<div id="course-modal-byte-bar" style="height:100%;border-radius:9999px;'
-      + 'background:linear-gradient(to right,#6366f1,#818cf8);transition:width 0.2s ease;'
-      + 'width:' + Math.min(100, Math.round(initBytes / BYTE_LIMIT * 100)) + '%;">'
-      + '</div></div>'
-      + '</div></div>'
-
-      + '</div>'
-
-      // ── 모달 푸터 ──
-      + '<div style="padding:12px 20px;border-top:1px solid #e5e7eb;'
-      + 'background:#f8fafc;display:flex;align-items:center;justify-content:flex-end;gap:10px;">'
-      + '<button onclick="AdminCourse.closeCourseWriteModal()" style="'
-      + 'padding:8px 20px;border-radius:10px;border:1.5px solid #d1d5db;background:#fff;'
-      + 'font-size:13px;font-weight:600;color:#4b5563;cursor:pointer;transition:background 0.15s;">취소</button>'
-      + '<button id="course-modal-save-btn" onclick="AdminCourse.saveCourseWriteModal(\'' + cardKey + '\',\'' + AdminCore.escapeHtml(studentId) + '\',\'' + AdminCore.escapeHtml(courseName) + '\')" style="'
-      + 'padding:8px 24px;border-radius:10px;border:none;'
-      + 'background:linear-gradient(135deg,#6366f1,#4f46e5);'
-      + 'font-size:13px;font-weight:700;color:#fff;cursor:pointer;'
-      + 'box-shadow:0 2px 8px rgba(99,102,241,.35);'
-      + 'display:flex;align-items:center;gap:6px;transition:opacity 0.15s;">'
-      + '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>'
-      + '저장</button>'
-      + '</div>'
-
-      + '</div>'; // modal-card 닫기
-
-    document.body.appendChild(modal);
-
-    // ── 애니메이션 오픈 ──
-    setTimeout(function() {
-      var card = document.getElementById('course-write-modal-card');
-      if (card) { card.style.transform = 'scale(1)'; card.style.opacity = '1'; }
-      var ta = document.getElementById('course-modal-textarea');
-      if (ta) ta.focus();
-    }, 10);
-
-    // ── textarea 실시간 바이트 카운트 ──
-    var ta = document.getElementById('course-modal-textarea');
+    // 우측 — 교사 작성
+    if (rightLabel) rightLabel.textContent = courseName + ' — 교사 작성 내용';
     if (ta) {
-      ta.addEventListener('input', function() {
-        var bytes = _countBytes(ta.value);
-        var byteInfo = document.getElementById('course-modal-byte-info');
-        var bar      = document.getElementById('course-modal-byte-bar');
-        var pct      = Math.min(100, Math.round(bytes / BYTE_LIMIT * 100));
-        if (byteInfo) {
-          byteInfo.textContent = bytes + '바이트 / ' + BYTE_LIMIT + '바이트';
-          byteInfo.style.color = bytes > BYTE_LIMIT ? '#ef4444' : '#6366f1';
-        }
-        if (bar) {
-          bar.style.width = pct + '%';
-          bar.style.background = bytes > BYTE_LIMIT
-            ? 'linear-gradient(to right,#ef4444,#f87171)'
-            : 'linear-gradient(to right,#6366f1,#818cf8)';
-        }
-        // textarea 테두리 색상
-        ta.style.borderColor = bytes > BYTE_LIMIT ? '#fca5a5' : '#c7d2fe';
-      });
-      // focus 스타일
-      ta.addEventListener('focus', function() {
-        if (_countBytes(ta.value) <= BYTE_LIMIT) ta.style.boxShadow = '0 0 0 3px rgba(99,102,241,0.15)';
-      });
-      ta.addEventListener('blur', function() { ta.style.boxShadow = 'none'; });
+      ta.value = currentText;
+      // 기존 Admin.updateModalBytes() 호출로 바이트 카운트 갱신
+      if (typeof Admin !== 'undefined' && typeof Admin.updateModalBytes === 'function') {
+        Admin.updateModalBytes();
+      }
     }
+
+    // ── 저장 버튼 onclick 을 교과용으로 교체 ─────────────────
+    // 기존 생기부 저장(adminSaveTeacherGibu) 대신 courseSaveTeacherNote 호출
+    if (saveBtn) {
+      // 이전에 붙인 교과용 핸들러가 있으면 제거
+      if (saveBtn._courseHandler) {
+        saveBtn.removeEventListener('click', saveBtn._courseHandler);
+        saveBtn._courseHandler = null;
+      }
+      // onclick 속성(기존 Admin.saveGibuModal 연결) 제거
+      saveBtn.removeAttribute('onclick');
+
+      saveBtn._courseHandler = function() {
+        _saveCourseFromGibuModal(cardKey, studentId, courseName);
+      };
+      saveBtn.addEventListener('click', saveBtn._courseHandler);
+    }
+
+    // 스크롤 위치 기억 (AdminRepoArea._modalState 와 동일 패턴)
+    var main = document.querySelector('main.flex-1');
+    var _scrollY = main ? main.scrollTop : window.scrollY;
+
+    modal.classList.remove('hidden');
+    if (ta) ta.focus();
+
+    // 모달 닫힐 때 스크롤 복원을 위해 저장
+    modal._courseScrollY = _scrollY;
   }
 
-  // ─── 교사 내용 작성 모달 닫기 ────────────────────────────────
-  function _closeCourseWriteModal() {
-    var modal = document.getElementById('course-write-modal');
-    var card  = document.getElementById('course-write-modal-card');
-    if (card) { card.style.transform = 'scale(0.95)'; card.style.opacity = '0'; }
-    setTimeout(function() {
-      if (modal && modal.parentNode) modal.parentNode.removeChild(modal);
-    }, 180);
-  }
-
-  function closeCourseWriteModal() { _closeCourseWriteModal(); }
-
-  // ─── 모달에서 저장 버튼 클릭 ─────────────────────────────────
-  async function saveCourseWriteModal(cardKey, studentId, courseName) {
-    var ta  = document.getElementById('course-modal-textarea');
-    var btn = document.getElementById('course-modal-save-btn');
+  // ─── 교과용 저장: gibu-write-modal textarea → courseSaveTeacherNote ──────────
+  async function _saveCourseFromGibuModal(cardKey, studentId, courseName) {
+    var ta      = document.getElementById('gibu-modal-textarea');
+    var saveBtn = document.getElementById('gibu-modal-save-btn');
     if (!ta) return;
-    var newText = ta.value;
-    if (btn) { btn.disabled = true; btn.style.opacity = '0.6'; btn.textContent = '저장 중...'; }
+
+    var newText = ta.value || '';
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
+        + ' style="animation:spin 0.7s linear infinite;flex-shrink:0;">'
+        + '<circle cx="12" cy="12" r="9" stroke-width="3" stroke-opacity="0.25"/>'
+        + '<path d="M12 3a9 9 0 019 9" stroke-width="3" stroke-linecap="round"/>'
+        + '</svg>저장 중...';
+    }
+
+    var _success = false;
     try {
       await saveCourseTeacherNote(cardKey, studentId, courseName, newText);
-      _closeCourseWriteModal();
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.style.opacity = '';
-        btn.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>저장';
+      _success = true;
+    } catch(e) {
+      // saveCourseTeacherNote 내부에서 alert 처리
+    }
+
+    if (saveBtn) {
+      saveBtn.disabled = false;
+      saveBtn.innerHTML =
+        '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+        + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
+    }
+
+    if (_success) {
+      // 핸들러 정리 및 onclick 복원 (다른 메뉴에서 생기부 모달 쓸 때 대비)
+      if (saveBtn) {
+        if (saveBtn._courseHandler) {
+          saveBtn.removeEventListener('click', saveBtn._courseHandler);
+          saveBtn._courseHandler = null;
+        }
+        saveBtn.setAttribute('onclick', 'Admin.saveGibuModal()');
+      }
+      // 모달 닫기 + 스크롤 복원
+      var modal = document.getElementById('gibu-write-modal');
+      if (modal) {
+        modal.classList.add('hidden');
+        var scrollY = modal._courseScrollY || 0;
+        var main = document.querySelector('main.flex-1');
+        if (main) { main.scrollTop = scrollY; } else { window.scrollTo(0, scrollY); }
       }
     }
+    // 실패 시: 버튼만 복구, 모달은 열어둠 (재시도 가능)
+  }
+
+  // closeCourseWriteModal, saveCourseWriteModal 은 이제 gibu-write-modal을 쓰므로
+  // Admin.closeGibuWriteModal 위임. 공개 API용으로만 유지.
+  function closeCourseWriteModal() {
+    if (typeof Admin !== 'undefined' && typeof Admin.closeGibuWriteModal === 'function') {
+      Admin.closeGibuWriteModal();
+    }
+  }
+
+  function saveCourseWriteModal() {
+    // 직접 호출은 _saveCourseFromGibuModal 로 위임됨(saveBtn click 이벤트에서 처리)
+    // 이 함수는 하위 호환성 유지용
   }
 
   // ─── 교사 내용 저장 (11번째 열 = 편집내용 열) ────────────────
