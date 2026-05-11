@@ -987,9 +987,14 @@
         } else {
           var params = new URLSearchParams({
             studentId: _loginUserData.studentId,
-            name: _loginUserData.name
+            name:      _loginUserData.name,
+            menuAuth:  _loginUserData.menuAuth || '모든메뉴'
           });
-          window.location.href = _GITHUB_PAGE_URL + '/firstpage.html?' + params.toString();
+          if (_loginUserData.menuAuth === '교과별메뉴') {
+            window.location.href = _GITHUB_PAGE_URL + '/class.html?' + params.toString();
+          } else {
+            window.location.href = _GITHUB_PAGE_URL + '/firstpage.html?' + params.toString();
+          }
         }
       }
 
