@@ -4,7 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>수업자료</title>
+  <script src="config.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="navi.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
   <style>
     :root {
@@ -305,6 +307,9 @@
 </head>
 <body>
 
+<!-- 공통 네비게이션 -->
+<div id="shared-nav"></div>
+
 <!-- 탭 메뉴 -->
 <div id="course-tabs">
   <div id="tab-loading" style="padding:10px 0;color:var(--text-sub);font-size:.875rem;">
@@ -368,7 +373,8 @@ var ClassPage = (function () {
     var p  = new URLSearchParams(window.location.search);
     return {
       studentId:   p.get('studentId') || p.get('sid') || '',
-      studentName: p.get('name')      || p.get('sname') || ''
+      studentName: p.get('name')      || p.get('sname') || '',
+      menuAuth:    p.get('menuAuth')  || '모든메뉴'
     };
   }
 
@@ -826,7 +832,17 @@ var ClassPage = (function () {
 })();
 
 // ── 페이지 로드 시 실행 ──
-document.addEventListener('DOMContentLoaded', function () { ClassPage.init(); });
+document.addEventListener('DOMContentLoaded', function () {
+  var p = new URLSearchParams(window.location.search);
+  NaviComponent.init({
+    activePage : 'class',
+    userName   : p.get('name') || p.get('sname') || '',
+    studentId  : p.get('studentId') || p.get('sid') || '',
+    menuAuth   : p.get('menuAuth') || '모든메뉴',
+    onLogout   : function () { window.location.href = Config.GITHUB + 'index.html'; }
+  });
+  ClassPage.init();
+});
 </script>
 </body>
 </html>
