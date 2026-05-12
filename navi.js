@@ -174,14 +174,20 @@ var NaviComponent = (function () {
       console.error('[NaviComponent] 잘못된 주소를 참조했습니다.');
     }
     _cfg = {
-      activePage : options.activePage  || '',
-      userName   : options.userName    || '',
-      studentId  : options.studentId   || '',
-      githubUrl  : options.githubUrl   || defaultGithub,
-      menuAuth   : options.menuAuth    || '모든메뉴',
-      onSave     : options.onSave      || null,
-      onLogout   : options.onLogout    || null
+      activePage   : options.activePage   || '',
+      userName     : options.userName     || '',
+      studentId    : options.studentId    || '',
+      githubUrl    : options.githubUrl    || defaultGithub,
+      menuAuth     : options.menuAuth     || '모든메뉴',
+      onSave       : options.onSave       || null,
+      onLogout     : options.onLogout     || null,
+      classEnabled : (options.classEnabled !== false) // 기본 true, 명시적 false 시 비활성
     };
+
+    // classEnabled 가 결정되지 않은 경우(undefined) → API로 자동 확인
+    if (options.classEnabled === undefined && options.studentId && options.userName) {
+      _checkClassEnabled(options.studentId, options.userName);
+    }
 
     _render();
   }
@@ -199,6 +205,39 @@ var NaviComponent = (function () {
     if (nameEl) {
       nameEl.textContent = _cfg.userName ? (_cfg.userName + ' 학생') : '';
     }
+  }
+
+  /* ── 수업자료 버튼 활성화 여부 자동 확인 ── */
+  function _checkClassEnabled(studentId, studentName) {
+    var deploy = (typeof Config !== 'undefined' && Config.DEPLOY) ? Config.DEPLOY : '';
+    if (!deploy) return;
+
+    var qs = 'action=classGetCourses'
+      + '&studentId='   + encodeURIComponent(studentId)
+      + '&studentName=' + encodeURIComponent(studentName);
+
+    fetch(deploy + '?' + qs)
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        var hasClass = res.success && res.data && res.data.length > 0;
+        _cfg.classEnabled = hasClass;
+        // 버튼 DOM 갱신
+        var btn = document.querySelector('[data-navkey="class"]');
+        if (btn) {
+          if (!hasClass) {
+            btn.disabled = true;
+            btn.style.opacity    = '0.35';
+            btn.style.cursor     = 'not-allowed';
+            btn.title = '수강 중인 과목이 없습니다.';
+          } else {
+            btn.disabled = false;
+            btn.style.opacity = '';
+            btn.style.cursor  = '';
+            btn.title = '';
+          }
+        }
+      })
+      .catch(function() { /* 오류 시 기본값(활성) 유지 */ });
   }
 
   /* ════════════════════════════════════════════════════════════════
@@ -219,12 +258,18 @@ var NaviComponent = (function () {
       : NAV_ITEMS;
 
     var btnHTML = visibleItems.map(function (item) {
-      var isActive = (item.key === _cfg.activePage);
+      var isActive  = (item.key === _cfg.activePage);
+      var isDisabled = (item.key === 'class' && !_cfg.classEnabled);
       var activeClass = isActive ? ' navi-active' : '';
+      var disabledAttr = isDisabled
+        ? ' disabled style="opacity:0.35;cursor:not-allowed;" title="수강 중인 과목이 없습니다."'
+        : '';
 
       return '<button'
         + ' onclick="NaviComponent._onNavClick(\'' + item.key + '\')"'
         + ' class="navi-btn navi-btn-' + item.color + activeClass + '"'
+        + ' data-navkey="' + item.key + '"'
+        + disabledAttr
         + '>'
         + item.label
         + '</button>';
@@ -290,6 +335,7 @@ var NaviComponent = (function () {
 
   function _onNavClick(pageKey) {
     if (pageKey === _cfg.activePage) return; // 현재 페이지면 무시
+    if (pageKey === 'class' && !_cfg.classEnabled) return; // 비활성화 상태면 무시
     if (_isDirty) {
       _showConfirm(function() { _doNavTo(pageKey); });
       return;
