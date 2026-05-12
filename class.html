@@ -536,14 +536,20 @@ var ClassPage = (function () {
         studentName: state.studentName,
         teacherName: c.teacher,
         courseName:  c.course
+      }),
+      _api('classGetTeacherFiles', {
+        teacherName: c.teacher,
+        courseName:  c.course
       })
     ]).then(function(results) {
-      var cardRes  = results[0];
-      var fileRes  = results[1];
-      var cardData = (cardRes.success  && cardRes.data)  ? cardRes.data  : {};
-      var files    = (fileRes.success  && fileRes.files) ? fileRes.files : [];
+      var cardRes       = results[0];
+      var fileRes       = results[1];
+      var teacherFileRes= results[2];
+      var cardData      = (cardRes.success       && cardRes.data)        ? cardRes.data        : {};
+      var files         = (fileRes.success       && fileRes.files)       ? fileRes.files       : [];
+      var teacherFiles  = (teacherFileRes.success && teacherFileRes.files) ? teacherFileRes.files : [];
 
-      var merged = Object.assign({}, cardData, { files: files });
+      var merged = Object.assign({}, cardData, { files: files, teacherFiles: teacherFiles });
       state.cardCache[key] = merged;
       _fillCard(idx, merged);
     }).catch(function(e) {
@@ -564,6 +570,7 @@ var ClassPage = (function () {
     var submitContent= data.submitContent || '';
     var files        = data.files         || [];
     var extraItems   = data.extraItems    || [];
+    var teacherFiles = data.teacherFiles  || [];
 
     // ── 공지사항 섹션 ──
     var noticeHtml =
@@ -585,20 +592,40 @@ var ClassPage = (function () {
         '</div>';
     }
 
-    // ── 내용 입력 섹션 ──
+    // ── 교사 제공 파일 섹션 ──
+    var teacherFilesHtml = '<div>';
+    teacherFilesHtml += '<div class="section-label">선생님 제공 파일</div>';
+    teacherFilesHtml += '<div class="file-list">';
+    if (teacherFiles.length === 0) {
+      teacherFilesHtml += '<p class="file-empty">등록된 파일이 없습니다.</p>';
+    } else {
+      teacherFiles.forEach(function(f) {
+        var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + f.id;
+        teacherFilesHtml +=
+          '<div class="file-item">' +
+            '<span class="file-name">📄 ' + _escHtml(f.name) + '</span>' +
+            '<a href="' + downloadUrl + '" target="_blank" class="btn btn-outline" style="font-size:0.8rem;padding:6px 12px;text-decoration:none;">' +
+              '⬇ 다운로드' +
+            '</a>' +
+          '</div>';
+      });
+    }
+    teacherFilesHtml += '</div></div>';
+
+    // ── 내용 입력 섹션 (저장 버튼을 레이블 옆으로 이동) ──
     var contentHtml =
       '<div>' +
-        '<div class="section-label">내용 입력 (교과세특 · 수행평가 등)</div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
+          '<div class="section-label" style="margin-bottom:0;">내용 입력 (교과세특 · 수행평가 등)</div>' +
+          '<button class="btn btn-primary" id="save-btn-' + idx + '" ' +
+            'onclick="ClassPage.saveContent(' + idx + ')" style="font-size:0.8rem;padding:6px 14px;">' +
+            '💾 저장' +
+          '</button>' +
+        '</div>' +
         '<textarea class="content-input" id="content-input-' + idx + '" ' +
           'placeholder="선생님께 제출할 내용을 입력하세요…">' +
           _escHtml(submitContent) +
         '</textarea>' +
-        '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">' +
-          '<button class="btn btn-primary" id="save-btn-' + idx + '" ' +
-            'onclick="ClassPage.saveContent(' + idx + ')">' +
-            '💾 저장' +
-          '</button>' +
-        '</div>' +
       '</div>';
 
     // ── 업로드된 파일 섹션 ──
@@ -656,7 +683,7 @@ var ClassPage = (function () {
         '</div>' +
       '</div>';
 
-    body.innerHTML = noticeHtml + extraBtnHtml + contentHtml + filesSection + uploadSection;
+    body.innerHTML = noticeHtml + extraBtnHtml + teacherFilesHtml + contentHtml + filesSection + uploadSection;
   }
 
   // ============================================================
