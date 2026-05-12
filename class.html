@@ -295,6 +295,27 @@
     }
     .empty-state svg { margin: 0 auto 16px; display: block; }
 
+    /* ── 파일 선택 미리보기 ── */
+    .file-preview-box {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #eff6ff;
+      border: 1.5px solid var(--primary);
+      border-radius: 8px;
+      padding: 10px 14px;
+      gap: 10px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .file-preview-name {
+      font-size: 0.875rem;
+      color: var(--text-main);
+      word-break: break-all;
+      flex: 1;
+    }
+    .file-preview-actions { display: flex; gap: 8px; flex-shrink: 0; }
+
     /* ── 반응형 ── */
     @media (max-width: 600px) {
       .card-body { padding: 16px; }
@@ -390,7 +411,6 @@ var ClassPage = (function () {
     } else {
       return fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(query)
       }).then(function(r){ return r.json(); });
     }
@@ -621,6 +641,15 @@ var ClassPage = (function () {
             '<strong>hwp · pdf · docx · xlsx · jpg · png</strong> 등 가능' +
           '</div>' +
         '</div>' +
+        '<div id="file-preview-' + idx + '" style="display:none;" class="file-preview-box">' +
+          '<span class="file-preview-name" id="file-preview-name-' + idx + '">📄</span>' +
+          '<div class="file-preview-actions">' +
+            '<button class="btn btn-success" id="file-save-btn-' + idx + '" ' +
+              'onclick="ClassPage.confirmUpload(' + idx + ')">💾 저장</button>' +
+            '<button class="btn btn-danger" ' +
+              'onclick="ClassPage.cancelUpload(' + idx + ')">✕ 취소</button>' +
+          '</div>' +
+        '</div>' +
         '<div id="upload-progress-' + idx + '" style="display:none;">' +
           '<div style="font-size:.8rem;color:var(--text-sub);margin-top:8px;" id="upload-progress-text-' + idx + '">업로드 중…</div>' +
           '<div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill-' + idx + '" style="width:0%"></div></div>' +
@@ -717,12 +746,40 @@ var ClassPage = (function () {
     var z = document.getElementById('upload-zone-' + idx);
     if (z) z.classList.remove('drag-over');
     var files = e.dataTransfer.files;
-    if (files && files[0]) _uploadFile(files[0], idx);
+    if (files && files[0]) _showFilePreview(files[0], idx);
   }
   function onFileSelected(e, idx) {
     var f = e.target.files[0];
-    if (f) _uploadFile(f, idx);
+    if (f) _showFilePreview(f, idx);
     e.target.value = '';
+  }
+
+  // ── 파일 미리보기 표시 ──
+  var _pendingFiles = {};   // idx → File 객체 임시 저장
+
+  function _showFilePreview(file, idx) {
+    _pendingFiles[idx] = file;
+    var preview = document.getElementById('file-preview-' + idx);
+    var nameEl  = document.getElementById('file-preview-name-' + idx);
+    if (preview && nameEl) {
+      nameEl.textContent = '📄 ' + file.name;
+      preview.style.display = '';
+    }
+  }
+
+  function confirmUpload(idx) {
+    var file = _pendingFiles[idx];
+    if (!file) return;
+    delete _pendingFiles[idx];
+    var preview = document.getElementById('file-preview-' + idx);
+    if (preview) preview.style.display = 'none';
+    _uploadFile(file, idx);
+  }
+
+  function cancelUpload(idx) {
+    delete _pendingFiles[idx];
+    var preview = document.getElementById('file-preview-' + idx);
+    if (preview) preview.style.display = 'none';
   }
 
   // ============================================================
@@ -825,6 +882,8 @@ var ClassPage = (function () {
     onDragLeave:     onDragLeave,
     onDrop:          onDrop,
     onFileSelected:  onFileSelected,
+    confirmUpload:   confirmUpload,
+    cancelUpload:    cancelUpload,
     openExtraModal:  openExtraModal,
     closeExtraModal: closeExtraModal
   };
