@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>수업자료</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --primary:    #2563eb;
+      --primary-lt: #eff6ff;
+      --accent:     #0ea5e9;
+      --success:    #16a34a;
+      --danger:     #dc2626;
+      --gray-bg:    #f8fafc;
+      --border:     #e2e8f0;
+      --text-main:  #1e293b;
+      --text-sub:   #64748b;
+      --card-shadow: 0 2px 12px rgba(37,99,235,0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--gray-bg);
+      color: var(--text-main);
+      min-height: 100vh;
+      margin: 0;
+    }
+
+    /* ── 탭 메뉴 ── */
+    #course-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 16px 16px 0;
+      background: #fff;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .tab-btn {
+      padding: 8px 18px;
+      border-radius: 8px 8px 0 0;
+      border: 2px solid var(--border);
+      border-bottom: none;
+      background: #f1f5f9;
+      color: var(--text-sub);
+      font-size: 0.85rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all .18s;
+      white-space: nowrap;
+    }
+    .tab-btn:hover  { background: var(--primary-lt); color: var(--primary); }
+    .tab-btn.active { background: #fff; color: var(--primary); border-color: var(--primary); font-weight: 700; }
+
+    /* ── 카드 영역 ── */
+    #card-area { padding: 24px 16px; max-width: 860px; margin: 0 auto; }
+
+    .course-card {
+      background: #fff;
+      border-radius: 14px;
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
+      animation: fadeIn .25s ease;
+    }
+    @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+    .card-header {
+      background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%);
+      color: #fff;
+      padding: 18px 24px;
+      font-size: 1.05rem;
+      font-weight: 700;
+      letter-spacing: -.3px;
+    }
+    .card-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── 섹션 타이틀 ── */
+    .section-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary);
+      text-transform: uppercase;
+      letter-spacing: .6px;
+      margin-bottom: 6px;
+    }
+
+    /* ── 공지사항 박스 ── */
+    .notice-box {
+      background: var(--primary-lt);
+      border-left: 4px solid var(--primary);
+      border-radius: 6px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      color: var(--text-main);
+      white-space: pre-wrap;
+      min-height: 48px;
+    }
+    .notice-empty { color: var(--text-sub); font-style: italic; }
+
+    /* ── 내용 입력 ── */
+    textarea.content-input {
+      width: 100%;
+      min-height: 120px;
+      resize: vertical;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.9rem;
+      font-family: 'Noto Sans KR', sans-serif;
+      color: var(--text-main);
+      transition: border-color .18s;
+      outline: none;
+    }
+    textarea.content-input:focus { border-color: var(--primary); }
+
+    /* ── 버튼 ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 20px;
+      border-radius: 8px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .18s;
+    }
+    .btn-primary  { background: var(--primary); color: #fff; }
+    .btn-primary:hover  { background: #1d4ed8; }
+    .btn-success  { background: var(--success); color: #fff; }
+    .btn-success:hover  { background: #15803d; }
+    .btn-danger   { background: #fee2e2; color: var(--danger); border: 1px solid #fecaca; }
+    .btn-danger:hover   { background: #fecaca; }
+    .btn-outline  { background: #fff; color: var(--primary); border: 1.5px solid var(--primary); }
+    .btn-outline:hover  { background: var(--primary-lt); }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── 업로드된 파일 목록 ── */
+    .file-list { display: flex; flex-direction: column; gap: 8px; }
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      gap: 10px;
+    }
+    .file-name {
+      font-size: 0.875rem;
+      color: var(--text-main);
+      word-break: break-all;
+      flex: 1;
+    }
+    .file-empty { color: var(--text-sub); font-size: 0.875rem; font-style: italic; }
+
+    /* ── 파일 업로드 영역 ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all .18s;
+      background: #fafbfc;
+    }
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--primary);
+      background: var(--primary-lt);
+    }
+    .upload-zone input[type="file"] { display: none; }
+    .upload-zone-text { font-size: 0.875rem; color: var(--text-sub); }
+    .upload-zone-text strong { color: var(--primary); }
+
+    /* ── 진행 표시 ── */
+    .progress-bar-wrap {
+      background: #e2e8f0;
+      border-radius: 99px;
+      height: 6px;
+      overflow: hidden;
+      margin-top: 8px;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary), var(--accent));
+      border-radius: 99px;
+      transition: width .3s;
+    }
+
+    /* ── Toast 알림 ── */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast {
+      background: #1e293b;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 10px;
+      font-size: 0.875rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,.18);
+      animation: toastIn .22s ease;
+      pointer-events: auto;
+      max-width: 320px;
+    }
+    .toast.success { background: #166534; }
+    .toast.error   { background: #991b1b; }
+    @keyframes toastIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+
+    /* ── 모달 ── */
+    .modal-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.45);
+      z-index: 1000;
+      display: flex; align-items: center; justify-content: center;
+      padding: 16px;
+    }
+    .modal-box {
+      background: #fff;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 520px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 40px rgba(0,0,0,.22);
+      animation: fadeIn .22s ease;
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+    .modal-close {
+      width: 32px; height: 32px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%; border: none; background: #f1f5f9;
+      cursor: pointer; font-size: 1.1rem; color: var(--text-sub);
+      transition: background .15s;
+    }
+    .modal-close:hover { background: #e2e8f0; }
+    .modal-body { padding: 20px 22px; }
+
+    /* ── 개인별 공지 항목 ── */
+    .extra-item {
+      margin-bottom: 16px;
+    }
+    .extra-item-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--primary);
+      margin-bottom: 4px;
+    }
+    .extra-item-value {
+      background: var(--gray-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      white-space: pre-wrap;
+    }
+
+    /* ── 로딩 스피너 ── */
+    .spinner {
+      display: inline-block;
+      width: 20px; height: 20px;
+      border: 2.5px solid #fff;
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 빈 상태 ── */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--text-sub);
+    }
+    .empty-state svg { margin: 0 auto 16px; display: block; }
+
+    /* ── 반응형 ── */
+    @media (max-width: 600px) {
+      .card-body { padding: 16px; }
+      .card-header { padding: 14px 16px; font-size: .95rem; }
+      #card-area { padding: 14px 8px; }
+      #course-tabs { padding: 12px 8px 0; gap: 6px; }
+      .tab-btn { padding: 7px 13px; font-size: .8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- 탭 메뉴 -->
+<div id="course-tabs">
+  <div id="tab-loading" style="padding:10px 0;color:var(--text-sub);font-size:.875rem;">
+    수강 과목을 불러오는 중…
+  </div>
+</div>
+
+<!-- 카드 영역 -->
+<div id="card-area">
+  <div class="empty-state" id="empty-state" style="display:none;">
+    <svg width="48" height="48" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+        d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+    </svg>
+    <p style="font-size:1rem;font-weight:600;">수강 중인 과목이 없습니다.</p>
+    <p style="font-size:.85rem;margin-top:6px;">담당 선생님께 문의해 주세요.</p>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast-container"></div>
+
+<!-- 개인별 공지사항 모달 -->
+<div id="extra-modal" class="modal-backdrop" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>개인별 공지사항</span>
+      <button class="modal-close" onclick="ClassPage.closeExtraModal()">✕</button>
+    </div>
+    <div class="modal-body" id="extra-modal-body"></div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// ClassPage 네임스페이스
+// ============================================================
+var ClassPage = (function () {
+  'use strict';
+
+  // ── 설정 상수 ──
+  var CONFIG = {
+    SS_ID:   '1f14LDZ4EWPokoRswVRNVcqh71K3VOCLO_XNCWni8MVY',
+    DEPLOY:  'https://script.google.com/macros/s/AKfycbxcoYt2Ifqwv09zZbwJT7na9Km0RslxaOdi8un22wt8BqIeJBt44KRo5faoC6Rr4V3gkw/exec',
+    GITHUB:  'https://blueskyfre.github.io/chphed.github.io/'
+  };
+
+  // ── 상태 ──
+  var state = {
+    studentId:   '',
+    studentName: '',
+    courses:     [],          // [{ teacher, course }, ...]
+    activeIdx:   -1,
+    cardCache:   {}           // key: teacher_course → 카드 데이터 캐시
+  };
+
+  // ============================================================
+  // 🔧 유틸
+  // ============================================================
+  function _getParams() {
+    var p  = new URLSearchParams(window.location.search);
+    return {
+      studentId:   p.get('studentId') || p.get('sid') || '',
+      studentName: p.get('name')      || p.get('sname') || ''
+    };
+  }
+
+  function _api(action, params, method) {
+    var url    = CONFIG.DEPLOY;
+    var query  = Object.assign({ action: action }, params || {});
+    var qs     = Object.keys(query)
+                   .map(function(k){ return encodeURIComponent(k)+'='+encodeURIComponent(query[k]); })
+                   .join('&');
+
+    if (!method || method === 'GET') {
+      return fetch(url + '?' + qs).then(function(r){ return r.json(); });
+    } else {
+      return fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(query)
+      }).then(function(r){ return r.json(); });
+    }
+  }
+
+  // ── Toast ──
+  function _toast(msg, type) {
+    var c  = document.getElementById('toast-container');
+    var el = document.createElement('div');
+    el.className = 'toast ' + (type || '');
+    el.textContent = msg;
+    c.appendChild(el);
+    setTimeout(function(){ el.style.opacity='0'; el.style.transform='translateY(12px)';
+      el.style.transition='.3s'; setTimeout(function(){ el.remove(); }, 320); }, 3000);
+  }
+
+  // ============================================================
+  // 🚀 초기화
+  // ============================================================
+  function init() {
+    var p = _getParams();
+    state.studentId   = p.studentId;
+    state.studentName = p.studentName;
+
+    if (!state.studentId || !state.studentName) {
+      document.getElementById('tab-loading').textContent = '접속 정보가 없습니다. 다시 로그인해 주세요.';
+      return;
+    }
+    _loadCourses();
+  }
+
+  // ============================================================
+  // 📚 수강 과목 목록 로드
+  // ============================================================
+  function _loadCourses() {
+    _api('classGetCourses', {
+      studentId:   state.studentId,
+      studentName: state.studentName
+    }).then(function(res) {
+      document.getElementById('tab-loading').remove();
+
+      if (!res.success || !res.data || res.data.length === 0) {
+        document.getElementById('empty-state').style.display = '';
+        return;
+      }
+
+      state.courses = res.data;
+      _renderTabs();
+      _selectTab(0);
+    }).catch(function(e) {
+      document.getElementById('tab-loading').textContent = '과목 로드 오류: ' + e.message;
+    });
+  }
+
+  // ============================================================
+  // 🗂️ 탭 렌더링
+  // ============================================================
+  function _renderTabs() {
+    var container = document.getElementById('course-tabs');
+    container.innerHTML = '';
+
+    state.courses.forEach(function(c, i) {
+      var btn = document.createElement('button');
+      btn.className   = 'tab-btn';
+      btn.textContent = c.course + '(' + c.teacher + '선생님)';
+      btn.setAttribute('data-idx', i);
+      btn.addEventListener('click', function() { _selectTab(i); });
+      container.appendChild(btn);
+    });
+  }
+
+  // ============================================================
+  // 📌 탭 선택
+  // ============================================================
+  function _selectTab(idx) {
+    state.activeIdx = idx;
+    // 탭 버튼 활성화
+    document.querySelectorAll('.tab-btn').forEach(function(btn, i) {
+      btn.classList.toggle('active', i === idx);
+    });
+    _renderCard(idx);
+  }
+
+  // ============================================================
+  // 🃏 카드 렌더링 + 데이터 로드
+  // ============================================================
+  function _renderCard(idx) {
+    var area = document.getElementById('card-area');
+    var c    = state.courses[idx];
+    var key  = c.teacher + '_' + c.course;
+
+    // 카드 HTML 골격
+    area.innerHTML = '';
+    var card = document.createElement('div');
+    card.className = 'course-card';
+    card.innerHTML =
+      '<div class="card-header">' +
+        c.course + '(' + c.teacher + '선생님) 수업 참여' +
+      '</div>' +
+      '<div class="card-body" id="card-body-' + idx + '">' +
+        '<div style="text-align:center;padding:40px 0;color:var(--text-sub);">' +
+          '<span style="font-size:1.5rem;">⏳</span>' +
+          '<p style="margin-top:8px;font-size:.875rem;">데이터를 불러오는 중…</p>' +
+        '</div>' +
+      '</div>';
+    area.appendChild(card);
+
+    // 데이터 로드 (캐시 또는 API)
+    if (state.cardCache[key]) {
+      _fillCard(idx, state.cardCache[key]);
+      return;
+    }
+
+    Promise.all([
+      _api('classGetCardData', {
+        studentId:   state.studentId,
+        studentName: state.studentName,
+        teacherName: c.teacher,
+        courseName:  c.course
+      }),
+      _api('classGetFiles', {
+        studentId:   state.studentId,
+        studentName: state.studentName,
+        teacherName: c.teacher,
+        courseName:  c.course
+      })
+    ]).then(function(results) {
+      var cardRes  = results[0];
+      var fileRes  = results[1];
+      var cardData = (cardRes.success  && cardRes.data)  ? cardRes.data  : {};
+      var files    = (fileRes.success  && fileRes.files) ? fileRes.files : [];
+
+      var merged = Object.assign({}, cardData, { files: files });
+      state.cardCache[key] = merged;
+      _fillCard(idx, merged);
+    }).catch(function(e) {
+      document.getElementById('card-body-' + idx).innerHTML =
+        '<p style="color:var(--danger);font-size:.875rem;">오류: ' + e.message + '</p>';
+    });
+  }
+
+  // ============================================================
+  // 🖊️ 카드 내용 채우기
+  // ============================================================
+  function _fillCard(idx, data) {
+    var c    = state.courses[idx];
+    var body = document.getElementById('card-body-' + idx);
+    if (!body) return;
+
+    var notice       = data.notice        || '';
+    var submitContent= data.submitContent || '';
+    var files        = data.files         || [];
+    var extraItems   = data.extraItems    || [];
+
+    // ── 공지사항 섹션 ──
+    var noticeHtml =
+      '<div>' +
+        '<div class="section-label">공지사항</div>' +
+        '<div class="notice-box' + (!notice ? ' notice-empty' : '') + '">' +
+          (notice ? _escHtml(notice) : '등록된 공지사항이 없습니다.') +
+        '</div>' +
+      '</div>';
+
+    // ── 개인별 공지사항 버튼 (extraItems 있을 때만) ──
+    var extraBtnHtml = '';
+    if (extraItems.length > 0) {
+      extraBtnHtml =
+        '<div>' +
+          '<button class="btn btn-outline" onclick="ClassPage.openExtraModal(' + idx + ')">' +
+            '📋 개인별 공지사항 보기' +
+          '</button>' +
+        '</div>';
+    }
+
+    // ── 내용 입력 섹션 ──
+    var contentHtml =
+      '<div>' +
+        '<div class="section-label">내용 입력 (교과세특 · 수행평가 등)</div>' +
+        '<textarea class="content-input" id="content-input-' + idx + '" ' +
+          'placeholder="선생님께 제출할 내용을 입력하세요…">' +
+          _escHtml(submitContent) +
+        '</textarea>' +
+        '<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap;">' +
+          '<button class="btn btn-primary" id="save-btn-' + idx + '" ' +
+            'onclick="ClassPage.saveContent(' + idx + ')">' +
+            '💾 저장' +
+          '</button>' +
+        '</div>' +
+      '</div>';
+
+    // ── 업로드된 파일 섹션 ──
+    var fileListHtml = '<div class="file-list" id="file-list-' + idx + '">';
+    if (files.length === 0) {
+      fileListHtml += '<p class="file-empty">제출된 파일이 없습니다.</p>';
+    } else {
+      files.forEach(function(f) {
+        fileListHtml +=
+          '<div class="file-item" id="fi-' + f.id + '">' +
+            '<span class="file-name">📄 ' + _escHtml(f.displayName) + '</span>' +
+            '<button class="btn btn-danger" onclick="ClassPage.deleteFile(\'' +
+              f.id + '\', ' + idx + ')">' +
+              '🗑 삭제' +
+            '</button>' +
+          '</div>';
+      });
+    }
+    fileListHtml += '</div>';
+
+    var filesSection =
+      '<div>' +
+        '<div class="section-label">업로드된 파일</div>' +
+        fileListHtml +
+      '</div>';
+
+    // ── 파일 업로드 섹션 ──
+    var uploadSection =
+      '<div>' +
+        '<div class="section-label">파일 업로드</div>' +
+        '<div class="upload-zone" id="upload-zone-' + idx + '" ' +
+          'onclick="document.getElementById(\'file-input-' + idx + '\').click()" ' +
+          'ondragover="ClassPage.onDragOver(event, ' + idx + ')" ' +
+          'ondragleave="ClassPage.onDragLeave(event, ' + idx + ')" ' +
+          'ondrop="ClassPage.onDrop(event, ' + idx + ')">' +
+          '<input type="file" id="file-input-' + idx + '" ' +
+            'onchange="ClassPage.onFileSelected(event, ' + idx + ')" />' +
+          '<div class="upload-zone-text">' +
+            '📎 클릭하거나 파일을 드래그하여 업로드<br>' +
+            '<strong>hwp · pdf · docx · xlsx · jpg · png</strong> 등 가능' +
+          '</div>' +
+        '</div>' +
+        '<div id="upload-progress-' + idx + '" style="display:none;">' +
+          '<div style="font-size:.8rem;color:var(--text-sub);margin-top:8px;" id="upload-progress-text-' + idx + '">업로드 중…</div>' +
+          '<div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill-' + idx + '" style="width:0%"></div></div>' +
+        '</div>' +
+      '</div>';
+
+    body.innerHTML = noticeHtml + extraBtnHtml + contentHtml + filesSection + uploadSection;
+  }
+
+  // ============================================================
+  // 💾 내용 저장
+  // ============================================================
+  function saveContent(idx) {
+    var c      = state.courses[idx];
+    var ta     = document.getElementById('content-input-' + idx);
+    var btn    = document.getElementById('save-btn-' + idx);
+    var content= ta ? ta.value.trim() : '';
+
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> 저장 중…';
+
+    _api('classSaveContent', {
+      studentId:   state.studentId,
+      studentName: state.studentName,
+      teacherName: c.teacher,
+      courseName:  c.course,
+      content:     content
+    }, 'POST').then(function(res) {
+      if (res.success) {
+        _toast('내용이 저장되었습니다.', 'success');
+        // 캐시 갱신
+        var key = c.teacher + '_' + c.course;
+        if (state.cardCache[key]) state.cardCache[key].submitContent = content;
+      } else {
+        _toast('저장 실패: ' + (res.message || '오류'), 'error');
+      }
+    }).catch(function(e) {
+      _toast('저장 오류: ' + e.message, 'error');
+    }).finally(function() {
+      btn.disabled = false;
+      btn.innerHTML = '💾 저장';
+    });
+  }
+
+  // ============================================================
+  // 📁 파일 삭제
+  // ============================================================
+  function deleteFile(fileId, idx) {
+    if (!confirm('파일을 삭제하시겠습니까?')) return;
+
+    _api('classDeleteFile', {
+      studentId:   state.studentId,
+      studentName: state.studentName,
+      fileId:      fileId
+    }, 'POST').then(function(res) {
+      if (res.success) {
+        _toast('파일이 삭제되었습니다.', 'success');
+        // DOM에서 제거
+        var el = document.getElementById('fi-' + fileId);
+        if (el) el.remove();
+        // 캐시에서 제거
+        var c   = state.courses[idx];
+        var key = c.teacher + '_' + c.course;
+        if (state.cardCache[key] && state.cardCache[key].files) {
+          state.cardCache[key].files = state.cardCache[key].files.filter(function(f){ return f.id !== fileId; });
+        }
+        // 파일 없으면 빈 메시지 표시
+        var list = document.getElementById('file-list-' + idx);
+        if (list && list.querySelectorAll('.file-item').length === 0) {
+          list.innerHTML = '<p class="file-empty">제출된 파일이 없습니다.</p>';
+        }
+      } else {
+        _toast('삭제 실패: ' + (res.message || '오류'), 'error');
+      }
+    }).catch(function(e) {
+      _toast('삭제 오류: ' + e.message, 'error');
+    });
+  }
+
+  // ============================================================
+  // 📤 파일 업로드 - 이벤트
+  // ============================================================
+  function onDragOver(e, idx) {
+    e.preventDefault();
+    var z = document.getElementById('upload-zone-' + idx);
+    if (z) z.classList.add('drag-over');
+  }
+  function onDragLeave(e, idx) {
+    var z = document.getElementById('upload-zone-' + idx);
+    if (z) z.classList.remove('drag-over');
+  }
+  function onDrop(e, idx) {
+    e.preventDefault();
+    var z = document.getElementById('upload-zone-' + idx);
+    if (z) z.classList.remove('drag-over');
+    var files = e.dataTransfer.files;
+    if (files && files[0]) _uploadFile(files[0], idx);
+  }
+  function onFileSelected(e, idx) {
+    var f = e.target.files[0];
+    if (f) _uploadFile(f, idx);
+    e.target.value = '';
+  }
+
+  // ============================================================
+  // 📤 파일 업로드 - 실행
+  // ============================================================
+  function _uploadFile(file, idx) {
+    var c       = state.courses[idx];
+    var progWrap= document.getElementById('upload-progress-' + idx);
+    var progText= document.getElementById('upload-progress-text-' + idx);
+    var progFill= document.getElementById('progress-fill-' + idx);
+
+    progWrap.style.display = '';
+    progText.textContent   = '파일을 읽는 중… (' + file.name + ')';
+    progFill.style.width   = '20%';
+
+    var reader = new FileReader();
+    reader.onload = function(ev) {
+      progFill.style.width   = '50%';
+      progText.textContent   = '업로드 중… (' + file.name + ')';
+
+      _api('classUploadFile', {
+        studentId:   state.studentId,
+        studentName: state.studentName,
+        teacherName: c.teacher,
+        courseName:  c.course,
+        fileName:    file.name,
+        fileData:    ev.target.result,  // base64 dataURL
+        mimeType:    file.type || 'application/octet-stream'
+      }, 'POST').then(function(res) {
+        progFill.style.width = '100%';
+        if (res.success) {
+          _toast(res.message || '파일이 업로드되었습니다.', 'success');
+          // 파일 목록 갱신 (캐시 삭제 후 카드 재렌더)
+          var key = c.teacher + '_' + c.course;
+          delete state.cardCache[key];
+          setTimeout(function() { _renderCard(idx); }, 500);
+        } else {
+          _toast('업로드 실패: ' + (res.message || '오류'), 'error');
+        }
+      }).catch(function(e) {
+        _toast('업로드 오류: ' + e.message, 'error');
+      }).finally(function() {
+        setTimeout(function() { progWrap.style.display = 'none'; progFill.style.width = '0%'; }, 800);
+      });
+    };
+    reader.onerror = function() {
+      _toast('파일 읽기 오류', 'error');
+      progWrap.style.display = 'none';
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // ============================================================
+  // 📋 개인별 공지사항 모달
+  // ============================================================
+  function openExtraModal(idx) {
+    var key  = state.courses[idx].teacher + '_' + state.courses[idx].course;
+    var data = state.cardCache[key];
+    if (!data || !data.extraItems || data.extraItems.length === 0) return;
+
+    var body = document.getElementById('extra-modal-body');
+    body.innerHTML = data.extraItems.map(function(item) {
+      return '<div class="extra-item">' +
+        '<div class="extra-item-label">' + _escHtml(item.header || '항목') + '</div>' +
+        '<div class="extra-item-value">' + _escHtml(item.value) + '</div>' +
+        '</div>';
+    }).join('');
+
+    document.getElementById('extra-modal').style.display = 'flex';
+  }
+
+  function closeExtraModal() {
+    document.getElementById('extra-modal').style.display = 'none';
+  }
+
+  // 모달 바깥 클릭 시 닫기
+  document.getElementById('extra-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeExtraModal();
+  });
+
+  // ============================================================
+  // 🔒 HTML 이스케이프
+  // ============================================================
+  function _escHtml(str) {
+    return String(str)
+      .replace(/&/g,'&amp;')
+      .replace(/</g,'&lt;')
+      .replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;');
+  }
+
+  // ============================================================
+  // 🔓 공개 API
+  // ============================================================
+  return {
+    init:            init,
+    saveContent:     saveContent,
+    deleteFile:      deleteFile,
+    onDragOver:      onDragOver,
+    onDragLeave:     onDragLeave,
+    onDrop:          onDrop,
+    onFileSelected:  onFileSelected,
+    openExtraModal:  openExtraModal,
+    closeExtraModal: closeExtraModal
+  };
+
+})();
+
+// ── 페이지 로드 시 실행 ──
+document.addEventListener('DOMContentLoaded', function () { ClassPage.init(); });
+</script>
+</body>
+</html>
