@@ -235,11 +235,12 @@ function downloadStudentTemplate() {
       a.href = res.url;
       a.download = '수강학생_학번이름.xlsx';
       a.click();
+      NaviComponent.showAlert('다운로드가 시작되었습니다.');
     } else {
-      alert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
+      NaviComponent.showAlert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
     }
   }).catch(function(err) {
-    alert('오류: ' + err.message);
+    NaviComponent.showAlert('오류: ' + err.message);
   }).finally(function() {
     if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>수강학생_학번이름.xlsx 다운로드'; }
   });
@@ -252,18 +253,18 @@ function downloadStudentTemplate() {
     var nameInput = document.getElementById('course-name-input');
     var courseName = nameInput ? nameInput.value.trim() : '';
     if (!courseName) {
-      alert('교과목명을 입력해주세요.');
-      nameInput && nameInput.focus();
+      NaviComponent.showAlert('교과목명을 입력해주세요.', function() {
+        nameInput && nameInput.focus();
+      });
       return;
     }
     if (!_state.pendingSaveFile) {
-      alert('수강학생 명단 파일을 업로드해주세요.');
+      NaviComponent.showAlert('수강학생 명단 파일을 업로드해주세요.');
       return;
     }
 
     var adminName = AdminCore.state.adminName;
-    var saveBtn = document.querySelector('[onclick="AdminCourse.saveCourse()"]');
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '저장 중...'; }
+    NaviComponent.showLoading('저장 중입니다...');
 
     try {
       // 엑셀 파일 파싱
@@ -303,22 +304,22 @@ function downloadStudentTemplate() {
         students:   JSON.stringify(students)
       });
 
+      NaviComponent.hideLoading();
       if (res && res.success) {
         // 교과목 목록 갱신
         if (_state.courses.indexOf(courseName) === -1) {
           _state.courses.push(courseName);
         }
         renderSidebar();
-        _showSaveSuccess(courseName);
+        NaviComponent.showAlert('교과 개설이 완료되었습니다.', function() {
+          _showSaveSuccess(courseName);
+        });
       } else {
-        alert('저장 중 오류가 발생했습니다: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('저장 중 오류가 발생했습니다: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch (err) {
-      alert('오류: ' + err.message);
-    } finally {
-      if (saveBtn) { saveBtn.disabled = false; saveBtn.innerHTML =
-        '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장 (교과 개설)';
-      }
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     }
   }
 
@@ -631,13 +632,13 @@ function downloadStudentTemplate() {
     var textarea = document.getElementById('all-notice-textarea');
     var noticeText = textarea ? textarea.value.trim() : '';
     if (!noticeText) {
-      alert('공지사항 내용을 입력해주세요.');
-      if (textarea) textarea.focus();
+      NaviComponent.showAlert('공지사항 내용을 입력해주세요.', function() {
+        if (textarea) textarea.focus();
+      });
       return;
     }
 
-    var saveBtn = document.querySelector('[onclick="AdminCourse.saveAllNotice(\'' + courseName + '\')"]');
-    if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = '저장 중...'; }
+    NaviComponent.showLoading('저장 중입니다...');
 
     try {
       var res = await AdminCore.apiGet('saveAllNotice', {
@@ -646,26 +647,28 @@ function downloadStudentTemplate() {
         courseName: courseName,
         noticeText: noticeText
       });
+      NaviComponent.hideLoading();
       if (res && res.success) {
-        Admin.showSaveSuccess('전체공지가 저장되었습니다.');
+        NaviComponent.showAlert('전체공지가 저장되었습니다.');
       } else {
-        alert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch(err) {
-      alert('오류: ' + err.message);
-    } finally {
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
-      }
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     }
   }
 
   // ─── 전체공지 삭제 ───────────────────────────────────────────
   async function deleteAllNotice(courseName) {
-    if (!confirm('전체공지 내용을 삭제하시겠습니까?')) return;
-    var textarea = document.getElementById('all-notice-textarea');
+    NaviComponent.showConfirmDialog('전체공지 내용을 삭제하시겠습니까?', function() {
+      _doDeleteAllNotice(courseName);
+    });
+  }
 
+  async function _doDeleteAllNotice(courseName) {
+    var textarea = document.getElementById('all-notice-textarea');
+    NaviComponent.showLoading('삭제 중입니다...');
     try {
       var res = await AdminCore.apiGet('saveAllNotice', {
         adminId:    AdminCore.state.adminId,
@@ -673,14 +676,16 @@ function downloadStudentTemplate() {
         courseName: courseName,
         noticeText: ''
       });
+      NaviComponent.hideLoading();
       if (res && res.success) {
         if (textarea) textarea.value = '';
-        Admin.showSaveSuccess('전체공지가 삭제되었습니다.');
+        NaviComponent.showAlert('전체공지가 삭제되었습니다.');
       } else {
-        alert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch(err) {
-      alert('오류: ' + err.message);
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     }
   }
 
@@ -724,8 +729,7 @@ function downloadStudentTemplate() {
   // ─── 드라이브에 파일 저장 (관리자이름 폴더) ─────────────────
   async function uploadAllNoticeToDrive() {
     if (!_state.allNoticeUploadFile) return;
-    var btn = document.getElementById('all-notice-drive-save-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '업로드 중...'; }
+    NaviComponent.showLoading('저장 중입니다...');
 
     try {
       var base64Data = await _fileToBase64(_state.allNoticeUploadFile);
@@ -739,39 +743,44 @@ function downloadStudentTemplate() {
         mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
       });
 
+      NaviComponent.hideLoading();
       if (res && res.success) {
         clearAllNoticeFile();
-        Admin.showSaveSuccess('파일이 드라이브에 저장되었습니다.');
+        NaviComponent.showAlert('파일이 드라이브에 저장되었습니다.');
         await _refreshDriveFileList();
       } else {
-        alert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch(err) {
-      alert('오류: ' + err.message);
-    } finally {
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>드라이브에 저장';
-      }
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     }
   }
 
   // ─── 드라이브 파일 삭제 ─────────────────────────────────────
   async function deleteDriveFile(fileId, fileName) {
-    if (!confirm('「' + fileName + '」 파일을 드라이브에서 삭제하시겠습니까?')) return;
+    NaviComponent.showConfirmDialog('「' + fileName + '」 파일을 드라이브에서 삭제하시겠습니까?', function() {
+      _doDeleteDriveFile(fileId, fileName);
+    });
+  }
+
+  async function _doDeleteDriveFile(fileId, fileName) {
+    NaviComponent.showLoading('삭제 중입니다...');
     try {
       var res = await AdminCore.apiGet('deleteDriveAdminFile', {
         adminId: AdminCore.state.adminId,
         fileId:  fileId
       });
+      NaviComponent.hideLoading();
       if (res && res.success) {
-        Admin.showSaveSuccess('파일이 삭제되었습니다.');
+        NaviComponent.showAlert('파일이 삭제되었습니다.');
         await _refreshDriveFileList();
       } else {
-        alert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch(err) {
-      alert('오류: ' + err.message);
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     }
   }
 
@@ -844,11 +853,12 @@ function downloadStudentTemplate() {
           a.href = res.url;
           a.download = '학생개별공지.xlsx';
           a.click();
+          NaviComponent.showAlert('다운로드가 시작되었습니다.');
         } else {
-          alert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
+          NaviComponent.showAlert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
         }
       }).catch(function(err) {
-        alert('오류: ' + err.message);
+        NaviComponent.showAlert('오류: ' + err.message);
       }).finally(function() {
         if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>학생개별공지.xlsx 다운로드'; }
       });
@@ -892,10 +902,9 @@ function downloadStudentTemplate() {
   async function uploadNoticeFile() {
     if (!_state.noticeUploadFile) return;
     var courseName = document.getElementById('course-notice-modal').dataset.course || '';
-    if (!courseName) { alert('교과목 정보가 없습니다.'); return; }
+    if (!courseName) { NaviComponent.showAlert('교과목 정보가 없습니다.'); return; }
 
-    var btn = document.getElementById('notice-upload-exec-btn');
-    if (btn) { btn.disabled = true; btn.textContent = '업로드 중...'; }
+    NaviComponent.showLoading('저장 중입니다...');
 
     try {
       var wb = await _readXlsx(_state.noticeUploadFile);
@@ -929,18 +938,18 @@ function downloadStudentTemplate() {
         rows:       JSON.stringify(rows)
       });
 
+      NaviComponent.hideLoading();
       if (res && res.success) {
         closeNoticeModal();
-        Admin.showSaveSuccess('학생 개별 공지가 업데이트되었습니다.');
-        // 학생 카드 새로고침
-        _renderCourseDetail(courseName);
+        NaviComponent.showAlert('학생 개별 공지가 업데이트되었습니다.', function() {
+          _renderCourseDetail(courseName);
+        });
       } else {
-        alert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch (err) {
-      alert('오류: ' + err.message);
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '업로드 & 저장'; }
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     }
   }
 
@@ -995,6 +1004,7 @@ function downloadStudentTemplate() {
 
   // ─── 학생 제출 파일 압축 다운로드 ────────────────────────────
   async function downloadStudentFiles(studentId, studentName, courseName) {
+    NaviComponent.showLoading('불러오는 중입니다...');
     try {
       var res = await AdminCore.apiGet('courseGetStudentFiles', {
         adminId:    AdminCore.state.adminId,
@@ -1004,7 +1014,11 @@ function downloadStudentTemplate() {
         studentName: studentName
       });
       var files = (res && res.success && res.files) ? res.files : [];
-      if (files.length === 0) { alert('다운로드할 파일이 없습니다.'); return; }
+      if (files.length === 0) {
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('다운로드할 파일이 없습니다.');
+        return;
+      }
 
       // 접두어(학번+이름+교과목)가 일치하는 파일만 필터링하여 GS에 압축 요청
       var prefix = studentId + studentName + courseName;
@@ -1013,7 +1027,11 @@ function downloadStudentTemplate() {
         var filePre = underIdx !== -1 ? f.name.substring(0, underIdx) : f.name;
         return filePre === prefix;
       });
-      if (matchedFiles.length === 0) { alert('조건에 맞는 파일이 없습니다.'); return; }
+      if (matchedFiles.length === 0) {
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('조건에 맞는 파일이 없습니다.');
+        return;
+      }
 
       var res2 = await AdminCore.apiGet('courseZipStudentFiles', {
         adminId:   AdminCore.state.adminId,
@@ -1025,16 +1043,19 @@ function downloadStudentTemplate() {
         zipName:   studentId + studentName + courseName
       });
 
+      NaviComponent.hideLoading();
       if (res2 && res2.success && res2.url) {
         var a = document.createElement('a');
         a.href = res2.url;
         a.download = studentId + studentName + courseName + '.zip';
         a.click();
+        NaviComponent.showAlert('다운로드가 시작되었습니다.');
       } else {
-        alert('압축 다운로드 오류: ' + (res2 && res2.message ? res2.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('압축 다운로드 오류: ' + (res2 && res2.message ? res2.message : '알 수 없는 오류'));
       }
     } catch(e) {
-      alert('오류: ' + e.message);
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + e.message);
     }
   }
 
@@ -1077,7 +1098,7 @@ function copyCardContent(cardKey) {
         }, 1500);
       }
     } catch(e) {
-      alert('복사 실패');
+      NaviComponent.showAlert('복사 실패');
     }
     document.body.removeChild(ta);
   });
@@ -1116,7 +1137,7 @@ function copyCardContent(cardKey) {
     var saveBtn     = document.getElementById('gibu-modal-save-btn');
 
     if (!modal) {
-      alert('생기부 작성 모달을 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
+      NaviComponent.showAlert('생기부 작성 모달을 찾을 수 없습니다. 페이지를 새로고침 해주세요.');
       return;
     }
 
@@ -1191,29 +1212,13 @@ if (leftCopyFb) {
     if (!ta) return;
 
     var newText = ta.value || '';
-    if (saveBtn) {
-      saveBtn.disabled = true;
-      saveBtn.innerHTML =
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
-        + ' style="animation:spin 0.7s linear infinite;flex-shrink:0;">'
-        + '<circle cx="12" cy="12" r="9" stroke-width="3" stroke-opacity="0.25"/>'
-        + '<path d="M12 3a9 9 0 019 9" stroke-width="3" stroke-linecap="round"/>'
-        + '</svg>저장 중...';
-    }
 
     var _success = false;
     try {
       await saveCourseTeacherNote(cardKey, studentId, courseName, newText);
       _success = true;
     } catch(e) {
-      // saveCourseTeacherNote 내부에서 alert 처리
-    }
-
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.innerHTML =
-        '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-        + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
+      // saveCourseTeacherNote 내부에서 NaviComponent 처리
     }
 
     if (_success) {
@@ -1252,6 +1257,7 @@ if (leftCopyFb) {
 
   // ─── 교사 내용 저장 (11번째 열 = 편집내용 열) ────────────────
   async function saveCourseTeacherNote(cardKey, studentId, courseName, newText) {
+    NaviComponent.showLoading('저장 중입니다...');
     try {
       var res = await AdminCore.apiGet('courseSaveTeacherNote', {
         adminId:    AdminCore.state.adminId,
@@ -1260,6 +1266,7 @@ if (leftCopyFb) {
         studentId:  studentId,
         noteText:   newText
       });
+      NaviComponent.hideLoading();
       if (res && res.success) {
         // 카드 UI 갱신
         var teacherEl = document.getElementById('course-teacher-' + cardKey);
@@ -1274,30 +1281,33 @@ if (leftCopyFb) {
             hint.style.display = newText ? '' : 'none';
           }
         }
-        if (typeof Admin !== 'undefined' && typeof Admin.showSaveSuccess === 'function') {
-          Admin.showSaveSuccess('교사 작성 내용이 저장되었습니다.');
-        }
+        NaviComponent.showAlert('교사 작성 내용이 저장되었습니다.');
       } else {
-        alert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch(e) {
-      alert('오류: ' + e.message);
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + e.message);
     }
   }
 
 // ─── 교과 삭제 ───────────────────────────────────────────────
   function confirmDeleteCourse(courseName) {
-    if (!confirm('「' + courseName + '」 교과를 삭제하시겠습니까?\n\nSH사용자 탭의 수강학생 표시 열과\nSH교과관리 탭의 해당 교과 데이터가 모두 삭제됩니다.')) return;
-    deleteCourse(courseName);
+    NaviComponent.showConfirmDialog(
+      '「' + courseName + '」 교과를 삭제하시겠습니까?\n\nSH사용자 탭의 수강학생 표시 열과\nSH교과관리 탭의 해당 교과 데이터가 모두 삭제됩니다.',
+      function() { deleteCourse(courseName); }
+    );
   }
 
   async function deleteCourse(courseName) {
+    NaviComponent.showLoading('삭제 중입니다...');
     try {
       var res = await AdminCore.apiGet('courseDelete', {
         adminId:    AdminCore.state.adminId,
         adminName:  AdminCore.state.adminName,
         courseName: courseName
       });
+      NaviComponent.hideLoading();
       if (res && res.success) {
         _state.courses = _state.courses.filter(function(c) { return c !== courseName; });
         if (_state.selectedCourse === courseName) {
@@ -1307,11 +1317,13 @@ if (leftCopyFb) {
           _showWelcome();
         }
         renderSidebar();
+        NaviComponent.showAlert('「' + courseName + '」 교과가 삭제되었습니다.');
       } else {
-        alert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        NaviComponent.showAlert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch (err) {
-      alert('오류: ' + err.message);
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     }
   }
   
