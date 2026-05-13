@@ -770,34 +770,34 @@ var ClassPage = (function () {
   // 📁 파일 삭제
   // ============================================================
   function deleteFile(fileId, idx) {
-    if (!confirm('파일을 삭제하시겠습니까?')) return;
-
-    _api('classDeleteFile', {
-      studentId:   state.studentId,
-      studentName: state.studentName,
-      fileId:      fileId
-    }, 'POST').then(function(res) {
-      if (res.success) {
-        _toast('파일이 삭제되었습니다.', 'success');
-        // DOM에서 제거
-        var el = document.getElementById('fi-' + fileId);
-        if (el) el.remove();
-        // 캐시에서 제거
-        var c   = state.courses[idx];
-        var key = c.teacher + '_' + c.course;
-        if (state.cardCache[key] && state.cardCache[key].files) {
-          state.cardCache[key].files = state.cardCache[key].files.filter(function(f){ return f.id !== fileId; });
+    NaviComponent.showConfirmDialog('파일을 삭제하시겠습니까?', function() {
+      _api('classDeleteFile', {
+        studentId:   state.studentId,
+        studentName: state.studentName,
+        fileId:      fileId
+      }, 'POST').then(function(res) {
+        if (res.success) {
+          _toast('파일이 삭제되었습니다.', 'success');
+          // DOM에서 제거
+          var el = document.getElementById('fi-' + fileId);
+          if (el) el.remove();
+          // 캐시에서 제거
+          var c   = state.courses[idx];
+          var key = c.teacher + '_' + c.course;
+          if (state.cardCache[key] && state.cardCache[key].files) {
+            state.cardCache[key].files = state.cardCache[key].files.filter(function(f){ return f.id !== fileId; });
+          }
+          // 파일 없으면 빈 메시지 표시
+          var list = document.getElementById('file-list-' + idx);
+          if (list && list.querySelectorAll('.file-item').length === 0) {
+            list.innerHTML = '<p class="file-empty">제출된 파일이 없습니다.</p>';
+          }
+        } else {
+          _toast('삭제 실패: ' + (res.message || '오류'), 'error');
         }
-        // 파일 없으면 빈 메시지 표시
-        var list = document.getElementById('file-list-' + idx);
-        if (list && list.querySelectorAll('.file-item').length === 0) {
-          list.innerHTML = '<p class="file-empty">제출된 파일이 없습니다.</p>';
-        }
-      } else {
-        _toast('삭제 실패: ' + (res.message || '오류'), 'error');
-      }
-    }).catch(function(e) {
-      _toast('삭제 오류: ' + e.message, 'error');
+      }).catch(function(e) {
+        _toast('삭제 오류: ' + e.message, 'error');
+      });
     });
   }
 
