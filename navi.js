@@ -49,8 +49,8 @@
  * ▶ google.script.run 공통 래퍼 사용법 (방법3 - 권장)
  *   NaviComponent.runScript('GAS함수명', { 파라미터 }, {
  *     loadingMessage : '저장 중입니다...',   // 생략 시 기본 메시지
- *     onSuccess      : function(result) { /* 성공 처리 */ },
- *     onFailure      : function(err)    { /* 실패 처리 (생략 시 공통 오류 모달 표시) */ }
+ *     onSuccess      : function(result) { ... },   // 성공 처리
+ *     onFailure      : function(err)    { ... }    // 실패 처리 (생략 시 공통 오류 모달 표시)
  *   });
  *   ※ hideLoading()은 성공/실패/타임아웃 모든 경우에 래퍼가 자동 호출합니다.
  *
