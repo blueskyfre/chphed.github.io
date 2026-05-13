@@ -31,16 +31,22 @@
     }
 
     /* ── 탭 메뉴 ── */
-    #course-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      padding: 16px 16px 0;
+    /* 탭 영역 전체 배경을 흰색으로 full-width sticky */
+    #course-tabs-wrapper {
       background: #fff;
       border-bottom: 2px solid var(--border);
       position: sticky;
       top: 0;
       z-index: 10;
+    }
+    #course-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 12px 16px 0;
+      max-width: 860px;
+      margin: 0 auto;
+      justify-content: center;
     }
     .tab-btn {
       padding: 8px 18px;
@@ -80,8 +86,43 @@
     }
     .card-body { padding: 20px 24px; display: flex; flex-direction: column; gap: 20px; }
 
+    /* ── 섹션 패널 (카드 내 구역 구분) ── */
+    .section-panel {
+      border-radius: 10px;
+      padding: 14px 16px;
+      border: 1.5px solid transparent;
+    }
+    /* 공지사항 패널 - 파란 계열 */
+    .section-panel--notice {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+    }
+    /* 개인별 공지 패널 - 보라 계열 */
+    .section-panel--personal {
+      background: #f5f3ff;
+      border-color: #ddd6fe;
+    }
+    /* 선생님 제공 파일 패널 - 청록 계열 */
+    .section-panel--teacher-files {
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+    /* 내용 입력 패널 - 주황 계열 */
+    .section-panel--content {
+      background: #fff7ed;
+      border-color: #fed7aa;
+    }
+    /* 파일 업로드/목록 패널 - 회색 계열 */
+    .section-panel--files {
+      background: #f8fafc;
+      border-color: #e2e8f0;
+    }
+
     /* ── 섹션 타이틀 ── */
     .section-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       font-size: 0.78rem;
       font-weight: 700;
       color: var(--primary);
@@ -321,8 +362,9 @@
       .card-body { padding: 16px; }
       .card-header { padding: 14px 16px; font-size: .95rem; }
       #card-area { padding: 14px 8px; }
-      #course-tabs { padding: 12px 8px 0; gap: 6px; }
+      #course-tabs { padding: 10px 8px 0; gap: 6px; }
       .tab-btn { padding: 7px 13px; font-size: .8rem; }
+      .section-panel { padding: 12px 12px; }
     }
   </style>
 </head>
@@ -332,9 +374,11 @@
 <div id="shared-nav"></div>
 
 <!-- 탭 메뉴 -->
-<div id="course-tabs">
-  <div id="tab-loading" style="padding:10px 0;color:var(--text-sub);font-size:.875rem;">
-    수강 과목을 불러오는 중…
+<div id="course-tabs-wrapper">
+  <div id="course-tabs">
+    <div id="tab-loading" style="padding:10px 0;color:var(--text-sub);font-size:.875rem;">
+      수강 과목을 불러오는 중…
+    </div>
   </div>
 </div>
 
@@ -574,9 +618,9 @@ var ClassPage = (function () {
 
     // ── 공지사항 섹션 ──
     var noticeHtml =
-      '<div>' +
-        '<div class="section-label">공지사항</div>' +
-        '<div class="notice-box' + (!notice ? ' notice-empty' : '') + '">' +
+      '<div class="section-panel section-panel--notice">' +
+        '<div class="section-label" style="color:#1d4ed8;">📢 공지사항</div>' +
+        '<div class="notice-box' + (!notice ? ' notice-empty' : '') + '" style="background:rgba(255,255,255,0.6);">' +
           (notice ? _escHtml(notice) : '등록된 공지사항이 없습니다.') +
         '</div>' +
       '</div>';
@@ -585,16 +629,17 @@ var ClassPage = (function () {
     var extraBtnHtml = '';
     if (extraItems.length > 0) {
       extraBtnHtml =
-        '<div>' +
-          '<button class="btn btn-outline" onclick="ClassPage.openExtraModal(' + idx + ')">' +
+        '<div class="section-panel section-panel--personal">' +
+          '<div class="section-label" style="color:#7c3aed;">🔔 개인별 공지사항</div>' +
+          '<button class="btn btn-outline" onclick="ClassPage.openExtraModal(' + idx + ')" style="border-color:#7c3aed;color:#7c3aed;" onmouseover="this.style.background=\'#f5f3ff\'" onmouseout="this.style.background=\'#fff\'">' +
             '📋 개인별 공지사항 보기' +
           '</button>' +
         '</div>';
     }
 
     // ── 교사 제공 파일 섹션 ──
-    var teacherFilesHtml = '<div>';
-    teacherFilesHtml += '<div class="section-label">선생님 제공 파일</div>';
+    var teacherFilesHtml = '<div class="section-panel section-panel--teacher-files">';
+    teacherFilesHtml += '<div class="section-label" style="color:#065f46;">📂 선생님 제공 파일</div>';
     teacherFilesHtml += '<div class="file-list">';
     if (teacherFiles.length === 0) {
       teacherFilesHtml += '<p class="file-empty">등록된 파일이 없습니다.</p>';
@@ -602,7 +647,7 @@ var ClassPage = (function () {
       teacherFiles.forEach(function(f) {
         var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + f.id;
         teacherFilesHtml +=
-          '<div class="file-item">' +
+          '<div class="file-item" style="background:rgba(255,255,255,0.7);">' +
             '<span class="file-name">📄 ' + _escHtml(f.name) + '</span>' +
             '<a href="' + downloadUrl + '" class="btn btn-outline" style="font-size:0.8rem;padding:6px 12px;text-decoration:none;">' +
               '⬇ 다운로드' +
@@ -614,16 +659,16 @@ var ClassPage = (function () {
 
     // ── 내용 입력 섹션 (저장 버튼을 레이블 옆으로 이동) ──
     var contentHtml =
-      '<div>' +
+      '<div class="section-panel section-panel--content">' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-          '<div class="section-label" style="margin-bottom:0;">내용 입력 (교과세특 · 수행평가 등)</div>' +
+          '<div class="section-label" style="margin-bottom:0;color:#c2410c;">✏️ 내용 입력 (교과세특 · 수행평가 등)</div>' +
           '<button class="btn btn-primary" id="save-btn-' + idx + '" ' +
             'onclick="ClassPage.saveContent(' + idx + ')" style="font-size:0.8rem;padding:6px 14px;">' +
             '💾 저장' +
           '</button>' +
         '</div>' +
         '<textarea class="content-input" id="content-input-' + idx + '" ' +
-          'placeholder="선생님께 제출할 내용을 입력하세요…">' +
+          'placeholder="선생님께 제출할 내용을 입력하세요…" style="background:rgba(255,255,255,0.75);">' +
           _escHtml(submitContent) +
         '</textarea>' +
       '</div>';
@@ -647,15 +692,15 @@ var ClassPage = (function () {
     fileListHtml += '</div>';
 
     var filesSection =
-      '<div>' +
-        '<div class="section-label">업로드된 파일</div>' +
+      '<div class="section-panel section-panel--files">' +
+        '<div class="section-label" style="color:#475569;">📁 업로드된 파일</div>' +
         fileListHtml +
       '</div>';
 
     // ── 파일 업로드 섹션 ──
     var uploadSection =
-      '<div>' +
-        '<div class="section-label">파일 업로드</div>' +
+      '<div class="section-panel section-panel--files">' +
+        '<div class="section-label" style="color:#475569;">⬆️ 파일 업로드</div>' +
         '<div class="upload-zone" id="upload-zone-' + idx + '" ' +
           'onclick="document.getElementById(\'file-input-' + idx + '\').click()" ' +
           'ondragover="ClassPage.onDragOver(event, ' + idx + ')" ' +
