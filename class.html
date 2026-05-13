@@ -490,10 +490,12 @@ var ClassPage = (function () {
   // 📚 수강 과목 목록 로드
   // ============================================================
   function _loadCourses() {
+    NaviComponent.showLoading('불러오는 중입니다...');
     _api('classGetCourses', {
       studentId:   state.studentId,
       studentName: state.studentName
     }).then(function(res) {
+      NaviComponent.hideLoading();
       document.getElementById('tab-loading').remove();
 
       if (!res.success || !res.data || res.data.length === 0) {
@@ -505,7 +507,8 @@ var ClassPage = (function () {
       _renderTabs();
       _selectTab(0);
     }).catch(function(e) {
-      document.getElementById('tab-loading').textContent = '과목 로드 오류: ' + e.message;
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('과목을 불러오는 중 오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
     });
   }
 
@@ -568,6 +571,7 @@ var ClassPage = (function () {
       return;
     }
 
+    NaviComponent.showLoading('불러오는 중입니다...');
     Promise.all([
       _api('classGetCardData', {
         studentId:   state.studentId,
@@ -586,6 +590,7 @@ var ClassPage = (function () {
         courseName:  c.course
       })
     ]).then(function(results) {
+      NaviComponent.hideLoading();
       var cardRes       = results[0];
       var fileRes       = results[1];
       var teacherFileRes= results[2];
@@ -597,6 +602,8 @@ var ClassPage = (function () {
       state.cardCache[key] = merged;
       _fillCard(idx, merged);
     }).catch(function(e) {
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('데이터를 불러오는 중 오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       document.getElementById('card-body-' + idx).innerHTML =
         '<p style="color:var(--danger);font-size:.875rem;">오류: ' + e.message + '</p>';
     });
@@ -737,11 +744,9 @@ var ClassPage = (function () {
   function saveContent(idx) {
     var c      = state.courses[idx];
     var ta     = document.getElementById('content-input-' + idx);
-    var btn    = document.getElementById('save-btn-' + idx);
     var content= ta ? ta.value.trim() : '';
 
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> 저장 중…';
+    NaviComponent.showLoading('저장 중입니다...');
 
     _api('classSaveContent', {
       studentId:   state.studentId,
@@ -750,34 +755,33 @@ var ClassPage = (function () {
       courseName:  c.course,
       content:     content
     }, 'POST').then(function(res) {
+      NaviComponent.hideLoading();
       if (res.success) {
-        _toast('내용이 저장되었습니다.', 'success');
         // 캐시 갱신
         var key = c.teacher + '_' + c.course;
         if (state.cardCache[key]) state.cardCache[key].submitContent = content;
+        NaviComponent.showAlert('내용이 저장되었습니다.', null, { icon: '✅' });
       } else {
-        _toast('저장 실패: ' + (res.message || '오류'), 'error');
+        NaviComponent.showAlert('저장에 실패했습니다.<br>' + (res.message || '오류'), null, { icon: '⚠️' });
       }
     }).catch(function(e) {
-      _toast('저장 오류: ' + e.message, 'error');
-    }).finally(function() {
-      btn.disabled = false;
-      btn.innerHTML = '💾 저장';
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('저장 중 오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
     });
   }
-
   // ============================================================
   // 📁 파일 삭제
   // ============================================================
   function deleteFile(fileId, idx) {
     NaviComponent.showConfirmDialog('파일을 삭제하시겠습니까?', function() {
+      NaviComponent.showLoading('삭제 중입니다...');
       _api('classDeleteFile', {
         studentId:   state.studentId,
         studentName: state.studentName,
         fileId:      fileId
       }, 'POST').then(function(res) {
+        NaviComponent.hideLoading();
         if (res.success) {
-          _toast('파일이 삭제되었습니다.', 'success');
           // DOM에서 제거
           var el = document.getElementById('fi-' + fileId);
           if (el) el.remove();
@@ -792,11 +796,13 @@ var ClassPage = (function () {
           if (list && list.querySelectorAll('.file-item').length === 0) {
             list.innerHTML = '<p class="file-empty">제출된 파일이 없습니다.</p>';
           }
+          NaviComponent.showAlert('파일이 삭제되었습니다.', null, { icon: '✅' });
         } else {
-          _toast('삭제 실패: ' + (res.message || '오류'), 'error');
+          NaviComponent.showAlert('파일 삭제에 실패했습니다.<br>' + (res.message || '오류'), null, { icon: '⚠️' });
         }
       }).catch(function(e) {
-        _toast('삭제 오류: ' + e.message, 'error');
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('삭제 중 오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       });
     });
   }
@@ -863,6 +869,7 @@ var ClassPage = (function () {
     var progText= document.getElementById('upload-progress-text-' + idx);
     var progFill= document.getElementById('progress-fill-' + idx);
 
+    NaviComponent.showLoading('저장 중입니다...');
     progWrap.style.display = '';
     progText.textContent   = '파일을 읽는 중… (' + file.name + ')';
     progFill.style.width   = '20%';
@@ -882,23 +889,27 @@ var ClassPage = (function () {
         mimeType:    file.type || 'application/octet-stream'
       }, 'POST').then(function(res) {
         progFill.style.width = '100%';
+        NaviComponent.hideLoading();
         if (res.success) {
-          _toast(res.message || '파일이 업로드되었습니다.', 'success');
           // 파일 목록 갱신 (캐시 삭제 후 카드 재렌더)
           var key = c.teacher + '_' + c.course;
           delete state.cardCache[key];
-          setTimeout(function() { _renderCard(idx); }, 500);
+          NaviComponent.showAlert(res.message || '파일이 업로드되었습니다.', function() {
+            setTimeout(function() { _renderCard(idx); }, 500);
+          }, { icon: '✅' });
         } else {
-          _toast('업로드 실패: ' + (res.message || '오류'), 'error');
+          NaviComponent.showAlert('파일 업로드에 실패했습니다.<br>' + (res.message || '오류'), null, { icon: '⚠️' });
         }
       }).catch(function(e) {
-        _toast('업로드 오류: ' + e.message, 'error');
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('업로드 중 오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }).finally(function() {
         setTimeout(function() { progWrap.style.display = 'none'; progFill.style.width = '0%'; }, 800);
       });
     };
     reader.onerror = function() {
-      _toast('파일 읽기 오류', 'error');
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('파일을 읽는 중 오류가 발생했습니다.', null, { icon: '⚠️' });
       progWrap.style.display = 'none';
     };
     reader.readAsDataURL(file);
