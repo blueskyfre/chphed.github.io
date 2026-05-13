@@ -28,6 +28,32 @@
  *   - 내용 변경 시  : NaviComponent.setDirty(true);
  *   - 저장 완료 후  : NaviComponent.setDirty(false);
  *
+ * ▶ 공통 모달 사용법 (브라우저 기본 alert/confirm 대체)
+ *   - 알림창 (확인 버튼만):
+ *       NaviComponent.showAlert('저장되었습니다.');
+ *       NaviComponent.showAlert('저장되었습니다.', function() { 확인 후 실행할 코드 });
+ *
+ *   - 확인/취소 창:
+ *       NaviComponent.showConfirmDialog('삭제하시겠습니까?',
+ *         function() { // 확인 클릭 시 },
+ *         function() { // 취소 클릭 시 (생략 가능) }
+ *       );
+ *
+ * ▶ 로딩 스피너 사용법
+ *   - NaviComponent.showLoading('저장 중입니다...');   // 메시지 지정
+ *   - NaviComponent.showLoading();                     // 기본 메시지 사용
+ *   - NaviComponent.hideLoading();                     // 스피너 종료 + 버튼 복원
+ *   ※ showLoading() 호출 시 페이지 내 모든 버튼/링크/셀렉트가 자동 비활성화됩니다.
+ *   ※ 30초 경과 시 응답이 없어도 자동으로 hideLoading()이 호출됩니다. (안전장치)
+ *
+ * ▶ google.script.run 공통 래퍼 사용법 (방법3 - 권장)
+ *   NaviComponent.runScript('GAS함수명', { 파라미터 }, {
+ *     loadingMessage : '저장 중입니다...',   // 생략 시 기본 메시지
+ *     onSuccess      : function(result) { /* 성공 처리 */ },
+ *     onFailure      : function(err)    { /* 실패 처리 (생략 시 공통 오류 모달 표시) */ }
+ *   });
+ *   ※ hideLoading()은 성공/실패/타임아웃 모든 경우에 래퍼가 자동 호출합니다.
+ *
  * ▶ 주의
  *   - 각 페이지의 기존 네임스페이스(SuselNS 등) 코드는 전혀 수정하지 않아도 됩니다.
  *   - activePage 에 해당하는 버튼은 자동으로 "현재 페이지" 스타일로 강조됩니다.
@@ -80,6 +106,12 @@ var NaviComponent = (function () {
 
   /* ── 미저장 상태 플래그 ── */
   var _isDirty = false;
+
+  /* ── 로딩 타임아웃 핸들 (안전장치용) ── */
+  var _loadingTimer = null;
+
+  /* ── 로딩 중 잠근 요소 목록 ── */
+  var _lockedElements = [];
 
   /* ── 공통 스타일 주입 (한 번만) ── */
   var _styleInjected = false;
@@ -329,6 +361,7 @@ var NaviComponent = (function () {
     });
     var fileName = PAGE_FILES[pageKey];
     if (fileName) {
+      showLoading('페이지 이동 중입니다...');
       window.location.href = _cfg.githubUrl + fileName + '?' + params.toString();
     }
   }
@@ -509,15 +542,226 @@ var NaviComponent = (function () {
     document.body.appendChild(div);
   }
 
-  function showLoading() {
+  function showLoading(message) {
     _injectSpinnerStyle();
     _ensureOverlay();
+
+    /* ── 메시지 업데이트 ── */
+    var textEl = document.querySelector('#navi-loading-overlay .navi-loading-text');
+    if (textEl) {
+      textEl.innerHTML = (message || '처리 중입니다.<br>잠시만 기다려주세요.');
+    }
+
     document.getElementById('navi-loading-overlay').classList.add('navi-loading-show');
+
+    /* ── 버튼/링크/셀렉트 전체 잠금 ── */
+    _lockedElements = [];
+    var targets = document.querySelectorAll('button, a, select, input[type="button"], input[type="submit"]');
+    for (var i = 0; i < targets.length; i++) {
+      var el = targets[i];
+      /* 원래부터 disabled였던 요소는 건드리지 않음 */
+      if (el.disabled || el.getAttribute('data-was-disabled') === 'true') {
+        el.setAttribute('data-was-disabled', 'true');
+        continue;
+      }
+      el.disabled = true;
+      el.setAttribute('data-navi-locked', 'true');
+      el.style.opacity = '0.4';
+      el.style.cursor  = 'not-allowed';
+      _lockedElements.push(el);
+    }
+
+    /* ── 30초 타임아웃 안전장치 ── */
+    if (_loadingTimer) clearTimeout(_loadingTimer);
+    _loadingTimer = setTimeout(function() {
+      hideLoading();
+      showAlert('요청 시간이 초과되었습니다.<br>다시 시도해 주세요.');
+    }, 30000);
   }
 
   function hideLoading() {
+    /* ── 타임아웃 취소 ── */
+    if (_loadingTimer) {
+      clearTimeout(_loadingTimer);
+      _loadingTimer = null;
+    }
+
+    /* ── 오버레이 숨김 ── */
     var el = document.getElementById('navi-loading-overlay');
     if (el) el.classList.remove('navi-loading-show');
+
+    /* ── 잠금 해제: showLoading이 잠근 요소만 복원 ── */
+    for (var i = 0; i < _lockedElements.length; i++) {
+      var locked = _lockedElements[i];
+      locked.disabled = false;
+      locked.removeAttribute('data-navi-locked');
+      locked.style.opacity = '';
+      locked.style.cursor  = '';
+    }
+    _lockedElements = [];
+
+    /* ── data-was-disabled 마킹 정리 ── */
+    var marked = document.querySelectorAll('[data-was-disabled="true"]');
+    for (var j = 0; j < marked.length; j++) {
+      marked[j].removeAttribute('data-was-disabled');
+    }
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     공통 모달 - showAlert (브라우저 alert 대체)
+     ════════════════════════════════════════════════════════════════ */
+  function _ensureAlertModal() {
+    _injectConfirmStyle();
+    if (document.getElementById('navi-alert-overlay')) return;
+    var div = document.createElement('div');
+    div.id = 'navi-alert-overlay';
+    div.style.cssText = [
+      'display:none',
+      'position:fixed',
+      'inset:0',
+      'background:rgba(0,0,0,0.45)',
+      'z-index:999999',
+      'align-items:center',
+      'justify-content:center'
+    ].join(';');
+    div.innerHTML = [
+      '<div class="navi-confirm-box">',
+      '  <div class="navi-confirm-icon" id="navi-alert-icon">ℹ️</div>',
+      '  <div class="navi-confirm-title" id="navi-alert-title"></div>',
+      '  <div class="navi-confirm-desc"  id="navi-alert-desc"></div>',
+      '  <div class="navi-confirm-btns">',
+      '    <button class="navi-confirm-btn-stay" id="navi-alert-ok" style="min-width:100px;">확인</button>',
+      '  </div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(div);
+  }
+
+  function showAlert(message, onOk, options) {
+    options = options || {};
+    _ensureAlertModal();
+    var overlay = document.getElementById('navi-alert-overlay');
+    var iconEl  = document.getElementById('navi-alert-icon');
+    var titleEl = document.getElementById('navi-alert-title');
+    var descEl  = document.getElementById('navi-alert-desc');
+
+    /* 아이콘/제목/설명 분리 또는 통합 */
+    if (options.title) {
+      titleEl.innerHTML = options.title;
+      descEl.innerHTML  = message || '';
+    } else {
+      titleEl.innerHTML = '';
+      descEl.innerHTML  = message || '';
+    }
+    iconEl.innerHTML = options.icon || 'ℹ️';
+
+    overlay.style.display = 'flex';
+    document.getElementById('navi-alert-ok').onclick = function() {
+      overlay.style.display = 'none';
+      if (typeof onOk === 'function') onOk();
+    };
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     공통 모달 - showConfirmDialog (브라우저 confirm 대체)
+     ════════════════════════════════════════════════════════════════ */
+  function _ensureConfirmDialogModal() {
+    _injectConfirmStyle();
+    if (document.getElementById('navi-dialog-overlay')) return;
+    var div = document.createElement('div');
+    div.id = 'navi-dialog-overlay';
+    div.style.cssText = [
+      'display:none',
+      'position:fixed',
+      'inset:0',
+      'background:rgba(0,0,0,0.45)',
+      'z-index:999999',
+      'align-items:center',
+      'justify-content:center'
+    ].join(';');
+    div.innerHTML = [
+      '<div class="navi-confirm-box">',
+      '  <div class="navi-confirm-icon" id="navi-dialog-icon">❓</div>',
+      '  <div class="navi-confirm-title" id="navi-dialog-title"></div>',
+      '  <div class="navi-confirm-desc"  id="navi-dialog-desc"></div>',
+      '  <div class="navi-confirm-btns">',
+      '    <button class="navi-confirm-btn-leave" id="navi-dialog-cancel">취소</button>',
+      '    <button class="navi-confirm-btn-stay"  id="navi-dialog-ok">확인</button>',
+      '  </div>',
+      '</div>'
+    ].join('');
+    document.body.appendChild(div);
+  }
+
+  function showConfirmDialog(message, onOk, onCancel, options) {
+    options = options || {};
+    _ensureConfirmDialogModal();
+    var overlay = document.getElementById('navi-dialog-overlay');
+    var iconEl  = document.getElementById('navi-dialog-icon');
+    var titleEl = document.getElementById('navi-dialog-title');
+    var descEl  = document.getElementById('navi-dialog-desc');
+
+    if (options.title) {
+      titleEl.innerHTML = options.title;
+      descEl.innerHTML  = message || '';
+    } else {
+      titleEl.innerHTML = '';
+      descEl.innerHTML  = message || '';
+    }
+    iconEl.innerHTML = options.icon || '❓';
+
+    /* 확인/취소 버튼 텍스트 커스터마이징 */
+    document.getElementById('navi-dialog-ok').textContent     = options.okLabel     || '확인';
+    document.getElementById('navi-dialog-cancel').textContent = options.cancelLabel || '취소';
+
+    overlay.style.display = 'flex';
+    document.getElementById('navi-dialog-ok').onclick = function() {
+      overlay.style.display = 'none';
+      if (typeof onOk === 'function') onOk();
+    };
+    document.getElementById('navi-dialog-cancel').onclick = function() {
+      overlay.style.display = 'none';
+      if (typeof onCancel === 'function') onCancel();
+    };
+  }
+
+  /* ════════════════════════════════════════════════════════════════
+     google.script.run 공통 래퍼 - runScript (방법3)
+     ════════════════════════════════════════════════════════════════ */
+  function runScript(fnName, params, options) {
+    options = options || {};
+    var loadingMsg = options.loadingMessage || '처리 중입니다...';
+    var onSuccess  = options.onSuccess  || null;
+    var onFailure  = options.onFailure  || null;
+
+    showLoading(loadingMsg);
+
+    /* google.script.run 환경이 아닐 경우 방어 */
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      hideLoading();
+      showAlert('google.script.run 환경이 아닙니다.', null, { icon: '⚠️' });
+      return;
+    }
+
+    google.script.run
+      .withSuccessHandler(function(result) {
+        hideLoading();
+        if (typeof onSuccess === 'function') onSuccess(result);
+      })
+      .withFailureHandler(function(err) {
+        hideLoading();
+        if (typeof onFailure === 'function') {
+          onFailure(err);
+        } else {
+          /* onFailure 미지정 시 공통 오류 모달 표시 */
+          showAlert(
+            '오류가 발생했습니다.<br>' + (err && err.message ? err.message : String(err)),
+            null,
+            { icon: '⚠️' }
+          );
+        }
+      })
+      [fnName](params);
   }
 
   /* ════════════════════════════════════════════════════════════════
@@ -530,9 +774,14 @@ var NaviComponent = (function () {
     _onNavClick : _onNavClick,
     _onSave     : _onSave,
     _onLogout   : _onLogout,
-    /* 로딩 스피너 */
+    /* 로딩 스피너 + 버튼 잠금 */
     showLoading : showLoading,
     hideLoading : hideLoading,
+    /* 공통 모달 (브라우저 alert/confirm 대체) */
+    showAlert         : showAlert,
+    showConfirmDialog : showConfirmDialog,
+    /* google.script.run 공통 래퍼 */
+    runScript   : runScript,
     /* 미저장 상태 관리 */
     setDirty    : function(val) { _isDirty = !!val; },
     getDirty    : function() { return _isDirty; },
