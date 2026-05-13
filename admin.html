@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>관리자 페이지</title>
   <script src="config.js"></script>
+  <script src="navi.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
     /* ── 글로벌 폰트 / 색감 ── */
@@ -569,7 +570,7 @@ var Admin = (function () {
   function _init() {
     var raw = sessionStorage.getItem('adminInfo');
     if (!raw) {
-      alert('로그인 정보가 없습니다. 로그인 페이지로 이동합니다.');
+      NaviComponent.showLoading('로그인 정보가 없습니다. 로그인 페이지로 이동합니다...');
       location.href = 'index.html';
       return;
     }
@@ -623,11 +624,13 @@ var Admin = (function () {
   // GS action: adminGetStudentList
   async function _loadStudentList() {
     _showSidebarSkeleton();
+    NaviComponent.showLoading('불러오는 중입니다...');
     try {
       var res = await AdminCore.apiGet('adminGetStudentList', {
         adminId:     AdminCore.state.adminId,
         filterClass: AdminCore.state.currentClass
       });
+      NaviComponent.hideLoading();
       if (res.success) {
         AdminCore.state.studentList = res.data;
         if (AdminCore.state.currentMenu === 'gibu_area') {
@@ -638,10 +641,13 @@ var Admin = (function () {
       } else {
         document.getElementById('student-list').innerHTML =
           '<p class="text-red-400 text-xs p-3">' + res.message + '</p>';
+        NaviComponent.showAlert(res.message || '학생 명단을 불러오지 못했습니다.', null, { icon: '⚠️' });
       }
     } catch (err) {
+      NaviComponent.hideLoading();
       document.getElementById('student-list').innerHTML =
         '<p class="text-red-400 text-xs p-3">오류: ' + err.message + '</p>';
+      NaviComponent.showAlert('학생 명단 로드 중 오류가 발생했습니다.<br>' + err.message, null, { icon: '⚠️' });
     }
   }
 
@@ -930,7 +936,7 @@ var Admin = (function () {
 
   function _openDownloadModal() {
     var menu = AdminCore.state.currentMenu;
-    if (!menu) { alert('먼저 상단 메뉴를 클릭하여 데이터를 조회하세요.'); return; }
+    if (!menu) { NaviComponent.showAlert('먼저 상단 메뉴를 클릭하여 데이터를 조회하세요.'); return; }
     if (AdminCore.state.isLoading) {
       _showInfoToast('⏳ 데이터를 로딩 중입니다. 완료되면 자동으로 다운로드합니다.');
       AdminCore.state.pendingDownload = true;
@@ -1101,8 +1107,18 @@ var Admin = (function () {
       XLSX.utils.book_append_sheet(wb, ws2, '데이터');
     }
 
-    XLSX.writeFile(wb, filename);
-    _closeDownloadModal();
+    NaviComponent.showLoading('저장 중입니다...');
+    setTimeout(function() {
+      try {
+        XLSX.writeFile(wb, filename);
+        NaviComponent.hideLoading();
+        _closeDownloadModal();
+        NaviComponent.showAlert('다운로드가 완료되었습니다.', null, { icon: '✅' });
+      } catch (e) {
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('다운로드 중 오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
+      }
+    }, 0);
   }
 
   // ─── 저장 성공 모달 ──────────────────────────────────────────
