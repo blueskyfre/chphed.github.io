@@ -357,6 +357,42 @@
     }
     .file-preview-actions { display: flex; gap: 8px; flex-shrink: 0; }
 
+    /* ── 바이트 카운터 ── */
+    .byte-counter {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text-sub);
+      white-space: nowrap;
+      margin-left: 8px;
+    }
+    .byte-counter.over-limit {
+      color: var(--danger);   /* 초과 시 빨간색으로 변경 */
+    }
+
+    /* ── 파일 용량 초과 모달 ── */
+    #file-size-modal .modal-box {
+      max-width: 400px;
+    }
+    #file-size-modal .modal-body {
+      text-align: center;
+      padding: 24px 22px;
+    }
+    .file-size-icon {
+      font-size: 2.5rem;
+      margin-bottom: 12px;
+    }
+    .file-size-msg {
+      font-size: 0.92rem;
+      color: var(--text-main);
+      line-height: 1.6;
+      margin-bottom: 18px;
+    }
+    .file-size-limit-note {
+      font-size: 0.82rem;
+      color: var(--text-sub);
+      margin-bottom: 20px;
+    }
+
     /* ── 반응형 ── */
     @media (max-width: 600px) {
       .card-body { padding: 16px; }
@@ -391,6 +427,27 @@
     </svg>
     <p style="font-size:1rem;font-weight:600;">수강 중인 과목이 없습니다.</p>
     <p style="font-size:.85rem;margin-top:6px;">담당 선생님께 문의해 주세요.</p>
+  </div>
+</div>
+
+<!-- 파일 용량 초과 모달 -->
+<div id="file-size-modal" class="modal-backdrop" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-header">
+      <span>⚠️ 파일 용량 초과</span>
+      <button class="modal-close" onclick="document.getElementById('file-size-modal').style.display='none'">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="file-size-icon">🚫</div>
+      <div class="file-size-msg" id="file-size-msg">
+        선택한 파일이 업로드 가능한 최대 용량을 초과했습니다.
+      </div>
+      <!-- ★ 파일 최대 용량 안내 문구 — 제한 변경 시 아래 숫자도 함께 수정 ★ -->
+      <div class="file-size-limit-note">업로드 가능한 최대 파일 크기: <strong>10 MB</strong></div>
+      <button class="btn btn-primary" onclick="document.getElementById('file-size-modal').style.display='none'" style="width:100%;justify-content:center;">
+        확인
+      </button>
+    </div>
   </div>
 </div>
 
@@ -667,14 +724,19 @@ var ClassPage = (function () {
     // ── 내용 입력 섹션 (저장 버튼을 레이블 옆으로 이동) ──
     var contentHtml =
       '<div class="section-panel section-panel--content">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">' +
-          '<div class="section-label" style="margin-bottom:0;color:#c2410c;">✏️ 내용 입력 (교과세특 · 수행평가 등)</div>' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:4px;">' +
+          '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">' +
+            '<div class="section-label" style="margin-bottom:0;color:#c2410c;">✏️ 내용 입력 (교과세특 · 수행평가 등)</div>' +
+            // 바이트 카운터 — 실시간으로 갱신됨 (초과 시 빨간색으로 변경)
+            '<span class="byte-counter" id="byte-counter-' + idx + '">( 0 바이트 / 1500 바이트 )</span>' +
+          '</div>' +
           '<button class="btn btn-primary" id="save-btn-' + idx + '" ' +
             'onclick="ClassPage.saveContent(' + idx + ')" style="font-size:0.8rem;padding:6px 14px;">' +
             '💾 저장' +
           '</button>' +
         '</div>' +
         '<textarea class="content-input" id="content-input-' + idx + '" ' +
+          'oninput="ClassPage.updateByteCount(' + idx + ')" ' +
           'placeholder="선생님께 제출할 내용을 입력하세요…" style="background:rgba(255,255,255,0.75);">' +
           _escHtml(submitContent) +
         '</textarea>' +
@@ -736,6 +798,73 @@ var ClassPage = (function () {
       '</div>';
 
     body.innerHTML = noticeHtml + extraBtnHtml + teacherFilesHtml + contentHtml + filesSection + uploadSection;
+
+    // 카드 렌더 직후 초기 바이트 수 계산 (기존 저장 내용이 있을 경우 반영)
+    ClassPage.updateByteCount(idx);
+  }
+
+  // ============================================================
+  // 🔢 바이트 수 실시간 계산
+  // ── 한글(가-힣, 자모, 한자 등): 1글자 = 3바이트
+  // ── 그 외 모든 문자(공백 포함): 1글자 = 1바이트
+  // ── 최대 허용 바이트: BYTE_LIMIT (아래 상수에서 변경)
+  // ============================================================
+  var BYTE_LIMIT = 1500; // ★ 바이트 제한 변경 시 이 값만 수정하면 됩니다 ★
+
+  function _calcBytes(str) {
+    var bytes = 0;
+    for (var i = 0; i < str.length; i++) {
+      var code = str.charCodeAt(i);
+      // 한글 유니코드 범위: AC00–D7A3(완성형), 1100–11FF(자모), 3130–318F(호환 자모), 4E00–9FFF(CJK 한자)
+      if (
+        (code >= 0xAC00 && code <= 0xD7A3) ||
+        (code >= 0x1100 && code <= 0x11FF) ||
+        (code >= 0x3130 && code <= 0x318F) ||
+        (code >= 0x4E00 && code <= 0x9FFF)
+      ) {
+        bytes += 3;
+      } else {
+        bytes += 1;
+      }
+    }
+    return bytes;
+  }
+
+  function updateByteCount(idx) {
+    var ta      = document.getElementById('content-input-' + idx);
+    var counter = document.getElementById('byte-counter-' + idx);
+    if (!ta || !counter) return;
+    var bytes = _calcBytes(ta.value);
+    counter.textContent = '( ' + bytes + ' 바이트 / ' + BYTE_LIMIT + ' 바이트 )';
+    // 초과 시 카운터 색상을 빨간색으로 변경
+    if (bytes > BYTE_LIMIT) {
+      counter.classList.add('over-limit');
+    } else {
+      counter.classList.remove('over-limit');
+    }
+  }
+
+  // ============================================================
+  // 📁 파일 용량 체크
+  // ── 최대 허용 업로드 파일 크기: FILE_MAX_MB (아래 상수에서 변경)
+  // ── 예) 20 MB로 변경하려면 → var FILE_MAX_MB = 20;
+  // ============================================================
+  var FILE_MAX_MB   = 10;                        // ★ 파일 최대 용량(MB) 변경 시 이 값만 수정하면 됩니다 ★
+  var FILE_MAX_BYTES = FILE_MAX_MB * 1024 * 1024; // MB → Bytes 자동 변환
+
+  function _checkFileSize(file) {
+    if (file.size > FILE_MAX_BYTES) {
+      var sizeMB   = (file.size / (1024 * 1024)).toFixed(1);
+      var msgEl    = document.getElementById('file-size-msg');
+      if (msgEl) {
+        msgEl.innerHTML =
+          '<strong>' + _escHtml(file.name) + '</strong> 파일의 크기는 <strong>' + sizeMB + ' MB</strong>입니다.<br>' +
+          FILE_MAX_MB + ' MB 이하의 파일만 업로드할 수 있습니다.';
+      }
+      document.getElementById('file-size-modal').style.display = 'flex';
+      return false; // 업로드 차단
+    }
+    return true;    // 용량 정상
   }
 
   // ============================================================
@@ -836,6 +965,8 @@ var ClassPage = (function () {
   var _pendingFiles = {};   // idx → File 객체 임시 저장
 
   function _showFilePreview(file, idx) {
+    // 파일 용량 초과 시 모달 표시 후 업로드 차단
+    if (!_checkFileSize(file)) return;
     _pendingFiles[idx] = file;
     var preview = document.getElementById('file-preview-' + idx);
     var nameEl  = document.getElementById('file-preview-name-' + idx);
@@ -968,7 +1099,8 @@ var ClassPage = (function () {
     confirmUpload:   confirmUpload,
     cancelUpload:    cancelUpload,
     openExtraModal:  openExtraModal,
-    closeExtraModal: closeExtraModal
+    closeExtraModal: closeExtraModal,
+    updateByteCount: updateByteCount   // 바이트 카운터 실시간 갱신
   };
 
 })();
