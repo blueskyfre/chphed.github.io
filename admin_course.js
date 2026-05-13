@@ -87,6 +87,7 @@ var AdminCourse = (function () {
   // ─── 개설 교과목 목록 로드 (GS action: courseGetList) ────────
   async function _loadCourses() {
     renderSidebar();
+    NaviComponent.showLoading('불러오는 중입니다...');
     try {
       var res = await AdminCore.apiGet('courseGetList', {
         adminId: AdminCore.state.adminId
@@ -99,6 +100,7 @@ var AdminCourse = (function () {
     } catch (e) {
       _state.courses = [];
     }
+    NaviComponent.hideLoading();
     renderSidebar();
     _showWelcome();
   }
@@ -224,12 +226,12 @@ var AdminCourse = (function () {
 
   // ─── 수강학생 양식 다운로드 ──────────────────────────────────
 function downloadStudentTemplate() {
-  var btn = document.querySelector('[onclick="AdminCourse.downloadStudentTemplate()"]');
-  if (btn) { btn.disabled = true; btn.textContent = '다운로드 중...'; }
+  NaviComponent.showLoading('불러오는 중입니다...');
   AdminCore.apiGet('getDriveFileUrl', {
     adminId: AdminCore.state.adminId,
     fileName: '수강학생_학번이름.xlsx'
   }).then(function(res) {
+    NaviComponent.hideLoading();
     if (res && res.success && res.url) {
       var a = document.createElement('a');
       a.href = res.url;
@@ -240,9 +242,8 @@ function downloadStudentTemplate() {
       NaviComponent.showAlert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
     }
   }).catch(function(err) {
+    NaviComponent.hideLoading();
     NaviComponent.showAlert('오류: ' + err.message);
-  }).finally(function() {
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>수강학생_학번이름.xlsx 다운로드'; }
   });
 }
 
@@ -364,8 +365,9 @@ function downloadStudentTemplate() {
     var ca = document.getElementById('content-area');
     var adminName = AdminCore.state.adminName;
 
-    // 로딩 스켈레톤
+    // 로딩 스켈레톤 + 버튼 전체 비활성화
     ca.innerHTML = '<div class="p-5"><div class="skeleton-box h-20 w-full mb-4"></div><div class="skeleton-box h-64 w-full"></div></div>';
+    NaviComponent.showLoading('불러오는 중입니다...');
 
     // 학생 목록 로드
     var students = [];
@@ -376,6 +378,8 @@ function downloadStudentTemplate() {
       });
       if (res && res.success) students = res.data || [];
     } catch (e) {}
+
+    NaviComponent.hideLoading();
 
     var escapedCourse = AdminCore.escapeHtml(courseName);
 
@@ -842,12 +846,12 @@ function downloadStudentTemplate() {
   }
 
     function downloadNoticeTmpl() {
-      var btn = document.querySelector('[onclick="AdminCourse.downloadNoticeTmpl()"]');
-      if (btn) { btn.disabled = true; btn.textContent = '다운로드 중...'; }
+      NaviComponent.showLoading('불러오는 중입니다...');
       AdminCore.apiGet('getDriveFileUrl', {
         adminId: AdminCore.state.adminId,
         fileName: '학생개별공지.xlsx'
       }).then(function(res) {
+        NaviComponent.hideLoading();
         if (res && res.success && res.url) {
           var a = document.createElement('a');
           a.href = res.url;
@@ -858,9 +862,8 @@ function downloadStudentTemplate() {
           NaviComponent.showAlert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''));
         }
       }).catch(function(err) {
+        NaviComponent.hideLoading();
         NaviComponent.showAlert('오류: ' + err.message);
-      }).finally(function() {
-        if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>학생개별공지.xlsx 다운로드'; }
       });
     }
 
