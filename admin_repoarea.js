@@ -47,6 +47,7 @@ var AdminRepoArea = (function () {
   async function loadByArea(area) {
     Admin.showContentSkeleton(8);
     AdminCore.state.isLoading = true;
+    NaviComponent.showLoading('불러오는 중입니다...');
     try {
       var res = await AdminCore.apiGet('adminGetGibuByArea', {
         adminId:     AdminCore.state.adminId,
@@ -78,6 +79,7 @@ var AdminRepoArea = (function () {
     } catch (err) {
       Admin.showError(err.message);
     } finally {
+      NaviComponent.hideLoading();
       AdminCore.state.isLoading = false;
       if (AdminCore.state.pendingDownload) {
         AdminCore.state.pendingDownload = false;
