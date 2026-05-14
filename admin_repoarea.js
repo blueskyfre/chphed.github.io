@@ -1,512 +1,141 @@
 // ============================================================
-// AdminCourse 네임스페이스 (IIFE)
-// 역할: 교과관리 메뉴 — 교과개설, 교과목 클릭, 학생 공지, 학생 카드 표시
-// 의존: AdminCore (공유 상태·API), XLSX 라이브러리
+// AdminRepoArea 네임스페이스
+// 역할: '생기부(영역별)' 메뉴의 렌더링 + 생기부 작성 모달 공통 로직
+//       (모달은 개인별/영역별 양쪽에서 사용하므로 이 파일에서 관리)
+// 의존: AdminCore (admin_core.js 가 먼저 로드되어야 함)
+// GS action: adminGetGibuByArea, adminSaveTeacherGibu
 // ============================================================
-var AdminCourse = (function () {
+var AdminRepoArea = (function () {
 
-  // ─── 모듈 내부 상태 ──────────────────────────────────────────
-  var _state = {
-    courses: [],            // 현재 관리자의 개설 교과목 목록
-    selectedCourse: null,   // 현재 선택된 교과목 이름
-    pendingSaveFile: null,  // 업로드 대기 중인 학생명단 File 객체
-    pendingSaveFileName: '',// 파일명 표시용
-    noticeUploadFile: null, // 학생개별공지 업로드 File
-    driveRootFolderId: '',  // 구글드라이브 관리자 폴더 ID (캐시)
-    allNoticeText: '',      // 전체공지 글상자 텍스트
-    allNoticeUploadFile: null,   // 전체공지 드라이브 업로드 File 객체
-    allNoticeUploadFileName: '', // 전체공지 드라이브 업로드 파일명
-    driveFiles: [],         // 관리자 폴더 내 파일 목록
+  // ─── 생기부 작성 모달 내부 상태 ─────────────────────────────
+  var _modalState = {
+    areaKey:      '',
+    studentId:    '',
+    area:         '',
+    limit:        0,
+    originalText: '',
+    savedText:    '',
+    scrollY:      0,
+    isSaving:     false
   };
 
-  // ─── 열 인덱스 → 문자 변환 (0-based) ────────────────────────
-  function _colLetter(idx) {
-    var letter = '';
-    idx = idx + 1;
-    while (idx > 0) {
-      var mod = (idx - 1) % 26;
-      letter = String.fromCharCode(65 + mod) + letter;
-      idx = Math.floor((idx - 1) / 26);
-    }
-    return letter;
-  }
+  // ════════════════════════════════════════════════════════════
+  //  영역별 생기부
+  // ════════════════════════════════════════════════════════════
 
-  // ─── 사이드바 렌더링 ─────────────────────────────────────────
-  function renderSidebar() {
-  var ul = document.getElementById('student-list');
-  if (!ul) return;
-
-  var html = '';
-
-  html += '<div class="px-2 pt-3 pb-2">'
-        + '<button onclick="AdminCourse.showOpenCourseForm()"'
-        + ' class="course-open-btn w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl'
-        + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-sm'
-        + ' shadow-md hover:from-indigo-700 hover:to-indigo-600 transition-all active:scale-95">'
-        + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-        + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>'
-        + '</svg>교과개설</button></div>';
-
-  if (_state.courses.length > 0) {
-    html += '<div class="mx-3 my-1 border-t border-gray-100"></div>'
-          + '<p class="px-4 py-1 text-xs font-bold text-gray-400 uppercase tracking-widest">개설 교과목</p>';
-  }
-
-  _state.courses.forEach(function (course) {
-    var isActive = _state.selectedCourse === course;
-    var escapedCourse = AdminCore.escapeHtml(course);
-    html += '<div class="px-2 py-0.5 flex items-center gap-1">'
-          + '<button onclick="AdminCourse.selectCourse(\'' + escapedCourse + '\')"'
-          + ' class="flex-1 text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all'
-          + (isActive
-              ? ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md'
-              : ' text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 border border-transparent hover:border-indigo-100') + '">'
-          + '<svg class="w-4 h-4 shrink-0 ' + (isActive ? 'text-indigo-200' : 'text-indigo-400') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-          + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'
-          + '</svg>'
-          + '<span class="truncate">' + escapedCourse + '</span>'
-          + '</button>'
-          + '<button onclick="AdminCourse.confirmDeleteCourse(\'' + escapedCourse + '\')"'
-          + ' title="교과 삭제"'
-          + ' class="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all">'
-          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
-          + '</button>'
-          + '</div>';
-  });
-
-  ul.innerHTML = html;
-}
-
-  // ─── 초기 진입: 교과관리 메뉴 활성화 ────────────────────────
-  function init() {
-    document.getElementById('sidebar-title').textContent = '교과관리';
-    _state.selectedCourse = null;
-    _loadCourses();
-  }
-
-  // ─── 개설 교과목 목록 로드 (GS action: courseGetList) ────────
-  async function _loadCourses() {
-    renderSidebar();
-    try {
-      var res = await AdminCore.apiGet('courseGetList', {
-        adminId: AdminCore.state.adminId
+  // ─── 사이드바 영역 버튼 렌더링 ──────────────────────────────
+  function renderAreaButtons() {
+    var areas = ['자율활동', '동아리활동', '진로활동', '개인별세특', '행동발달'];
+    var ul = document.getElementById('student-list');
+    ul.innerHTML = '';
+    areas.forEach(function (area) {
+      var btn = document.createElement('button');
+      btn.className = 'area-btn w-full text-left px-4 py-3 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-blue-50 transition-colors';
+      btn.textContent = area;
+      btn.addEventListener('click', function () {
+        document.querySelectorAll('.area-btn').forEach(function (b) { b.classList.remove('active'); });
+        btn.classList.add('active');
+        AdminCore.state.currentArea = area;
+        loadByArea(area);
       });
-      if (res && res.success) {
-        _state.courses = res.data || [];
-      } else {
-        _state.courses = [];
-      }
-    } catch (e) {
-      _state.courses = [];
-    }
-    renderSidebar();
-    _showWelcome();
-  }
-
-  // ─── 환영/안내 메시지 ────────────────────────────────────────
-  function _showWelcome() {
-    var ca = document.getElementById('content-area');
-    if (!ca) return;
-    ca.innerHTML =
-      '<div class="flex flex-col items-center justify-center h-72 gap-4 px-6">'
-      + '<div class="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-200 flex items-center justify-center shadow-sm">'
-      + '<svg class="w-8 h-8 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-      + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'
-      + '</svg></div>'
-      + '<p class="text-center text-sm font-medium text-indigo-700 bg-indigo-50 border border-indigo-200 rounded-xl px-5 py-3 shadow-sm max-w-sm leading-relaxed">'
-      + '교과를 개설하면, 개설한 교과의 수행평가 양식 제공이나 파일 수합, 성적 공지 등이 가능합니다.<br>'
-      + '좌측에 있는 <strong>교과개설</strong>을 이용하여 관리할 교과를 생성하거나 생성된 교과를 클릭하세요.'
-      + '</p></div>';
-  }
-
-  // ─── 1. 교과개설 폼 표시 ─────────────────────────────────────
-  function showOpenCourseForm() {
-    _state.selectedCourse = null;
-    _state.pendingSaveFile = null;
-    _state.pendingSaveFileName = '';
-    renderSidebar();
-
-    var ca = document.getElementById('content-area');
-    ca.innerHTML =
-      '<div class="p-5 max-w-2xl mx-auto">'
-
-      // 제목 카드
-      + '<div class="flex items-center gap-3 mb-6">'
-      + '<div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow">'
-      + '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/></svg>'
-      + '</div><h2 class="text-xl font-bold text-gray-800">교과 개설</h2></div>'
-
-      // 교과목명 입력
-      + '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">'
-      + '<label class="block text-sm font-bold text-gray-700 mb-2">교과목명</label>'
-      + '<input id="course-name-input" type="text" placeholder="예: 국어, 수학, 영어..."'
-      + ' class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"/>'
-      + '</div>'
-
-      // 수강학생 명단 업로드
-      + '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">'
-      + '<label class="block text-sm font-bold text-gray-700 mb-1">수강학생 명단 업로드</label>'
-      + '<p class="text-xs text-gray-500 mb-3">수강학생을 <span class="font-semibold text-indigo-600">수강학생명단</span> 파일에 입력한 후 업로드해주세요.</p>'
-
-      // 양식 다운로드 버튼
-      + '<button onclick="AdminCourse.downloadStudentTemplate()"'
-      + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold mb-4'
-      + ' bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow hover:from-emerald-600 hover:to-emerald-700 transition-all">'
-      + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
-      + '수강학생_학번이름.xlsx 다운로드</button>'
-
-      // 파일 업로드 영역
-      + '<div id="course-upload-zone"'
-      + ' class="border-2 border-dashed border-indigo-200 rounded-xl p-6 text-center bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer"'
-      + ' onclick="document.getElementById(\'course-file-input\').click()"'
-      + ' ondragover="event.preventDefault()" ondrop="AdminCourse.handleFileDrop(event)">'
-      + '<svg class="w-8 h-8 text-indigo-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
-      + '<p class="text-sm text-indigo-500 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
-      + '<p class="text-xs text-gray-400 mt-1">.xlsx 형식</p>'
-      + '</div>'
-      + '<input id="course-file-input" type="file" accept=".xlsx,.xls" class="hidden" onchange="AdminCourse.handleFileSelect(event)"/>'
-
-      // 선택된 파일 표시
-      + '<div id="course-file-selected" class="hidden mt-3 flex items-center gap-3 bg-indigo-50 rounded-xl px-4 py-3">'
-      + '<svg class="w-5 h-5 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
-      + '<span id="course-file-name" class="text-sm font-semibold text-indigo-700 flex-1 truncate"></span>'
-      + '<button onclick="AdminCourse.clearFile()" class="text-gray-400 hover:text-gray-600 transition-colors text-xs">✕ 취소</button>'
-      + '</div>'
-      + '</div>'
-
-      // 저장 버튼
-      + '<div id="course-save-btn-wrap" class="hidden">'
-      + '<button onclick="AdminCourse.saveCourse()"'
-      + ' class="w-full py-3 rounded-xl text-sm font-bold text-white'
-      + ' bg-gradient-to-r from-indigo-600 to-indigo-500 shadow-md hover:from-indigo-700 hover:to-indigo-600 transition-all flex items-center justify-center gap-2">'
-      + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
-      + '저장 (교과 개설)</button></div>'
-
-      + '</div>';
-  }
-
-  // ─── 파일 선택 핸들러 ────────────────────────────────────────
-  function handleFileSelect(e) {
-    var file = e.target.files && e.target.files[0];
-    _applyFile(file);
-  }
-
-  function handleFileDrop(e) {
-    e.preventDefault();
-    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    _applyFile(file);
-  }
-
-  function _applyFile(file) {
-    if (!file) return;
-    _state.pendingSaveFile = file;
-    _state.pendingSaveFileName = file.name;
-    var nameEl = document.getElementById('course-file-name');
-    var selEl  = document.getElementById('course-file-selected');
-    var btnWrap = document.getElementById('course-save-btn-wrap');
-    if (nameEl) nameEl.textContent = file.name;
-    if (selEl)  selEl.classList.remove('hidden');
-    if (btnWrap) btnWrap.classList.remove('hidden');
-  }
-
-  function clearFile() {
-    _state.pendingSaveFile = null;
-    _state.pendingSaveFileName = '';
-    var nameEl = document.getElementById('course-file-name');
-    var selEl  = document.getElementById('course-file-selected');
-    var btnWrap = document.getElementById('course-save-btn-wrap');
-    var fileInput = document.getElementById('course-file-input');
-    if (nameEl) nameEl.textContent = '';
-    if (selEl)  selEl.classList.add('hidden');
-    if (btnWrap) btnWrap.classList.add('hidden');
-    if (fileInput) fileInput.value = '';
-  }
-
-  // ─── 수강학생 양식 다운로드 ──────────────────────────────────
-function downloadStudentTemplate() {
-  var btn = document.querySelector('[onclick="AdminCourse.downloadStudentTemplate()"]');
-  NaviComponent.lockButtons();
-  NaviComponent.showLoadingMsg('불러오는 중입니다...');
-  AdminCore.apiGet('getDriveFileUrl', {
-    adminId: AdminCore.state.adminId,
-    fileName: '수강학생_학번이름.xlsx'
-  }).then(function(res) {
-    if (res && res.success && res.url) {
-      var a = document.createElement('a');
-      a.href = res.url;
-      a.download = '수강학생_학번이름.xlsx';
-      a.click();
-      NaviComponent.hideLoadingWithMsg('다운로드가 시작되었습니다.');
-    } else {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''), { icon: '❌' });
-    }
-  }).catch(function(err) {
-    NaviComponent.hideLoading();
-    NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-  }).finally(function() {
-    NaviComponent.unlockButtons();
-    if (btn) { btn.disabled = false; btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>수강학생_학번이름.xlsx 다운로드'; }
-  });
-}
-
-  
-
-  // ─── 교과 저장 (GS + 스프레드시트 조작) ─────────────────────
-  async function saveCourse() {
-    var nameInput = document.getElementById('course-name-input');
-    var courseName = nameInput ? nameInput.value.trim() : '';
-    if (!courseName) {
-      NaviComponent.showAlert('교과목명을 입력해주세요.', { icon: '❌' });
-      nameInput && nameInput.focus();
-      return;
-    }
-    if (!_state.pendingSaveFile) {
-      NaviComponent.showAlert('수강학생 명단 파일을 업로드해주세요.', { icon: '❌' });
-      return;
-    }
-
-    var adminName = AdminCore.state.adminName;
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('저장 중입니다...');
-
-    try {
-      // 엑셀 파일 파싱
-      var wb = await _readXlsx(_state.pendingSaveFile);
-      var sheet = wb.Sheets[wb.SheetNames[0]];
-      var data  = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-      // 헤더 행 찾기 (학번, 이름)
-      var headerRowIdx = -1;
-      var sidColIdx = -1, nameColIdx = -1;
-      for (var ri = 0; ri < Math.min(data.length, 5); ri++) {
-        var row = data[ri];
-        for (var ci = 0; ci < row.length; ci++) {
-          var val = String(row[ci] || '').trim();
-          if (val === '학번') sidColIdx = ci;
-          if (val === '이름') nameColIdx = ci;
-        }
-        if (sidColIdx !== -1 && nameColIdx !== -1) { headerRowIdx = ri; break; }
-      }
-
-      // 학생 목록 추출
-      var students = [];
-      if (headerRowIdx !== -1) {
-        for (var di = headerRowIdx + 1; di < data.length; di++) {
-          var row = data[di];
-          var sid  = String(row[sidColIdx]  || '').trim();
-          var sname= String(row[nameColIdx] || '').trim();
-          if (sid && sname) students.push({ studentId: sid, name: sname });
-        }
-      }
-
-      // GS 서버에 저장 요청
-      var res = await AdminCore.apiGet('courseSave', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  adminName,
-        courseName: courseName,
-        students:   JSON.stringify(students)
-      });
-
-      if (res && res.success) {
-        // 교과목 목록 갱신
-        if (_state.courses.indexOf(courseName) === -1) {
-          _state.courses.push(courseName);
-        }
-        renderSidebar();
-        NaviComponent.hideLoadingWithMsg('교과 개설이 완료되었습니다.', function() {
-          _showSaveSuccess(courseName);
-        });
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('저장 중 오류가 발생했습니다: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch (err) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-  function _showSaveSuccess(courseName) {
-    var ca = document.getElementById('content-area');
-    ca.innerHTML =
-      '<div class="flex flex-col items-center justify-center h-64 gap-4">'
-      + '<div class="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center ring-4 ring-emerald-100">'
-      + '<svg class="w-9 h-9 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>'
-      + '</div>'
-      + '<p class="text-lg font-bold text-gray-800">교과 개설 완료!</p>'
-      + '<p class="text-sm text-gray-500"><span class="font-bold text-indigo-600">' + AdminCore.escapeHtml(courseName) + '</span> 교과가 개설되었습니다.</p>'
-      + '<button onclick="AdminCourse.selectCourse(\'' + AdminCore.escapeHtml(courseName) + '\')"'
-      + ' class="mt-2 px-6 py-2.5 rounded-xl text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow">'
-      + '개설된 교과 보기</button>'
-      + '</div>';
-  }
-
-  // ─── XLSX 파일 읽기 (Promise) ────────────────────────────────
-  function _readXlsx(file) {
-    return new Promise(function (resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function (e) {
-        try {
-          var wb = XLSX.read(e.target.result, { type: 'binary' });
-          resolve(wb);
-        } catch (err) { reject(err); }
-      };
-      reader.onerror = function () { reject(new Error('파일 읽기 실패')); };
-      reader.readAsBinaryString(file);
+      ul.appendChild(btn);
     });
   }
 
-  // ─── 3. 개설 교과목 선택 ─────────────────────────────────────
-  function selectCourse(courseName) {
-    _state.selectedCourse = courseName;
-    renderSidebar();
-    _renderCourseDetail(courseName);
+  // ─── 영역별 생기부 데이터 로드 ──────────────────────────────
+  // GS action: adminGetGibuByArea
+  async function loadByArea(area) {
+    Admin.showContentSkeleton(8);
+    AdminCore.state.isLoading = true;
+    try {
+      var res = await AdminCore.apiGet('adminGetGibuByArea', {
+        adminId:     AdminCore.state.adminId,
+        filterClass: AdminCore.state.currentClass,
+        adminAuth:   AdminCore.state.adminAuth,
+        adminClass:  AdminCore.state.adminClass,
+        area:        area
+      });
+      if (res.success) {
+        // studentList 전체 기준으로 데이터 없는 학생도 빈 row 로 합성
+        var dataMap = {};
+        (res.data || []).forEach(function (r) { dataMap[r.studentId] = r; });
+        var allRows = AdminCore.state.studentList.map(function (s) {
+          return dataMap[s.studentId] || {
+            studentClass:  s.studentClass,
+            studentId:     s.studentId,
+            name:          s.name,
+            area:          area,
+            content:       '',
+            bytes:         '',
+            editedContent: '',
+            editedBytes:   ''
+          };
+        });
+        renderArea(allRows, area);
+      } else {
+        Admin.showError(res.message);
+      }
+    } catch (err) {
+      Admin.showError(err.message);
+    } finally {
+      AdminCore.state.isLoading = false;
+      if (AdminCore.state.pendingDownload) {
+        AdminCore.state.pendingDownload = false;
+        Admin.openDownloadModal();
+      }
+    }
   }
 
-  async function _renderCourseDetail(courseName) {
-    var ca = document.getElementById('content-area');
-    var adminName = AdminCore.state.adminName;
+  // ─── 영역별 생기부 렌더링 ────────────────────────────────────
+  function renderArea(rows, area) {
+    if (!rows || rows.length === 0) {
+      Admin.clearContent('<p class="text-gray-400 text-center mt-20">' + area + ' 데이터가 없습니다.</p>');
+      return;
+    }
+    var html = '<div class="p-4">'
+             + '<div class="gibu-page-banner">'
+             + '<div class="gibu-page-banner-icon">'
+             + '<svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>'
+             + '</div><div>'
+             + '<div class="gibu-page-banner-title">' + area + ' 영역별 생기부 내용</div>'
+             + '<div class="gibu-page-banner-sub">전체 ' + rows.length + '명</div>'
+             + '</div></div>';
 
-    // 로딩 스켈레톤
-    ca.innerHTML = '<div class="p-5"><div class="skeleton-box h-20 w-full mb-4"></div><div class="skeleton-box h-64 w-full"></div></div>';
+    rows.forEach(function (row, _idx) {
+      var limit        = AdminCore.BYTE_LIMIT[row.area] || 1500;
+      var areaKey      = 'a_' + _idx;
+      var editedContent = row.editedContent || '';
+      var editedBytes  = (row.editedBytes !== undefined && row.editedBytes !== '' && row.editedBytes !== null)
+                         ? row.editedBytes : AdminCore.calcBytes(editedContent);
+      var sidAttr      = AdminCore.escapeHtml(row.studentId);
+      var areaAttr     = AdminCore.escapeHtml(row.area || area);
+      var hasContent   = !!(row.content);
+      var hasNoData    = !row.content && !editedContent;
 
-    // 학생 목록 로드
-    var students = [];
-    try {
-      var res = await AdminCore.apiGet('courseGetStudents', {
-        adminId:    AdminCore.state.adminId,
-        courseName: courseName
-      });
-      if (res && res.success) students = res.data || [];
-    } catch (e) {}
+      html += '<div class="gibu-student-block">'
+            + '<div class="gibu-student-header">'
+            + '<span class="gibu-student-class">' + row.studentClass + '반</span>'
+            + '<span class="gibu-student-id">'    + row.studentId    + '</span>'
+            + '<span class="gibu-student-name">'  + row.name         + '</span>'
+            + '</div>'
+            + '<div class="gibu-student-body">';
 
-    var escapedCourse = AdminCore.escapeHtml(courseName);
-
-    var html = '<div class="p-4 sm:p-5 max-w-4xl mx-auto">';
-
-    // ── 상단 카드: 학생개별공지 + 전체공지 + 드라이브 파일목록 + 파일업로드 ──
-    html += '<div class="bg-white rounded-2xl shadow-sm border border-indigo-100 p-4 mb-4">'
-
-          // ① 학생개별공지 박스
-          + '<div class="border border-indigo-200 rounded-xl bg-indigo-50 px-3 py-2.5 mb-3 flex flex-col sm:flex-row sm:items-center gap-3">'
-          + '<button onclick="AdminCourse.openNoticeModal(\'' + escapedCourse + '\')"'
-          + ' class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold'
-          + ' bg-indigo-600 text-white shadow-sm hover:bg-indigo-700 transition-all shrink-0">' 
-          + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>'
-          + escapedCourse + ' 학생개별공지</button>'
-          + '<p class="text-sm font-medium text-indigo-900">성적 등 학생 개인별로 공지할 내용을 엑셀로 업로드할 수 있습니다.</p>' 
-          + '</div>'
-
-          // ② 전체공지 박스
-          + '<div class="border border-indigo-200 rounded-xl bg-indigo-50 px-3 py-2.5 mb-3">'
-          + '<p class="text-xs font-bold text-indigo-700 mb-2 flex items-center gap-1.5">'
-          + '<svg class="w-3.5 h-3.5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z"/></svg>'
-          + '전체공지</p>'
-          + '<div class="flex gap-2 items-start">'
-          + '<textarea id="all-notice-textarea" rows="2"'
-          + ' placeholder="수업 대상자 전체에게 보내는 공지사항"'
-          + ' class="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all resize-none bg-white"></textarea>'
-          + '<div class="flex flex-col gap-1.5 shrink-0">'
-          + '<button onclick="AdminCourse.saveAllNotice(\'' + escapedCourse + '\')"'
-          + ' class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold'
-          + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow hover:from-indigo-700 hover:to-indigo-600 transition-all">'
-          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>'
-          + '저장</button>'
-          + '<button onclick="AdminCourse.deleteAllNotice(\'' + escapedCourse + '\')"'
-          + ' class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold'
-          + ' bg-gradient-to-r from-red-500 to-red-400 text-white shadow hover:from-red-600 hover:to-red-500 transition-all">'
-          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
-          + '삭제</button>'
-          + '</div>'
-          + '</div>'
-          + '</div>'
-
-          // ③ 드라이브 폴더 파일 목록 박스
-          + '<div class="border border-gray-200 rounded-xl bg-gray-50 px-3 py-2.5 mb-3">'
-          + '<p class="text-xs font-bold text-gray-600 mb-2 flex items-center gap-1.5">'
-          + '<svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>'
-          + '드라이브 폴더 파일 목록</p>'
-          + '<div id="all-notice-drive-files">'
-          + '<p class="text-xs text-gray-400 italic">드라이브 폴더 파일 목록을 불러오는 중...</p>'
-          + '</div>'
-          + '</div>'
-
-          // ④ 드라이브 파일 업로드 박스
-          + '<div id="all-notice-file-section" class="border border-emerald-200 rounded-xl bg-emerald-50 px-3 py-2.5">'
-          + '<p class="text-xs font-bold text-emerald-700 mb-2 flex items-center gap-1.5">'
-          + '<svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
-          + '드라이브에 파일 업로드</p>'
-          + '<div id="all-notice-drive-file-list-wrap" class="mb-2 hidden">'
-          + '<p class="text-xs font-bold text-gray-400 mb-1">관리자 폴더 내 파일:</p>'
-          + '<ul id="all-notice-drive-file-list" class="text-xs text-gray-600 space-y-1 pl-2"></ul>'
-          + '</div>'
-          + '<div id="all-notice-upload-zone"'
-          + ' class="border-2 border-dashed border-emerald-300 rounded-lg p-3 text-center bg-white hover:bg-emerald-50 transition-colors cursor-pointer mb-2"'
-          + ' onclick="document.getElementById(\'all-notice-file-input\').click()"'
-          + ' ondragover="event.preventDefault()" ondrop="AdminCourse.handleAllNoticeFileDrop(event)">'
-          + '<svg class="w-5 h-5 text-emerald-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
-          + '<p class="text-xs text-emerald-600 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
-          + '</div>'
-          + '<input id="all-notice-file-input" type="file" class="hidden" onchange="AdminCourse.handleAllNoticeFileSelect(event)"/>'
-          + '<div id="all-notice-file-selected" class="hidden flex items-center gap-2 bg-white border border-emerald-200 rounded-lg px-3 py-1.5 mb-2">'
-          + '<svg class="w-4 h-4 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
-          + '<span id="all-notice-file-name" class="text-xs font-semibold text-emerald-700 flex-1 truncate"></span>'
-          + '<button onclick="AdminCourse.clearAllNoticeFile()" class="text-gray-400 hover:text-gray-600 transition-colors text-xs">✕ 취소</button>'
-          + '</div>'
-          + '<button id="all-notice-drive-save-btn" onclick="AdminCourse.uploadAllNoticeToDrive()"'
-          + ' class="hidden inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold'
-          + ' bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow hover:from-emerald-600 hover:to-emerald-700 transition-all">'
-          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
-          + '드라이브에 저장</button>'
-          + '</div>'
-
-          + '</div>';
-
-    // ── 교과목 제목 ──
-    html += '<div class="flex items-center gap-3 mb-4">'
-          + '<div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow">'
-          + '<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>'
-          + '</div>'
-          + '<h3 class="text-base font-bold text-gray-800">수강 학생 목록 <span class="text-indigo-600">(' + students.length + '명)</span></h3>'
-          + '</div>';
-
-    // ── 학생 카드 목록 (개인별 상세 카드) ──
-    if (students.length === 0) {
-      html += '<div class="text-center text-gray-400 text-sm py-16">수강 학생 데이터가 없습니다.</div>';
-    } else {
-      students.forEach(function (s) {
-        var sid   = s.studentId || '';
-        var sname = s.name || '';
-        var submitContent = s.submitContent || '';
-        var teacherNote   = s.teacherNote  || '';
-
-        // 카드 고유 키 (areaKey 방식과 동일)
-        var cardKey = 'c_' + encodeURIComponent(sid).replace(/%/g, '_');
-        var sidAttr  = AdminCore.escapeHtml(sid);
-        var courseAttr = AdminCore.escapeHtml(courseName);
-
-        html += '<div class="gibu-area-block">'
-
-              // ── 카드 배너 (학번 + 이름) ──
-              + '<div class="gibu-page-banner">'
-              + '<div class="gibu-page-banner-icon">'
-              + '<svg width="22" height="22" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>'
-              + '</div><div>'
-              + '<div class="gibu-page-banner-title">' + AdminCore.escapeHtml(sid) + ' ' + AdminCore.escapeHtml(sname) + '</div>'
-              + '<div class="gibu-page-banner-sub">' + AdminCore.escapeHtml(courseName) + ' 교과 학습 기록</div>'
-              + '</div></div>'
-
-              + '<div class="gibu-area-body">'
-
-              // ── ① 학생 제출 내용 카드 ──
-              + '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
+      if (hasNoData) {
+        // 데이터 없는 학생: 얇은 안내 박스
+        html += '<div id="gibu-nodata-' + areaKey + '" class="border border-dashed border-gray-300 rounded-lg p-3 flex items-center justify-between gap-3" style="background:#f8fafc;">'
+              + '<span style="font-size:0.82rem;color:#94a3b8;font-weight:500;">입력된 내용이 없음</span>'
+              + '<button type="button" class="gibu-write-btn" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
+              + '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+              + '생기부 내용 입력</button>'
+              + '</div>';
+      } else {
+        // 학생 제출 내용 카드
+        html += '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
               + '<div class="gibu-card-toolbar mb-2">'
               + '<span class="gibu-label">📄 학생 제출 내용</span>'
-              + '<span id="copy-feedback-' + cardKey + '" class="gibu-spacer"></span>'
-              + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="AdminCourse.copyCardContent(\'' + cardKey + '\')">'
+              + (row.bytes !== undefined && row.bytes !== '' ? '<span class="gibu-bytes-info">(' + row.bytes + '바이트 / ' + limit + '바이트)</span>' : '<span class="gibu-bytes-info"></span>')
+              + '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
+              + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
               + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
               + '내용 복사</button>'
               + '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
@@ -514,903 +143,307 @@ function downloadStudentTemplate() {
               + '<span>펼치기</span></button>'
               + '</div>'
               + '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
-              + '<div id="course-submit-' + cardKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-raw="' + AdminCore.escapeHtml(submitContent) + '">'
-              + (submitContent ? AdminCore.escapeHtml(submitContent) : '<span class="text-gray-400 italic">학생이 제출한 내용이 없음</span>')
+              + '<div id="gibu-original-' + areaKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-raw="' + AdminCore.escapeHtml(row.content || '') + '">'
+              + (hasContent ? AdminCore.escapeHtml(row.content) : '<span class="text-gray-400 italic">내용 없음</span>')
               + '</div>'
-              + (submitContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
+              + (hasContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
               + '</div></div>'
 
-              // ── ② 학생 제출 파일 카드 ──
-              + '<div class="bg-white border border-indigo-200 rounded-lg p-3 mb-3">'
-              + '<div class="gibu-card-toolbar mb-2">'
-              + '<span class="gibu-label">📁 학생 제출 파일</span>'
-              + '<button type="button" id="course-dl-btn-' + cardKey + '" class="gibu-copy-btn" style="margin-left:4px;" onclick="AdminCourse.downloadStudentFiles(\'' + sidAttr + '\',\'' + AdminCore.escapeHtml(sname) + '\',\'' + courseAttr + '\')" disabled>'
-              + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
-              + '압축 다운로드</button>'
-              + '</div>'
-              + '<div id="course-files-' + cardKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-400 italic">파일 목록 로딩 중...</div>'
-              + '</div>'
-
-              // ── ③ 교사 작성 내용 카드 ──
+              // 교사 작성 내용 카드
               + '<div class="bg-white border border-blue-200 rounded-lg p-3">'
               + '<div class="gibu-card-toolbar mb-2">'
               + '<span class="gibu-label">✏️ 교사 작성 내용</span>'
-              + '<span id="copy-feedback-edit-' + cardKey + '" class="gibu-spacer"></span>'
-              + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="AdminCourse.copyCardEdit(\'' + cardKey + '\')">'
+              + '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + editedBytes + '바이트 / ' + limit + '바이트)</span>'
+              + '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+              + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
               + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
               + '편집 복사</button>'
-              + '<button type="button" class="gibu-write-btn" style="margin-left:4px;" onclick="AdminCourse.openCourseWriteModal(\'' + cardKey + '\',\'' + sidAttr + '\',\'' + AdminCore.escapeHtml(sname) + '\',\'' + courseAttr + '\')">'
+              + '<button type="button" class="gibu-write-btn" style="margin-left:4px;" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr + '\', \'' + areaAttr + '\', ' + limit + ')">'
               + '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
-              + '교사 내용 작성</button>'
+              + '생기부 작성</button>'
               + '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
               + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
               + '<span>펼치기</span></button>'
               + '</div>'
               + '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
-              + '<div id="course-teacher-' + cardKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-iseditor="1" data-raw-edit="' + AdminCore.escapeHtml(teacherNote) + '">'
-              + (teacherNote ? AdminCore.escapeHtml(teacherNote) : '<span class="text-gray-400 italic">편집 내용 없음</span>')
+              + '<div class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-iseditor="1" data-raw-edit="' + AdminCore.escapeHtml(editedContent) + '">'
+              + (AdminCore.escapeHtml(editedContent) || '<span class="text-gray-400 italic">편집 내용 없음</span>')
               + '</div>'
-              + (teacherNote ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
-              + '</div></div>'
-
+              + (editedContent ? '<span class="gibu-ellipsis-hint">.....</span>' : '')
               + '</div></div>';
-      });
-    }
-
+      }
+      html += '</div></div>';
+    });
     html += '</div>';
-    ca.innerHTML = html;
-
-    // 전체공지 기존 내용 로드 및 드라이브 파일 목록 로드
-    _loadAllNoticeAndDriveFiles(courseName);
-
-    // 각 학생 카드의 제출 파일 목록 비동기 로드
-    students.forEach(function(s) {
-      var cardKey = 'c_' + encodeURIComponent(s.studentId || '').replace(/%/g, '_');
-      _loadStudentDriveFiles(s.studentId, s.name, courseName, cardKey);
-    });
+    document.getElementById('content-area').innerHTML = html;
   }
 
-  // ─── 전체공지 & 드라이브 파일 목록 로드 ─────────────────────
-  async function _loadAllNoticeAndDriveFiles(courseName) {
-    // 기존 전체공지 내용 로드
-    try {
-      var res = await AdminCore.apiGet('getAllNotice', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName
-      });
-      var textarea = document.getElementById('all-notice-textarea');
-      if (textarea && res && res.success) {
-        textarea.value = res.data || '';
+  // ════════════════════════════════════════════════════════════
+  //  생기부 작성 모달 (개인별/영역별 공통)
+  // ════════════════════════════════════════════════════════════
+
+  function openGibuWriteModal(areaKey, studentId, area, limit) {
+    _modalState.areaKey   = areaKey;
+    _modalState.studentId = studentId;
+    _modalState.area      = area;
+    _modalState.limit     = limit;
+    _modalState.scrollY   = document.querySelector('main.flex-1')
+                            ? document.querySelector('main.flex-1').scrollTop
+                            : window.scrollY;
+
+    // 원본 텍스트 (학생 제출 내용)
+    var originalEl    = document.getElementById('gibu-original-' + areaKey);
+    var originalText  = originalEl ? (originalEl.getAttribute('data-raw') || '') : '';
+    var originalBytes = originalEl ? (originalEl.closest('.bg-white') ? (function () {
+      var byteSpan = originalEl.closest('.bg-white').querySelector('.gibu-bytes-info');
+      return byteSpan ? byteSpan.textContent : '';
+    })() : '') : '';
+
+    // 편집 내용 (카드 미리보기에서 읽기)
+    var editedText = '';
+    var bytesEl = document.getElementById('gibu-edit-bytes-' + areaKey);
+    if (bytesEl) {
+      var editCard = bytesEl.closest('.bg-white');
+      if (editCard) {
+        var pDiv = editCard.querySelector('.gibu-preview-text[data-iseditor="1"]');
+        if (pDiv) editedText = pDiv.getAttribute('data-raw-edit') || pDiv.innerText || '';
+        if (editedText === '편집 내용 없음') editedText = '';
       }
-    } catch(e) {}
-
-    // 드라이브 관리자 폴더 파일 목록 로드
-    _refreshDriveFileList();
-  }
-
-  async function _refreshDriveFileList() {
-    var filesWrap = document.getElementById('all-notice-drive-files');
-    if (!filesWrap) return;
-    try {
-      var res = await AdminCore.apiGet('getDriveAdminFiles', {
-        adminId:   AdminCore.state.adminId,
-        adminName: AdminCore.state.adminName + '||' + (_state.selectedCourse || '')
-      });
-      _state.driveFiles = (res && res.success && res.files) ? res.files : [];
-    } catch(e) {
-      _state.driveFiles = [];
     }
-    _renderDriveFileList();
-  }
+    var hiddenTa = document.getElementById('gibu-edit-' + areaKey);
+    if (hiddenTa) editedText = hiddenTa.value || editedText;
 
-  function _renderDriveFileList() {
-    var filesWrap = document.getElementById('all-notice-drive-files');
-    if (!filesWrap) return;
-    if (_state.driveFiles.length === 0) {
-      filesWrap.innerHTML = '<p class="text-xs text-gray-400 italic">드라이브 폴더에 파일이 없습니다.</p>';
-    } else {
-      var listHtml = '<ul class="text-xs text-gray-600 space-y-1">';
-      _state.driveFiles.forEach(function(f) {
-        var fileId   = AdminCore.escapeHtml(f.id   || '');
-        var fileName = AdminCore.escapeHtml(f.name || '');
-        var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + fileId;
-        listHtml += '<li class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2 py-1.5">'
-          + '<svg class="w-3 h-3 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
-          + '<span class="flex-1 truncate text-gray-700">' + fileName + '</span>'
-          + '<a href="' + downloadUrl + '" target="_blank" title="파일 저장"'
-          + ' class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors">'
-          + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
-          + '저장</a>'
-          + '<button onclick="AdminCourse.deleteDriveFile(\''+fileId+'\',\''+fileName+'\')" title="파일 삭제"'
-          + ' class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-red-50 text-red-500 hover:bg-red-100 border border-red-200 transition-colors">'
-          + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>'
-          + '삭제</button>'
-          + '</li>';
-      });
-      listHtml += '</ul>';
-      filesWrap.innerHTML = listHtml;
-    }
-  }
+    _modalState.originalText = originalText;
+    _modalState.savedText    = editedText;
 
-  // ─── 전체공지 저장 (시트 기록 → 파일 업로드 UI 표시) ─────────
-  async function saveAllNotice(courseName) {
-    var textarea = document.getElementById('all-notice-textarea');
-    var noticeText = textarea ? textarea.value.trim() : '';
-    if (!noticeText) {
-      NaviComponent.showAlert('공지사항 내용을 입력해주세요.', { icon: '❌' });
-      if (textarea) textarea.focus();
-      return;
-    }
-
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('저장 중입니다...');
-
-    try {
-      var res = await AdminCore.apiGet('saveAllNotice', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName,
-        noticeText: noticeText
-      });
-      if (res && res.success) {
-        NaviComponent.hideLoadingWithMsg('전체공지가 저장되었습니다.');
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch(err) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-  async function deleteAllNotice(courseName) {
-    NaviComponent.showConfirmDialog('전체공지 내용을 삭제하시겠습니까?', function() {
-      _doDeleteAllNotice(courseName);
-    }, { icon: '🗑️', confirmText: '삭제', cancelText: '취소' });
-  }
-
-  async function _doDeleteAllNotice(courseName) {
-    var textarea = document.getElementById('all-notice-textarea');
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('삭제 중입니다...');
-
-    try {
-      var res = await AdminCore.apiGet('saveAllNotice', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName,
-        noticeText: ''
-      });
-      if (res && res.success) {
-        if (textarea) textarea.value = '';
-        NaviComponent.hideLoadingWithMsg('전체공지가 삭제되었습니다.');
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch(err) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-  // ─── 전체공지 드라이브 파일 업로드 핸들러 ───────────────────
-  function handleAllNoticeFileSelect(e) {
-    var file = e.target.files && e.target.files[0];
-    _applyAllNoticeFile(file);
-  }
-
-  function handleAllNoticeFileDrop(e) {
-    e.preventDefault();
-    var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-    _applyAllNoticeFile(file);
-  }
-
-  function _applyAllNoticeFile(file) {
-    if (!file) return;
-    _state.allNoticeUploadFile = file;
-    _state.allNoticeUploadFileName = file.name;
-    var nameEl  = document.getElementById('all-notice-file-name');
-    var selEl   = document.getElementById('all-notice-file-selected');
-    var saveBtn = document.getElementById('all-notice-drive-save-btn');
-    if (nameEl)  nameEl.textContent = file.name;
-    if (selEl)   selEl.classList.remove('hidden');
-    if (saveBtn) saveBtn.classList.remove('hidden');
-  }
-
-  function clearAllNoticeFile() {
-    _state.allNoticeUploadFile = null;
-    _state.allNoticeUploadFileName = '';
-    var nameEl  = document.getElementById('all-notice-file-name');
-    var selEl   = document.getElementById('all-notice-file-selected');
-    var saveBtn = document.getElementById('all-notice-drive-save-btn');
-    var input   = document.getElementById('all-notice-file-input');
-    if (nameEl)  nameEl.textContent = '';
-    if (selEl)   selEl.classList.add('hidden');
-    if (saveBtn) saveBtn.classList.add('hidden');
-    if (input)   input.value = '';
-  }
-
-  // ─── 드라이브에 파일 저장 (관리자이름 폴더) ─────────────────
-  async function uploadAllNoticeToDrive() {
-    if (!_state.allNoticeUploadFile) return;
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('저장 중입니다...');
-
-    try {
-      var base64Data = await _fileToBase64(_state.allNoticeUploadFile);
-
-      // 파일 데이터가 크므로 POST 방식으로 전송
-      var res = await AdminCore.apiPost('uploadFileToDriveAdminFolder', {
-        adminId:   AdminCore.state.adminId,
-        adminName: AdminCore.state.adminName,
-        fileName:  (_state.selectedCourse || '') + '||' + _state.allNoticeUploadFileName,
-        fileData:  base64Data,
-        mimeType:  _state.allNoticeUploadFile.type || 'application/octet-stream'
-      });
-
-      if (res && res.success) {
-        clearAllNoticeFile();
-        NaviComponent.hideLoadingWithMsg('파일이 드라이브에 저장되었습니다.');
-        await _refreshDriveFileList();
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch(err) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-  // ─── 드라이브 파일 삭제 ─────────────────────────────────────
-  async function deleteDriveFile(fileId, fileName) {
-    NaviComponent.showConfirmDialog('「' + fileName + '」 파일을 드라이브에서 삭제하시겠습니까?', function() {
-      _doDeleteDriveFile(fileId);
-    }, { icon: '🗑️', confirmText: '삭제', cancelText: '취소' });
-  }
-
-  async function _doDeleteDriveFile(fileId) {
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('삭제 중입니다...');
-    try {
-      var res = await AdminCore.apiGet('deleteDriveAdminFile', {
-        adminId: AdminCore.state.adminId,
-        fileId:  fileId
-      });
-      if (res && res.success) {
-        NaviComponent.hideLoadingWithMsg('파일이 삭제되었습니다.');
-        await _refreshDriveFileList();
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch(err) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-  function _fileToBase64(file) {
-    return new Promise(function(resolve, reject) {
-      var reader = new FileReader();
-      reader.onload = function(e) {
-        var result = e.target.result;
-        // "data:mime;base64,XXXX" 형태에서 콤마 뒤 Base64 부분만 추출
-        var commaIdx = result.indexOf(',');
-        if (commaIdx === -1) {
-          reject(new Error('파일 읽기 형식 오류'));
-          return;
-        }
-        var base64 = result.substring(commaIdx + 1);
-        if (!base64) {
-          reject(new Error('파일 내용이 비어있습니다.'));
-          return;
-        }
-        resolve(base64);
-      };
-      reader.onerror = function() { reject(new Error('파일 읽기 실패')); };
-      reader.readAsDataURL(file);
-    });
-  }
-
-  // ─── 학생개별공지 모달 ───────────────────────────────────────
-  function openNoticeModal(courseName) {
-  _state.noticeUploadFile = null;
-  var modal = document.getElementById('course-notice-modal');
-  var titleEl = document.getElementById('course-notice-modal-title');
-  if (titleEl) titleEl.textContent = courseName + '과목 학생개별공지';
-
-  // 모달 내부 상태 초기화
-  var fileNameEl = document.getElementById('notice-file-name');
-  var fileSelEl  = document.getElementById('notice-file-selected');
-  var uploadBtn  = document.getElementById('notice-upload-btn-wrap');
-  if (fileNameEl) fileNameEl.textContent = '';
-  if (fileSelEl)  fileSelEl.classList.add('hidden');
-  if (uploadBtn)  uploadBtn.classList.add('hidden');
-  var noticeInput = document.getElementById('notice-file-input');
-  if (noticeInput) noticeInput.value = '';
-
-  // 현재 교과목 저장
-  document.getElementById('course-notice-modal').dataset.course = courseName;
-
-  if (modal) modal.classList.remove('hidden');
-  setTimeout(function () {
-    var card = document.getElementById('course-notice-modal-card');
-    if (card) { card.classList.remove('scale-95', 'opacity-0'); card.classList.add('scale-100', 'opacity-100'); }
-  }, 10);
-}
-
-  function closeNoticeModal() {
-    var modal = document.getElementById('course-notice-modal');
-    var card  = document.getElementById('course-notice-modal-card');
-    if (card) { card.classList.remove('scale-100', 'opacity-100'); card.classList.add('scale-95', 'opacity-0'); }
-    setTimeout(function () { if (modal) modal.classList.add('hidden'); }, 180);
-  }
-
-    function downloadNoticeTmpl() {
-      NaviComponent.lockButtons();
-      NaviComponent.showLoadingMsg('불러오는 중입니다...');
-      AdminCore.apiGet('getDriveFileUrl', {
-        adminId: AdminCore.state.adminId,
-        fileName: '학생개별공지.xlsx'
-      }).then(function(res) {
-        if (res && res.success && res.url) {
-          var a = document.createElement('a');
-          a.href = res.url;
-          a.download = '학생개별공지.xlsx';
-          a.click();
-          NaviComponent.hideLoadingWithMsg('다운로드가 시작되었습니다.');
-        } else {
-          NaviComponent.hideLoading();
-          NaviComponent.showAlert('파일을 찾을 수 없습니다: ' + (res && res.message ? res.message : ''), { icon: '❌' });
-        }
-      }).catch(function(err) {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-      }).finally(function() {
-        NaviComponent.unlockButtons();
-      });
-    }
-
-  
-
-    function handleNoticeFileSelect(e) {
-      var file = e.target.files && e.target.files[0];
-      _applyNoticeFile(file);
-    }
-    
-    function handleNoticeFileDrop(e) {
-      var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
-      _applyNoticeFile(file);
-    }
-    
-    function clearNoticeFile() {
-      _state.noticeUploadFile = null;
-      var nameEl  = document.getElementById('notice-file-name');
-      var selEl   = document.getElementById('notice-file-selected');
-      var btnWrap = document.getElementById('notice-upload-btn-wrap');
-      var input   = document.getElementById('notice-file-input');
-      if (nameEl)  nameEl.textContent = '';
-      if (selEl)   selEl.classList.add('hidden');
-      if (btnWrap) btnWrap.classList.add('hidden');
-      if (input)   input.value = '';
-    }
-
-  function _applyNoticeFile(file) {
-    if (!file) return;
-    _state.noticeUploadFile = file;
-    var nameEl  = document.getElementById('notice-file-name');
-    var selEl   = document.getElementById('notice-file-selected');
-    var btnWrap = document.getElementById('notice-upload-btn-wrap');
-    if (nameEl) nameEl.textContent = file.name;
-    if (selEl)  selEl.classList.remove('hidden');
-    if (btnWrap) btnWrap.classList.remove('hidden');
-  }
-
-  async function uploadNoticeFile() {
-    if (!_state.noticeUploadFile) return;
-    var courseName = document.getElementById('course-notice-modal').dataset.course || '';
-    if (!courseName) { NaviComponent.showAlert('교과목 정보가 없습니다.', { icon: '❌' }); return; }
-
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('저장 중입니다...');
-
-    try {
-      var wb = await _readXlsx(_state.noticeUploadFile);
-      var sheet = wb.Sheets[wb.SheetNames[0]];
-      var data  = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-      // 1행 C~F열: 헤더 레이블
-      var headers = (data[0] || []).slice(2, 6);
-
-      // 학생별 데이터 (2행부터)
-      var rows = [];
-      for (var ri = 1; ri < data.length; ri++) {
-        var row = data[ri];
-        var sid  = String(row[0] || '').trim();
-        var sname= String(row[1] || '').trim();
-        if (!sid) continue;
-        rows.push({
-          studentId: sid, name: sname,
-          c3: String(row[2] || '').trim(),
-          c4: String(row[3] || '').trim(),
-          c5: String(row[4] || '').trim(),
-          c6: String(row[5] || '').trim()
-        });
-      }
-
-      var res = await AdminCore.apiGet('courseUploadNotice', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName,
-        headers:    JSON.stringify(headers),
-        rows:       JSON.stringify(rows)
-      });
-
-      if (res && res.success) {
-        closeNoticeModal();
-        NaviComponent.hideLoadingWithMsg('학생 개별 공지가 업데이트되었습니다.', function() {
-          // 학생 카드 새로고침
-          _renderCourseDetail(courseName);
-        });
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch (err) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-// ─── 학생 제출 파일 목록 로드 (구글드라이브 담당교사\교과\학생제출 폴더) ──
-  async function _loadStudentDriveFiles(studentId, studentName, courseName, cardKey) {
-    var filesEl = document.getElementById('course-files-' + cardKey);
-    var dlBtn   = document.getElementById('course-dl-btn-' + cardKey);
-    if (!filesEl) return;
-
-    try {
-      var res = await AdminCore.apiGet('courseGetStudentFiles', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName,
-        studentId:  studentId,
-        studentName: studentName
-      });
-
-      var files = (res && res.success && res.files) ? res.files : [];
-
-      if (files.length === 0) {
-        filesEl.innerHTML = '<span class="text-gray-400 italic">제출한 파일 없음</span>';
-        if (dlBtn) { dlBtn.disabled = true; dlBtn.style.opacity = '0.4'; dlBtn.style.cursor = 'not-allowed'; }
-        return;
-      }
-
-      // 파일 목록 렌더링: 파일명에서 _ 기준 뒷글자만 표시
-      var listHtml = '<ul class="space-y-1">';
-      files.forEach(function(f) {
-        var displayName = f.name;
-        var underIdx = f.name.indexOf('_');
-        if (underIdx !== -1) displayName = f.name.substring(underIdx + 1);
-        var downloadUrl = 'https://drive.google.com/uc?export=download&id=' + AdminCore.escapeHtml(f.id);
-        listHtml += '<li class="flex items-center gap-1.5">'
-          + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
-          + '<span class="text-sm text-gray-700 flex-1 truncate">' + AdminCore.escapeHtml(displayName) + '</span>'
-          + '<a href="' + downloadUrl + '" target="_blank" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors">'
-          + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>저장</a>'
-          + '</li>';
-      });
-      listHtml += '</ul>';
-      filesEl.className = 'w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm';
-      filesEl.innerHTML = listHtml;
-
-      // 다운로드 버튼 활성화
-      if (dlBtn) { dlBtn.disabled = false; dlBtn.style.opacity = ''; dlBtn.style.cursor = ''; }
-
-    } catch(e) {
-      filesEl.innerHTML = '<span class="text-red-400 italic">파일 목록 조회 오류</span>';
-    }
-  }
-
-  // ─── 학생 제출 파일 압축 다운로드 ────────────────────────────
-  async function downloadStudentFiles(studentId, studentName, courseName) {
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('불러오는 중입니다...');
-    try {
-      var res = await AdminCore.apiGet('courseGetStudentFiles', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName,
-        studentId:  studentId,
-        studentName: studentName
-      });
-      var files = (res && res.success && res.files) ? res.files : [];
-      if (files.length === 0) {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('다운로드할 파일이 없습니다.', { icon: 'ℹ️' });
-        return;
-      }
-
-      // 접두어(학번+이름+교과목)가 일치하는 파일만 필터링하여 GS에 압축 요청
-      var prefix = studentId + studentName + courseName;
-      var matchedFiles = files.filter(function(f) {
-        var underIdx = f.name.indexOf('_');
-        var filePre = underIdx !== -1 ? f.name.substring(0, underIdx) : f.name;
-        return filePre === prefix;
-      });
-      if (matchedFiles.length === 0) {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('조건에 맞는 파일이 없습니다.', { icon: 'ℹ️' });
-        return;
-      }
-
-      var res2 = await AdminCore.apiGet('courseZipStudentFiles', {
-        adminId:   AdminCore.state.adminId,
-        adminName: AdminCore.state.adminName,
-        courseName: courseName,
-        studentId:  studentId,
-        studentName: studentName,
-        fileIds:   JSON.stringify(matchedFiles.map(function(f){ return f.id; })),
-        zipName:   studentId + studentName + courseName
-      });
-
-      if (res2 && res2.success && res2.url) {
-        var a = document.createElement('a');
-        a.href = res2.url;
-        a.download = studentId + studentName + courseName + '.zip';
-        a.click();
-        NaviComponent.hideLoadingWithMsg('다운로드가 시작되었습니다.');
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('압축 다운로드 오류: ' + (res2 && res2.message ? res2.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch(e) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + e.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-  // ─── 카드 내용 복사 (학생 제출 내용) ─────────────────────────
-function copyCardContent(cardKey) {
-  var el = document.getElementById('course-submit-' + cardKey);
-  if (!el) return;
-  // data-raw 값을 우선 사용
-  var text = el.getAttribute('data-raw');
-  // 없으면 textContent fallback
-  if (text == null || text === '') {
-    text = el.textContent || '';
-  }
-  // 공백 제거
-  text = text.trim();
-  // 최신 clipboard API
-  navigator.clipboard.writeText(text).then(function() {
-    var fb = document.getElementById('copy-feedback-' + cardKey);
-    if (fb) {
-      fb.textContent = '✓ 복사됨';
-      setTimeout(function() {
-        fb.textContent = '';
-      }, 1500);
-    }
-  }).catch(function() {
-    // fallback 복사
-    var ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.focus();
-    ta.select();
-    ta.setSelectionRange(0, 99999);
-    try {
-      document.execCommand('copy');
-      var fb = document.getElementById('copy-feedback-' + cardKey);
-      if (fb) {
-        fb.textContent = '✓ 복사됨';
-        setTimeout(function() {
-          fb.textContent = '';
-        }, 1500);
-      }
-    } catch(e) {
-      NaviComponent.showAlert('복사 실패', { icon: '❌' });
-    }
-    document.body.removeChild(ta);
-  });
-}
-
-  // ─── 카드 편집 복사 (교사 작성 내용) ─────────────────────────
-  function copyCardEdit(cardKey) {
-    var el = document.getElementById('course-teacher-' + cardKey);
-    if (!el) return;
-    var text = el.getAttribute('data-raw-edit') || el.textContent || '';
-    navigator.clipboard.writeText(text).then(function() {
-      var fb = document.getElementById('copy-feedback-edit-' + cardKey);
-      if (fb) { fb.textContent = '✓ 복사됨'; setTimeout(function(){ fb.textContent = ''; }, 1500); }
-    });
-  }
-
-  // ─── 교사 내용 작성 모달 열기 ─────────────────────────────────────────────────
-  // admin_repoarea.js 의 gibu-write-modal DOM을 그대로 재활용.
-  // 좌측: 학생 제출 내용(읽기 전용) / 우측: 교사 작성(textarea) + 실시간 글자수
-  // 저장만 courseSaveTeacherNote 로 교체, 닫기·바이트카운트는 Admin(AdminRepoArea) 공통 함수 사용.
-  // ──────────────────────────────────────────────────────────────────────────────
-  function openCourseWriteModal(cardKey, studentId, studentName, courseName) {
-    var submitEl  = document.getElementById('course-submit-'  + cardKey);
-    var teacherEl = document.getElementById('course-teacher-' + cardKey);
-    var submitText  = submitEl  ? (submitEl.getAttribute('data-raw')       || '') : '';
-    var currentText = teacherEl ? (teacherEl.getAttribute('data-raw-edit') || '') : '';
-
-    // ── gibu-write-modal DOM 요소 채우기 ──────────────────────
+    // 모달 DOM 채우기
     var modal       = document.getElementById('gibu-write-modal');
     var leftLabel   = document.getElementById('gibu-modal-left-label');
     var leftBytes   = document.getElementById('gibu-modal-left-bytes');
     var leftContent = document.getElementById('gibu-modal-left-content');
     var rightLabel  = document.getElementById('gibu-modal-right-label');
     var ta          = document.getElementById('gibu-modal-textarea');
-    var badge       = document.getElementById('gibu-modal-student-badge');
-    var saveBtn     = document.getElementById('gibu-modal-save-btn');
 
-    if (!modal) {
-      NaviComponent.showAlert('생기부 작성 모달을 찾을 수 없습니다. 페이지를 새로고침 해주세요.', { icon: '❌' });
-      return;
+    var badge = document.getElementById('gibu-modal-student-badge');
+    if (badge) {
+      var stu = null;
+      for (var si = 0; si < AdminCore.state.studentList.length; si++) {
+        if (AdminCore.state.studentList[si].studentId === studentId) {
+          stu = AdminCore.state.studentList[si]; break;
+        }
+      }
+      badge.textContent = stu ? (stu.studentId + ' ' + stu.name) : studentId;
     }
 
-    // 학생 뱃지
-    if (badge) badge.textContent = studentId + ' ' + studentName;
+    if (leftLabel)   leftLabel.textContent   = area + ' — 학생 제출 내용';
+    if (leftBytes)   leftBytes.textContent   = originalBytes;
+    if (leftContent) leftContent.textContent = originalText || '학생이 제출한 내용이 없음';
+    if (rightLabel)  rightLabel.textContent  = area + ' — 내용 편집';
+    if (ta) { ta.value = editedText; updateModalBytes(); }
 
-    // 좌측 — 학생 제출 내용
-    if (leftLabel)   leftLabel.textContent   = courseName + ' — 학생 제출 내용';
-    if (leftBytes)   leftBytes.textContent   = '';
-    if (leftContent) leftContent.textContent = submitText || '학생이 제출한 내용이 없습니다.';
-    
-    // 우측 — 교사 작성
-    if (rightLabel) rightLabel.textContent = courseName + ' — 교사 작성 내용';
-    if (ta) {
-      ta.value = currentText;
-      // 기존 Admin.updateModalBytes() 호출로 바이트 카운트 갱신
-      if (typeof Admin !== 'undefined' && typeof Admin.updateModalBytes === 'function') {
-        Admin.updateModalBytes();
-      }
-    }
-
-    // ── 저장 버튼 onclick 을 교과용으로 교체 ─────────────────
-    // 기존 생기부 저장(adminSaveTeacherGibu) 대신 courseSaveTeacherNote 호출
-    if (saveBtn) {
-      // 이전에 붙인 교과용 핸들러가 있으면 제거
-      if (saveBtn._courseHandler) {
-        saveBtn.removeEventListener('click', saveBtn._courseHandler);
-        saveBtn._courseHandler = null;
-      }
-      // onclick 속성(기존 Admin.saveGibuModal 연결) 제거
-      saveBtn.removeAttribute('onclick');
-
-      saveBtn._courseHandler = function() {
-        _saveCourseFromGibuModal(cardKey, studentId, courseName);
-      };
-      saveBtn.addEventListener('click', saveBtn._courseHandler);
-    }
-
-    // 스크롤 위치 기억 (AdminRepoArea._modalState 와 동일 패턴)
-    var main = document.querySelector('main.flex-1');
-    var _scrollY = main ? main.scrollTop : window.scrollY;
-
-var leftCopyFb = document.getElementById('gibu-modal-left-copy-fb');
-if (leftCopyFb) {
-  var leftCopyBtn = leftCopyFb.previousElementSibling;
-  if (leftCopyBtn) {
-    leftCopyBtn.onclick = function() {
-      var text = submitText || '';
-      var fb = document.getElementById('gibu-modal-left-copy-fb');
-      function show() {
-        if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function(){ fb.textContent = ''; }, 2000); }
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(show, function(){ AdminCore.fallbackCopy(text); show(); });
-      } else { AdminCore.fallbackCopy(text); show(); }
-    };
-  }
-}
-
-   
     modal.classList.remove('hidden');
     if (ta) ta.focus();
-
-    // 모달 닫힐 때 스크롤 복원을 위해 저장
-    modal._courseScrollY = _scrollY;
   }
 
-  // ─── 교과용 저장: gibu-write-modal textarea → courseSaveTeacherNote ──────────
-  async function _saveCourseFromGibuModal(cardKey, studentId, courseName) {
+  function updateModalBytes() {
+    var ta    = document.getElementById('gibu-modal-textarea');
+    var label = document.getElementById('gibu-modal-right-bytes');
+    if (!ta || !label) return;
+    var bytes = AdminCore.calcBytes(ta.value);
+    var limit = _modalState.limit;
+    label.textContent = bytes + '바이트 / ' + limit + '바이트';
+    label.style.color = bytes > limit ? '#dc2626' : '#374151';
+    if (ta.value !== _modalState.savedText) {
+      AdminCore.state.hasUnsavedEdit = true;
+    }
+  }
+
+  function copyModalLeft() {
+    var text = _modalState.originalText || '';
+    var fb   = document.getElementById('gibu-modal-left-copy-fb');
+    function show() {
+      if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function () { fb.textContent = ''; }, 2000); }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(show, function () { AdminCore.fallbackCopy(text); show(); });
+    } else { AdminCore.fallbackCopy(text); show(); }
+  }
+
+  function copyModalRight() {
+    var ta   = document.getElementById('gibu-modal-textarea');
+    var text = ta ? ta.value : '';
+    var fb   = document.getElementById('gibu-modal-right-copy-fb');
+    function show() {
+      if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function () { fb.textContent = ''; }, 2000); }
+    }
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(show, function () { AdminCore.fallbackCopy(text); show(); });
+    } else { AdminCore.fallbackCopy(text); show(); }
+  }
+
+  // ─── 생기부 모달 저장 ─────────────────────────────────────
+  // GS action: adminSaveTeacherGibu
+  async function saveGibuModal() {
+    if (_modalState.isSaving) return;
     var ta      = document.getElementById('gibu-modal-textarea');
     var saveBtn = document.getElementById('gibu-modal-save-btn');
     if (!ta) return;
-
-    var newText = ta.value || '';
+    var text  = ta.value || '';
+    var bytes = AdminCore.calcBytes(text);
+    var limit = _modalState.limit;
+    if (bytes > limit) {
+      if (!confirm('글자수(' + bytes + '바이트)가 제한(' + limit + '바이트)을 초과했습니다. 그래도 저장하시겠습니까?')) return;
+    }
+    _modalState.isSaving = true;
     if (saveBtn) {
       saveBtn.disabled = true;
       saveBtn.innerHTML =
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"'
-        + ' style="animation:spin 0.7s linear infinite;flex-shrink:0;">'
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="animation:spin 0.7s linear infinite;flex-shrink:0;">'
         + '<circle cx="12" cy="12" r="9" stroke-width="3" stroke-opacity="0.25"/>'
         + '<path d="M12 3a9 9 0 019 9" stroke-width="3" stroke-linecap="round"/>'
         + '</svg>저장 중...';
     }
-
-    var _success = false;
     try {
-      await saveCourseTeacherNote(cardKey, studentId, courseName, newText);
-      _success = true;
-    } catch(e) {
-      // saveCourseTeacherNote 내부에서 alert 처리
-    }
-
-    if (saveBtn) {
-      saveBtn.disabled = false;
-      saveBtn.innerHTML =
-        '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
-        + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
-    }
-
-    if (_success) {
-      // 핸들러 정리 및 onclick 복원 (다른 메뉴에서 생기부 모달 쓸 때 대비)
-      if (saveBtn) {
-        if (saveBtn._courseHandler) {
-          saveBtn.removeEventListener('click', saveBtn._courseHandler);
-          saveBtn._courseHandler = null;
-        }
-        saveBtn.setAttribute('onclick', 'Admin.saveGibuModal()');
-      }
-      // 모달 닫기 + 스크롤 복원
-      var modal = document.getElementById('gibu-write-modal');
-      if (modal) {
-        modal.classList.add('hidden');
-        var scrollY = modal._courseScrollY || 0;
-        var main = document.querySelector('main.flex-1');
-        if (main) { main.scrollTop = scrollY; } else { window.scrollTo(0, scrollY); }
-      }
-    }
-    // 실패 시: 버튼만 복구, 모달은 열어둠 (재시도 가능)
-  }
-
-  // closeCourseWriteModal, saveCourseWriteModal 은 이제 gibu-write-modal을 쓰므로
-  // Admin.closeGibuWriteModal 위임. 공개 API용으로만 유지.
-  function closeCourseWriteModal() {
-    if (typeof Admin !== 'undefined' && typeof Admin.closeGibuWriteModal === 'function') {
-      Admin.closeGibuWriteModal();
-    }
-  }
-
-  function saveCourseWriteModal() {
-    // 직접 호출은 _saveCourseFromGibuModal 로 위임됨(saveBtn click 이벤트에서 처리)
-    // 이 함수는 하위 호환성 유지용
-  }
-
-  // ─── 교사 내용 저장 (11번째 열 = 편집내용 열) ────────────────
-  async function saveCourseTeacherNote(cardKey, studentId, courseName, newText) {
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('저장 중입니다...');
-    try {
-      var res = await AdminCore.apiGet('courseSaveTeacherNote', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName,
-        studentId:  studentId,
-        noteText:   newText
+      var res = await AdminCore.apiGet('adminSaveTeacherGibu', {
+        adminId:       AdminCore.state.adminId,
+        adminAuth:     AdminCore.state.adminAuth,
+        adminClass:    AdminCore.state.adminClass,
+        studentId:     _modalState.studentId,
+        area:          _modalState.area,
+        editedContent: text,
+        editedBytes:   bytes
       });
       if (res && res.success) {
-        // 카드 UI 갱신
-        var teacherEl = document.getElementById('course-teacher-' + cardKey);
-        if (teacherEl) {
-          teacherEl.setAttribute('data-raw-edit', newText);
-          teacherEl.innerHTML = newText
-            ? AdminCore.escapeHtml(newText)
-            : '<span class="text-gray-400 italic">편집 내용 없음</span>';
-          // 줄임표 힌트
-          var hint = teacherEl.nextElementSibling;
-          if (hint && hint.classList.contains('gibu-ellipsis-hint')) {
-            hint.style.display = newText ? '' : 'none';
-          }
-        }
-        NaviComponent.hideLoadingWithMsg('교사 작성 내용이 저장되었습니다.');
+        _modalState.savedText = text;
+        AdminCore.state.hasUnsavedEdit = false;
+        _updateCardAfterSave(text, bytes, limit);
+        Admin.showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
+        _doCloseGibuModal();
       } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('저장 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
-      }
-    } catch(e) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + e.message, { icon: '❌' });
-    } finally {
-      NaviComponent.unlockButtons();
-    }
-  }
-
-// ─── 교과 삭제 ───────────────────────────────────────────────
-  function confirmDeleteCourse(courseName) {
-    NaviComponent.showConfirmDialog(
-      '「' + courseName + '」 교과를 삭제하시겠습니까?\n\nSH사용자 탭의 수강학생 표시 열과\nSH교과관리 탭의 해당 교과 데이터가 모두 삭제됩니다.',
-      function() { deleteCourse(courseName); },
-      { icon: '🗑️', confirmText: '삭제', cancelText: '취소' }
-    );
-  }
-
-  async function deleteCourse(courseName) {
-    NaviComponent.lockButtons();
-    NaviComponent.showLoadingMsg('삭제 중입니다...');
-    try {
-      var res = await AdminCore.apiGet('courseDelete', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName
-      });
-      if (res && res.success) {
-        _state.courses = _state.courses.filter(function(c) { return c !== courseName; });
-        if (_state.selectedCourse === courseName) {
-          _state.selectedCourse = null;
-          var ca = document.getElementById('content-area');
-          if (ca) ca.innerHTML = '';
-          _showWelcome();
+        alert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
         }
-        renderSidebar();
-        NaviComponent.hideLoadingWithMsg('교과가 삭제되었습니다.');
-      } else {
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('삭제 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), { icon: '❌' });
       }
     } catch (err) {
-      NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, { icon: '❌' });
+      alert('오류: ' + err.message);
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
+      }
     } finally {
-      NaviComponent.unlockButtons();
+      _modalState.isSaving = false;
     }
   }
-  
+
+  // ─── 저장 후 카드 화면 즉시 갱신 ────────────────────────────
+  function _updateCardAfterSave(text, bytes, limit) {
+    var areaKey = _modalState.areaKey;
+
+    // 데이터 없던 학생(nodata 박스)인 경우 → 카드 형태로 교체
+    var nodataBox = document.getElementById('gibu-nodata-' + areaKey);
+    if (nodataBox) {
+      var sidAttr2  = AdminCore.escapeHtml(_modalState.studentId);
+      var areaAttr2 = AdminCore.escapeHtml(_modalState.area);
+      var limit2    = _modalState.limit;
+      var newHtml =
+        '<div class="bg-white border border-blue-200 rounded-lg p-3 mb-3">'
+        + '<div class="gibu-card-toolbar mb-2">'
+        + '<span class="gibu-label">📄 학생 제출 내용</span>'
+        + '<span class="gibu-bytes-info"></span>'
+        + '<span id="copy-feedback-' + areaKey + '" class="gibu-spacer"></span>'
+        + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuContent(\'' + areaKey + '\')">'
+        + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
+        + '내용 복사</button>'
+        + '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+        + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+        + '<span>펼치기</span></button>'
+        + '</div>'
+        + '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+        + '<div id="gibu-original-' + areaKey + '" class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-raw="">'
+        + '<span class="text-gray-400 italic">내용 없음</span>'
+        + '</div></div></div>'
+        + '<div class="bg-white border border-blue-200 rounded-lg p-3">'
+        + '<div class="gibu-card-toolbar mb-2">'
+        + '<span class="gibu-label">✏️ 교사 작성 내용</span>'
+        + '<span id="gibu-edit-bytes-' + areaKey + '" class="gibu-bytes-info">(' + bytes + '바이트 / ' + limit2 + '바이트)</span>'
+        + '<span id="copy-feedback-edit-' + areaKey + '" class="gibu-spacer"></span>'
+        + '<button type="button" class="gibu-copy-btn" style="margin-left:4px;" onclick="Admin.copyGibuEdit(\'' + areaKey + '\')">'
+        + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>'
+        + '편집 복사</button>'
+        + '<button type="button" class="gibu-write-btn" style="margin-left:4px;" onclick="Admin.openGibuWriteModal(\'' + areaKey + '\', \'' + sidAttr2 + '\', \'' + areaAttr2 + '\', ' + limit2 + ')">'
+        + '<svg width="13" height="13" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>'
+        + '생기부 작성</button>'
+        + '<button type="button" class="gibu-toggle-btn" onclick="Admin.toggleGibuPreview(this)" data-expanded="0">'
+        + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>'
+        + '<span>펼치기</span></button>'
+        + '</div>'
+        + '<div class="gibu-preview-box" onclick="Admin.toggleGibuPreviewBox(this)">'
+        + '<div class="w-full bg-gray-50 border border-gray-200 rounded p-3 text-sm text-gray-700 gibu-preview-text" data-iseditor="1" data-raw-edit="' + AdminCore.escapeHtml(text) + '">'
+        + AdminCore.escapeHtml(text)
+        + '</div><span class="gibu-ellipsis-hint">.....</span>'
+        + '</div></div>';
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = newHtml;
+      nodataBox.parentNode.replaceChild(wrapper, nodataBox);
+      return;
+    }
+
+    // 기존 카드 갱신
+    var bytesEl = document.getElementById('gibu-edit-bytes-' + areaKey);
+    if (bytesEl) {
+      bytesEl.textContent = '(' + bytes + '바이트 / ' + limit + '바이트)';
+      bytesEl.style.color = bytes > limit ? '#dc2626' : '#6b7280';
+      var editCard = bytesEl.closest('.bg-white');
+      if (editCard) {
+        var pDiv = editCard.querySelector('.gibu-preview-text[data-iseditor="1"]');
+        if (pDiv) {
+          pDiv.setAttribute('data-raw-edit', text);
+          pDiv.textContent = text || '편집 내용 없음';
+        }
+        var hint = editCard.querySelector('.gibu-ellipsis-hint');
+        if (hint) hint.style.display = '';
+        if (pDiv) pDiv.classList.remove('expanded');
+      }
+    }
+  }
+
+  function closeGibuWriteModal() {
+    if (_modalState.isSaving) return;
+    var ta      = document.getElementById('gibu-modal-textarea');
+    var isDirty = ta && (ta.value !== _modalState.savedText);
+    if (isDirty) {
+      Admin.showUnsavedModal('저장하지 않은 편집 내용이 사라집니다. 저장하지 않고 나가시겠습니까?', function () {
+        AdminCore.state.hasUnsavedEdit = false;
+        _doCloseGibuModal();
+      });
+      return;
+    }
+    _doCloseGibuModal();
+  }
+
+  function _doCloseGibuModal() {
+    document.getElementById('gibu-write-modal').classList.add('hidden');
+    var main = document.querySelector('main.flex-1');
+    if (main) {
+      main.scrollTop = _modalState.scrollY;
+    } else {
+      window.scrollTo(0, _modalState.scrollY);
+    }
+  }
+
   // ─── 공개 API ────────────────────────────────────────────────
   return {
-    init:                init,
-    renderSidebar:       renderSidebar,
-    confirmDeleteCourse: confirmDeleteCourse,
-    deleteCourse:        deleteCourse,
-    showOpenCourseForm:  showOpenCourseForm,
-    downloadStudentTemplate: downloadStudentTemplate,
-    handleFileSelect:    handleFileSelect,
-    handleFileDrop:      handleFileDrop,
-    clearFile:           clearFile,
-    saveCourse:          saveCourse,
-    selectCourse:        selectCourse,
-    openNoticeModal:     openNoticeModal,
-    closeNoticeModal:    closeNoticeModal,
-    downloadNoticeTmpl:  downloadNoticeTmpl,
-    handleNoticeFileSelect: handleNoticeFileSelect,
-    handleNoticeFileDrop:   handleNoticeFileDrop,
-    clearNoticeFile:        clearNoticeFile,
-    uploadNoticeFile:    uploadNoticeFile,
-    saveAllNotice:              saveAllNotice,
-    deleteAllNotice:            deleteAllNotice,
-    handleAllNoticeFileSelect:  handleAllNoticeFileSelect,
-    handleAllNoticeFileDrop:    handleAllNoticeFileDrop,
-    clearAllNoticeFile:         clearAllNoticeFile,
-    uploadAllNoticeToDrive:     uploadAllNoticeToDrive,
-    deleteDriveFile:            deleteDriveFile,
-    // ── 교과 학생 카드 기능 ──
-    copyCardContent:            copyCardContent,
-    copyCardEdit:               copyCardEdit,
-    openCourseWriteModal:       openCourseWriteModal,
-    closeCourseWriteModal:      closeCourseWriteModal,
-    saveCourseWriteModal:       saveCourseWriteModal,
-    saveCourseTeacherNote:      saveCourseTeacherNote,
-    downloadStudentFiles:       downloadStudentFiles
+    renderAreaButtons:    renderAreaButtons,
+    loadByArea:           loadByArea,
+    renderArea:           renderArea,
+    openGibuWriteModal:   openGibuWriteModal,
+    closeGibuWriteModal:  closeGibuWriteModal,
+    updateModalBytes:     updateModalBytes,
+    copyModalLeft:        copyModalLeft,
+    copyModalRight:       copyModalRight,
+    saveGibuModal:        saveGibuModal
   };
 
 })();
