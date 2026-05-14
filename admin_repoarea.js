@@ -294,15 +294,7 @@ var AdminRepoArea = (function () {
     if (bytes > limit) {
       NaviComponent.showConfirmDialog(
         '글자수(' + bytes + '바이트)가 제한(' + limit + '바이트)을 초과했습니다. 그래도 저장하시겠습니까?',
-        function () { _doSaveGibuModal(ta, saveBtn, text, bytes, limit); },
-        function () {
-          // 취소: saveBtn 복원 + isSaving 해제
-          _modalState.isSaving = false;
-          if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
-          }
-        }
+        function () { _doSaveGibuModal(ta, saveBtn, text, bytes, limit); }
       );
       return;
     }
@@ -342,21 +334,11 @@ var AdminRepoArea = (function () {
         });
       } else {
         NaviComponent.hideLoading();
-        NaviComponent.showAlert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'), function () {
-          if (saveBtn) {
-            saveBtn.disabled = false;
-            saveBtn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
-          }
-        });
+        NaviComponent.showAlert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch (err) {
       NaviComponent.hideLoading();
-      NaviComponent.showAlert('오류: ' + err.message, function () {
-        if (saveBtn) {
-          saveBtn.disabled = false;
-          saveBtn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
-        }
-      });
+      NaviComponent.showAlert('오류: ' + err.message);
     } finally {
       _modalState.isSaving = false;
     }
