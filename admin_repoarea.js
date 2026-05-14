@@ -47,6 +47,7 @@ var AdminRepoArea = (function () {
   async function loadByArea(area) {
     Admin.showContentSkeleton(8);
     AdminCore.state.isLoading = true;
+    NaviComponent.showLoading('불러오는 중입니다...');
     try {
       var res = await AdminCore.apiGet('adminGetGibuByArea', {
         adminId:     AdminCore.state.adminId,
@@ -78,6 +79,7 @@ var AdminRepoArea = (function () {
     } catch (err) {
       Admin.showError(err.message);
     } finally {
+      NaviComponent.hideLoading();
       AdminCore.state.isLoading = false;
       if (AdminCore.state.pendingDownload) {
         AdminCore.state.pendingDownload = false;
@@ -292,9 +294,19 @@ var AdminRepoArea = (function () {
     var bytes = AdminCore.calcBytes(text);
     var limit = _modalState.limit;
     if (bytes > limit) {
-      if (!confirm('글자수(' + bytes + '바이트)가 제한(' + limit + '바이트)을 초과했습니다. 그래도 저장하시겠습니까?')) return;
+      NaviComponent.showConfirmDialog(
+        '글자수(' + bytes + '바이트)가 제한(' + limit + '바이트)을 초과했습니다. 그래도 저장하시겠습니까?',
+        function () { _doSaveGibuModal(ta, saveBtn, text, bytes, limit); }
+      );
+      return;
     }
+    _doSaveGibuModal(ta, saveBtn, text, bytes, limit);
+  }
+
+  // ─── 생기부 모달 저장 실행 (confirm 분기 후 공통 경로) ──────
+  async function _doSaveGibuModal(ta, saveBtn, text, bytes, limit) {
     _modalState.isSaving = true;
+    NaviComponent.showLoading('저장 중입니다...');
     if (saveBtn) {
       saveBtn.disabled = true;
       saveBtn.innerHTML =
@@ -317,21 +329,18 @@ var AdminRepoArea = (function () {
         _modalState.savedText = text;
         AdminCore.state.hasUnsavedEdit = false;
         _updateCardAfterSave(text, bytes, limit);
-        Admin.showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
-        _doCloseGibuModal();
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('변경 내용이 정상적으로 저장되었습니다.', function () {
+          Admin.showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
+          _doCloseGibuModal();
+        });
       } else {
-        alert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
-        if (saveBtn) {
-          saveBtn.disabled = false;
-          saveBtn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
-        }
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
       }
     } catch (err) {
-      alert('오류: ' + err.message);
-      if (saveBtn) {
-        saveBtn.disabled = false;
-        saveBtn.innerHTML = '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>저장';
-      }
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + err.message);
     } finally {
       _modalState.isSaving = false;
     }
