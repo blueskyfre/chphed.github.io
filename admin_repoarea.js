@@ -307,14 +307,6 @@ var AdminRepoArea = (function () {
   async function _doSaveGibuModal(ta, saveBtn, text, bytes, limit) {
     _modalState.isSaving = true;
     NaviComponent.showLoading('저장 중입니다...');
-    if (saveBtn) {
-      saveBtn.disabled = true;
-      saveBtn.innerHTML =
-        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="animation:spin 0.7s linear infinite;flex-shrink:0;">'
-        + '<circle cx="12" cy="12" r="9" stroke-width="3" stroke-opacity="0.25"/>'
-        + '<path d="M12 3a9 9 0 019 9" stroke-width="3" stroke-linecap="round"/>'
-        + '</svg>저장 중...';
-    }
     try {
       var res = await AdminCore.apiGet('adminSaveTeacherGibu', {
         adminId:       AdminCore.state.adminId,
