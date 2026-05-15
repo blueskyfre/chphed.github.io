@@ -988,10 +988,10 @@
           _renderEligibleTypeDisplay();
           if (!eligibleTypeValue) { _openEligibleTypeModal(); }
         } else {
-          _showToast('데이터 로드 실패: ' + ((result && result.message) || ''), 'error');
+          NaviComponent.showAlert('데이터 로드 실패: ' + ((result && result.message) || ''), null, { icon: '⚠️' });
         }
       } catch (e) {
-        _showToast('❌ 오류: ' + e.message, 'error');
+        NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
 
       _renderAll();
@@ -1012,7 +1012,7 @@
           _renderEligibleTypeDisplay();
         }
       } catch (e) {
-        _showToast('❌ 오류: ' + e.message, 'error');
+        NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
       _renderAll();
     }
@@ -1254,7 +1254,7 @@ function _onDragEnd(evt) {
         } else {
           container.insertBefore(allCards[evt.newIndex], allCards[evt.oldIndex].nextSibling);
         }
-        _showToast('⚠️ 데이터가 없는 빈 카드와는 순위를 교체할 수 없습니다.', 'error');
+        NaviComponent.showAlert('데이터가 없는 빈 카드와는 순위를 교체할 수 없습니다.', null, { icon: '⚠️' });
         return;
       }
 
@@ -1325,12 +1325,12 @@ async function _saveDragOrder(newRows) {
       });
 
       if (toSave.length === 0) {
-        _showToast('✅ 데이타가 저장되습니다.', 'success');
+        NaviComponent.showAlert('저장이 완료되었습니다.');
         await _reloadData();
         return;
       }
 
-      NaviComponent.showLoading();
+      NaviComponent.showLoading('저장 중입니다...');
       var successCount = 0;
       var failCount    = 0;
 
@@ -1371,15 +1371,15 @@ async function _saveDragOrder(newRows) {
 
         NaviComponent.hideLoading();
         if (failCount === 0) {
-          _showToast('✅ 데이타가 변경되었습니다.', 'success');
+          NaviComponent.showAlert('저장이 완료되었습니다.');
         } else if (successCount > 0) {
-          _showToast('⚠️ 일부 순위 저장 실패 (' + failCount + '건)', 'error');
+          NaviComponent.showAlert('일부 순위 저장에 실패했습니다. (' + failCount + '건)', null, { icon: '⚠️' });
         } else {
-          _showToast('❌ 순위 저장에 실패했습니다.', 'error');
+          NaviComponent.showAlert('순위 저장에 실패했습니다.', null, { icon: '⚠️' });
         }
       } catch(e) {
         NaviComponent.hideLoading();
-        _showToast('❌ 오류: ' + e.message, 'error');
+        NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
 
       await _reloadData();
@@ -1421,11 +1421,11 @@ async function _saveDragOrder(newRows) {
     // ── 선호전형 저장 ────────────────────────────────────────
     async function savePrefType() {
       var selected = document.querySelector('#pref-type-group .seg-btn.selected');
-      if (!selected) { _showToast('선호전형을 선택해주세요.', 'error'); return; }
+      if (!selected) { NaviComponent.showAlert('선호전형을 선택해주세요.'); return; }
       var prefType = selected.dataset.value;
 
       try {
-        NaviComponent.showLoading();
+        NaviComponent.showLoading('저장 중입니다...');
         var result = await _callPostAPI('univSavePrefType', {
           studentId: studentId,
           prefType : prefType
@@ -1433,13 +1433,14 @@ async function _saveDragOrder(newRows) {
         
         if (result && result.success) {
           NaviComponent.hideLoading();
-          _showToast('✅ ' + result.message, 'success');
+          NaviComponent.showAlert(result.message || '저장이 완료되었습니다.');
         } else {
-          _showToast('저장 실패: ' + (result.message || ''), 'error');
+          NaviComponent.hideLoading();
+          NaviComponent.showAlert('저장 실패: ' + (result.message || ''), null, { icon: '⚠️' });
         }
       } catch (e) {
         NaviComponent.hideLoading();
-        _showToast('❌ 오류: ' + e.message, 'error');
+        NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
     }
 
@@ -1509,24 +1510,24 @@ async function _saveDragOrder(newRows) {
       checkboxes.forEach(function(cb) { selected.push(cb.value); });
       if (selected.indexOf('일반전형(기본)') === -1) selected.unshift('일반전형(기본)');
       var value = selected.join(', ');
-      NaviComponent.showLoading(); 
+      NaviComponent.showLoading('저장 중입니다...');
       try {
         var result = await _callPostAPI('univSaveEligibleType', {
           studentId   : studentId,
           eligibleType: value
         });
-        NaviComponent.hideLoading(); 
+        NaviComponent.hideLoading();
         if (result && result.success) {
           eligibleTypeValue = value;
           _renderEligibleTypeDisplay();
           closeEligibleTypeModal();
-          _showToast('✅ ' + result.message, 'success');
+          NaviComponent.showAlert(result.message || '저장이 완료되었습니다.');
         } else {
-          _showToast('저장 실패: ' + (result.message || ''), 'error');
+          NaviComponent.showAlert('저장 실패: ' + (result.message || ''), null, { icon: '⚠️' });
         }
       } catch (e) {
-        NaviComponent.hideLoading(); 
-        _showToast('❌ 오류: ' + e.message, 'error');
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
     }
 
@@ -1544,18 +1545,21 @@ async function _saveDragOrder(newRows) {
     async function _savePrefTypeFromModal(prefType) {
       document.getElementById('pref-type-modal').classList.add('hidden');
       _restorePrefType(prefType);
+      NaviComponent.showLoading('저장 중입니다...');
       try {
         var result = await _callPostAPI('univSavePrefType', {
           studentId: studentId,
           prefType : prefType
         });
+        NaviComponent.hideLoading();
         if (result && result.success) {
-          _showToast('✅ 선호전형이 저장되었습니다.', 'success');
+          NaviComponent.showAlert('선호전형이 저장되었습니다.');
         } else {
-          _showToast('저장 실패: ' + (result.message || ''), 'error');
+          NaviComponent.showAlert('저장 실패: ' + (result.message || ''), null, { icon: '⚠️' });
         }
       } catch (e) {
-        _showToast('❌ 오류: ' + e.message, 'error');
+        NaviComponent.hideLoading();
+        NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
     }
 
@@ -1798,7 +1802,7 @@ async function _saveDragOrder(newRows) {
     // ── 행 저장 ──────────────────────────────────────────────
     async function saveRow() {
       var newRank = Number(document.getElementById('modal-rank').value);
-      if (!newRank) { _showToast('순위를 선택해주세요.', 'error'); return; }
+      if (!newRank) { NaviComponent.showAlert('순위를 선택해주세요.'); return; }
 
       // 날짜 유효성 검사
       var dateError = _validateDates();
@@ -1973,7 +1977,7 @@ async function _saveDragOrder(newRows) {
         // 마지막 데이터 슬롯의 rank (삭제 전)
         var lastDataRank = dataRows[dataRows.length - 1].rank;
 
-        NaviComponent.showLoading();
+        NaviComponent.showLoading('삭제 중입니다...');
 
         // 삭제 대상 뒤 행들을 순서대로 한 칸씩 앞으로 덮어쓰기
         // 예) 3위 삭제 시: 4위→3위 저장, 5위→4위 저장
@@ -2021,6 +2025,7 @@ async function _saveDragOrder(newRows) {
         } catch(e2) { /* 실패해도 계속 */ }
 
         NaviComponent.hideLoading();
+        NaviComponent.showAlert('삭제가 완료되었습니다.');
 
         await _reloadData();
       });
