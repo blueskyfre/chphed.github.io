@@ -245,6 +245,17 @@
       border-color: #93c5fd;
       background: #eff6ff;
     }
+
+    /* ── 로딩 중 전체 버튼/링크 포인터 이벤트 차단 ── */
+    body.navi-loading-active button,
+    body.navi-loading-active a,
+    body.navi-loading-active select,
+    body.navi-loading-active input[type="button"],
+    body.navi-loading-active input[type="submit"] {
+      pointer-events: none !important;
+      opacity: 0.4 !important;
+      cursor: not-allowed !important;
+    }
   </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
@@ -689,6 +700,32 @@
   <!-- ============================================================ -->
   <!--  스크립트 (IIFE 네임스페이스: UniverNS) -->
   <!-- ============================================================ -->
+  <!-- ============================================================ -->
+  <!--  로딩 래퍼: NaviComponent + body 클래스 동기화              -->
+  <!-- ============================================================ -->
+  <script>
+    function _pageShowLoading(msg) {
+      document.body.classList.add('navi-loading-active');
+      NaviComponent.showLoading(msg);
+    }
+    function _pageHideLoading() {
+      NaviComponent.hideLoading();
+      document.body.classList.remove('navi-loading-active');
+    }
+
+    /* ── 타임아웃 안전장치 대응 ──────────────────────────────────
+       navi.js의 30초 타임아웃은 NaviComponent.hideLoading()을 직접
+       호출하므로 body 클래스가 제거되지 않는 문제를 방지.
+       NaviComponent.hideLoading 자체를 래핑하여 항상 클래스 제거를 보장. */
+    (function() {
+      var _orig = NaviComponent.hideLoading;
+      NaviComponent.hideLoading = function() {
+        _orig.apply(this, arguments);
+        document.body.classList.remove('navi-loading-active');
+      };
+    })();
+  </script>
+
   <script>
   var UniverNS = (function () {
     'use strict';
@@ -1330,7 +1367,7 @@ async function _saveDragOrder(newRows) {
         return;
       }
 
-      NaviComponent.showLoading('저장 중입니다...');
+      _pageShowLoading('저장 중입니다...');
       var successCount = 0;
       var failCount    = 0;
 
@@ -1369,7 +1406,7 @@ async function _saveDragOrder(newRows) {
           }
         }
 
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         if (failCount === 0) {
           NaviComponent.showAlert('저장이 완료되었습니다.');
         } else if (successCount > 0) {
@@ -1378,7 +1415,7 @@ async function _saveDragOrder(newRows) {
           NaviComponent.showAlert('순위 저장에 실패했습니다.', null, { icon: '⚠️' });
         }
       } catch(e) {
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
 
@@ -1425,21 +1462,21 @@ async function _saveDragOrder(newRows) {
       var prefType = selected.dataset.value;
 
       try {
-        NaviComponent.showLoading('저장 중입니다...');
+        _pageShowLoading('저장 중입니다...');
         var result = await _callPostAPI('univSavePrefType', {
           studentId: studentId,
           prefType : prefType
         });
         
         if (result && result.success) {
-          NaviComponent.hideLoading();
+          _pageHideLoading();
           NaviComponent.showAlert(result.message || '저장이 완료되었습니다.');
         } else {
-          NaviComponent.hideLoading();
+          _pageHideLoading();
           NaviComponent.showAlert('저장 실패: ' + (result.message || ''), null, { icon: '⚠️' });
         }
       } catch (e) {
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
     }
@@ -1510,13 +1547,13 @@ async function _saveDragOrder(newRows) {
       checkboxes.forEach(function(cb) { selected.push(cb.value); });
       if (selected.indexOf('일반전형(기본)') === -1) selected.unshift('일반전형(기본)');
       var value = selected.join(', ');
-      NaviComponent.showLoading('저장 중입니다...');
+      _pageShowLoading('저장 중입니다...');
       try {
         var result = await _callPostAPI('univSaveEligibleType', {
           studentId   : studentId,
           eligibleType: value
         });
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         if (result && result.success) {
           eligibleTypeValue = value;
           _renderEligibleTypeDisplay();
@@ -1526,7 +1563,7 @@ async function _saveDragOrder(newRows) {
           NaviComponent.showAlert('저장 실패: ' + (result.message || ''), null, { icon: '⚠️' });
         }
       } catch (e) {
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
     }
@@ -1545,20 +1582,20 @@ async function _saveDragOrder(newRows) {
     async function _savePrefTypeFromModal(prefType) {
       document.getElementById('pref-type-modal').classList.add('hidden');
       _restorePrefType(prefType);
-      NaviComponent.showLoading('저장 중입니다...');
+      _pageShowLoading('저장 중입니다...');
       try {
         var result = await _callPostAPI('univSavePrefType', {
           studentId: studentId,
           prefType : prefType
         });
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         if (result && result.success) {
           NaviComponent.showAlert('선호전형이 저장되었습니다.');
         } else {
           NaviComponent.showAlert('저장 실패: ' + (result.message || ''), null, { icon: '⚠️' });
         }
       } catch (e) {
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
     }
@@ -1977,7 +2014,7 @@ async function _saveDragOrder(newRows) {
         // 마지막 데이터 슬롯의 rank (삭제 전)
         var lastDataRank = dataRows[dataRows.length - 1].rank;
 
-        NaviComponent.showLoading('삭제 중입니다...');
+        _pageShowLoading('삭제 중입니다...');
 
         // 삭제 대상 뒤 행들을 순서대로 한 칸씩 앞으로 덮어쓰기
         // 예) 3위 삭제 시: 4위→3위 저장, 5위→4위 저장
@@ -2024,7 +2061,7 @@ async function _saveDragOrder(newRows) {
           });
         } catch(e2) { /* 실패해도 계속 */ }
 
-        NaviComponent.hideLoading();
+        _pageHideLoading();
         NaviComponent.showAlert('삭제가 완료되었습니다.');
 
         await _reloadData();
