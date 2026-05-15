@@ -321,11 +321,10 @@ var AdminRepoArea = (function () {
         _modalState.savedText = text;
         AdminCore.state.hasUnsavedEdit = false;
         _updateCardAfterSave(text, bytes, limit);
-        NaviComponent.hideLoading();
-        NaviComponent.showAlert('변경 내용이 정상적으로 저장되었습니다.', function () {
-          Admin.showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
-          _doCloseGibuModal();
-        });
+      NaviComponent.hideLoading();
+      Admin.showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
+      _doCloseGibuModal();
+           
       } else {
         NaviComponent.hideLoading();
         NaviComponent.showAlert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
