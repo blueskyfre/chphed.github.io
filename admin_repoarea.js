@@ -306,12 +306,15 @@ var AdminRepoArea = (function () {
   // ─── 생기부 모달 저장 실행 (confirm 분기 후 공통 경로) ──────
   async function _doSaveGibuModal(ta, saveBtn, text, bytes, limit) {
     _modalState.isSaving = true;
-
-    // 저장 버튼 클릭 차단 (중복 클릭 방지)
+    NaviComponent.showLoading('저장 중입니다...');
     if (saveBtn) {
       saveBtn.disabled = true;
+      saveBtn.innerHTML =
+        '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" style="animation:spin 0.7s linear infinite;flex-shrink:0;">'
+        + '<circle cx="12" cy="12" r="9" stroke-width="3" stroke-opacity="0.25"/>'
+        + '<path d="M12 3a9 9 0 019 9" stroke-width="3" stroke-linecap="round"/>'
+        + '</svg>저장 중...';
     }
-
     try {
       var res = await AdminCore.apiGet('adminSaveTeacherGibu', {
         adminId:       AdminCore.state.adminId,
@@ -322,26 +325,22 @@ var AdminRepoArea = (function () {
         editedContent: text,
         editedBytes:   bytes
       });
-
       if (res && res.success) {
         _modalState.savedText = text;
         AdminCore.state.hasUnsavedEdit = false;
         _updateCardAfterSave(text, bytes, limit);
-        
-        // 성공 알림 후 모달 닫기
+        NaviComponent.hideLoading();
         NaviComponent.showAlert('변경 내용이 정상적으로 저장되었습니다.', function () {
           Admin.showSaveSuccess('변경 내용이 정상적으로 저장되었습니다.');
           _doCloseGibuModal();
         });
       } else {
-        // 실패 시 사용자가 다시 시도할 수 있도록 버튼 활성화
+        NaviComponent.hideLoading();
         NaviComponent.showAlert('저장 실패: ' + (res && res.message ? res.message : '알 수 없는 오류'));
-        if (saveBtn) saveBtn.disabled = false;
       }
     } catch (err) {
-      // 에러 발생 시 버튼 활성화
+      NaviComponent.hideLoading();
       NaviComponent.showAlert('오류: ' + err.message);
-      if (saveBtn) saveBtn.disabled = false;
     } finally {
       _modalState.isSaving = false;
     }
