@@ -9,13 +9,17 @@ var AdminRepoPer = (function () {
   // ─── 개인별 생기부 조회·렌더링 ──────────────────────────────
   async function renderForStudent(targetId) {
     Admin.showContentSkeleton(6);
+    NaviComponent.showLoading('불러오는 중입니다...');
     AdminCore.state.isLoading = true;
     try {
       var res = await AdminCore.apiGet('adminGetGibuByStudent', {
         adminId:     AdminCore.state.adminId,
         filterClass: AdminCore.state.currentClass
       });
-      if (!res.success) { Admin.showError(res.message); return; }
+      if (!res.success) {
+        NaviComponent.showAlert(res.message || '데이터를 불러오지 못했습니다.', null, { icon: '⚠️' });
+        return;
+      }
 
       var found = null;
       for (var i = 0; i < res.data.length; i++) {
@@ -104,8 +108,9 @@ var AdminRepoPer = (function () {
       document.getElementById('content-area').innerHTML = html;
 
     } catch (err) {
-      Admin.showError(err.message);
+      NaviComponent.showAlert('데이터 로드 중 오류가 발생했습니다.<br>' + err.message, null, { icon: '⚠️' });
     } finally {
+      NaviComponent.hideLoading();
       AdminCore.state.isLoading = false;
       if (AdminCore.state.pendingDownload) {
         AdminCore.state.pendingDownload = false;
