@@ -1010,6 +1010,7 @@
 
     // ── 데이터 로드 ──────────────────────────────────────────
     async function _loadData() {
+      _pageShowLoading('불러오는 중입니다...');
       try {
         var result = await _callGetAPI('univGetStudentData', {
           studentId: studentId,
@@ -1031,6 +1032,7 @@
         NaviComponent.showAlert('오류가 발생했습니다.<br>' + e.message, null, { icon: '⚠️' });
       }
 
+      _pageHideLoading();
       _renderAll();
     }
 
@@ -2139,6 +2141,9 @@ async function _saveDragOrder(newRows) {
       studentId:  urlParams.get('studentId') || '',
       onLogout: function() { UniverNS.doLogout(); }
     });
+    /* nav 렌더링 직후 즉시 차단 — _loadData의 _pageShowLoading 이전에
+       nav 버튼이 잠깐 활성화되는 것을 방지 */
+    document.body.classList.add('navi-loading-active');
     UniverNS.init();
   });
     
