@@ -10,6 +10,7 @@ var AdminSuneung = (function () {
   // AdminCore.state.suneungData 에 결과를 캐싱합니다.
   async function load() {
     Admin.showContentSkeleton(10);
+    NaviComponent.showLoading('불러오는 중입니다...');  // 모든 버튼/링크/셀렉트 비활성화
     AdminCore.state.isLoading = true;
     try {
       var res = await AdminCore.apiGet('adminGetSuneungData', {
@@ -26,6 +27,7 @@ var AdminSuneung = (function () {
       Admin.showError(err.message);
     } finally {
       AdminCore.state.isLoading = false;
+      NaviComponent.hideLoading();                      // 모든 버튼/링크/셀렉트 재활성화
       if (AdminCore.state.pendingDownload) {
         AdminCore.state.pendingDownload = false;
         Admin.openDownloadModal();
