@@ -812,38 +812,99 @@ function downloadStudentTemplate() {
 
   // ─── 학생개별공지 모달 ───────────────────────────────────────
   function openNoticeModal(courseName) {
-  _state.noticeUploadFile = null;
-  var modal = document.getElementById('course-notice-modal');
-  var titleEl = document.getElementById('course-notice-modal-title');
-  if (titleEl) titleEl.textContent = courseName + '과목 학생개별공지';
+    _state.noticeUploadFile = null;
 
-  // 모달 내부 상태 초기화
-  var fileNameEl = document.getElementById('notice-file-name');
-  var fileSelEl  = document.getElementById('notice-file-selected');
-  var uploadBtn  = document.getElementById('notice-upload-btn-wrap');
-  if (fileNameEl) fileNameEl.textContent = '';
-  if (fileSelEl)  fileSelEl.classList.add('hidden');
-  if (uploadBtn)  uploadBtn.classList.add('hidden');
-  var noticeInput = document.getElementById('notice-file-input');
-  if (noticeInput) noticeInput.value = '';
+    // 기존 모달 제거 후 새로 생성
+    var old = document.getElementById('course-notice-modal');
+    if (old) old.remove();
 
-  // 개인공지제목 글상자 초기화
-  var noticeTitleInput = document.getElementById('notice-personal-title');
-  if (noticeTitleInput) noticeTitleInput.value = '';
+    var modalHtml =
+      '<div id="course-notice-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center">'
+      + '<div class="absolute inset-0 bg-black/40 backdrop-blur-sm" onclick="AdminCourse.closeNoticeModal()"></div>'
+      + '<div id="course-notice-modal-card"'
+      + ' class="relative bg-white rounded-2xl shadow-2xl overflow-hidden transform transition-all duration-200 scale-95 opacity-0"'
+      + ' style="width:min(96vw,560px);">'
+      + '<div class="h-1.5 bg-gradient-to-r from-amber-500 to-amber-300"></div>'
+      + '<div class="px-6 py-5">'
 
-  // 경고메세지 초기화
-  var warnEl = document.getElementById('notice-upload-warning');
-  if (warnEl) warnEl.classList.add('hidden');
+      // 헤더
+      + '<div class="flex items-center justify-between mb-4">'
+      + '<h3 id="course-notice-modal-title" class="text-base font-bold text-gray-800">' + AdminCore.escapeHtml(courseName) + ' 과목 학생개별공지</h3>'
+      + '<button onclick="AdminCourse.closeNoticeModal()"'
+      + ' class="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors flex items-center justify-center text-gray-500 font-bold text-sm">✕</button>'
+      + '</div>'
 
-  // 현재 교과목 저장
-  document.getElementById('course-notice-modal').dataset.course = courseName;
+      // 안내 메시지
+      + '<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">'
+      + '<p class="text-xs text-amber-700 leading-relaxed">'
+      + '엑셀에 입력된 <strong>선택형 점수, 서술형 점수, 총점, 비고</strong>는 학생에게 보이는 표 제목입니다.'
+      + ' 제목을 바꾸고 싶으면 다른 내용으로 바꾸시면 됩니다.<br>'
+      + '예를 들어, 학생에게 체험학습 시간, 장소, 내용, 비고를 알리고 싶으면 선택형 점수, 서술형 점수, 총점, 비고 글자를'
+      + ' <strong>체험학습 시간, 장소, 내용, 비고</strong> 글자로 변경하고 엑셀 파일을 업로드하세요.'
+      + '</p>'
+      + '</div>'
 
-  if (modal) modal.classList.remove('hidden');
-  setTimeout(function () {
-    var card = document.getElementById('course-notice-modal-card');
-    if (card) { card.classList.remove('scale-95', 'opacity-0'); card.classList.add('scale-100', 'opacity-100'); }
-  }, 10);
-}
+      // 개인공지 제목 입력
+      + '<div class="mb-4">'
+      + '<label class="block text-xs font-bold text-gray-700 mb-1">개인공지 제목 <span class="text-red-400">*</span></label>'
+      + '<input id="notice-personal-title" type="text" placeholder="학생에게 표시될 공지 제목을 입력하세요"'
+      + ' class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"/>'
+      + '</div>'
+
+      // 다운로드 버튼
+      + '<button onclick="AdminCourse.downloadNoticeTmpl()"'
+      + ' class="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-bold mb-4'
+      + ' bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow hover:from-emerald-600 hover:to-emerald-700 transition-all">'
+      + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
+      + '학생개별공지.xlsx 다운로드'
+      + '</button>'
+
+      // 파일 업로드 드래그앤드롭 존
+      + '<div class="border-2 border-dashed border-indigo-200 rounded-xl p-4 text-center bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer mb-3"'
+      + ' onclick="document.getElementById(\'notice-file-input\').click()"'
+      + ' ondragover="event.preventDefault(); this.classList.add(\'border-indigo-400\',\'bg-indigo-100\')"'
+      + ' ondragleave="this.classList.remove(\'border-indigo-400\',\'bg-indigo-100\')"'
+      + ' ondrop="event.preventDefault(); this.classList.remove(\'border-indigo-400\',\'bg-indigo-100\'); AdminCourse.handleNoticeFileDrop(event)">'
+      + '<svg class="w-7 h-7 text-indigo-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
+      + '<p class="text-sm text-indigo-500 font-semibold">작성한 학생개별공지.xlsx를 업로드하세요</p>'
+      + '<p class="text-xs text-gray-400 mt-0.5">클릭하거나 파일을 드래그하여 선택 · .xlsx 형식</p>'
+      + '</div>'
+      + '<input id="notice-file-input" type="file" accept=".xlsx,.xls" class="hidden" onchange="AdminCourse.handleNoticeFileSelect(event)"/>'
+
+      // 선택된 파일 표시
+      + '<div id="notice-file-selected" class="hidden flex items-center gap-3 bg-indigo-50 rounded-xl px-4 py-2.5 mb-3">'
+      + '<svg class="w-4 h-4 text-indigo-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
+      + '<span id="notice-file-name" class="text-sm font-semibold text-indigo-700 flex-1 truncate"></span>'
+      + '<button onclick="AdminCourse.clearNoticeFile()" class="text-gray-400 hover:text-gray-600 transition-colors text-xs shrink-0">✕ 취소</button>'
+      + '</div>'
+
+      // 경고 메시지
+      + '<div id="notice-upload-warning" class="hidden bg-red-50 border border-red-200 rounded-xl px-4 py-2.5 mb-3">'
+      + '<p class="text-xs font-semibold text-red-600"></p>'
+      + '</div>'
+
+      // 업로드 & 저장 버튼
+      + '<div id="notice-upload-btn-wrap" class="hidden">'
+      + '<button id="notice-upload-exec-btn" onclick="AdminCourse.uploadNoticeFile()"'
+      + ' class="w-full py-2.5 rounded-xl text-sm font-bold text-white'
+      + ' bg-gradient-to-r from-indigo-600 to-indigo-500 shadow hover:from-indigo-700 hover:to-indigo-600 transition-all">'
+      + '업로드 &amp; 저장'
+      + '</button>'
+      + '</div>'
+
+      + '</div></div></div>';
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+
+    // 현재 교과목 저장
+    var modal = document.getElementById('course-notice-modal');
+    modal.dataset.course = courseName;
+    modal.classList.remove('hidden');
+    setTimeout(function () {
+      var card = document.getElementById('course-notice-modal-card');
+      if (card) { card.classList.remove('scale-95', 'opacity-0'); card.classList.add('scale-100', 'opacity-100'); }
+    }, 10);
+  }
 
   function closeNoticeModal() {
     var modal = document.getElementById('course-notice-modal');
@@ -927,7 +988,7 @@ function downloadStudentTemplate() {
       } else {
         msg = '공지 파일을 첨부해주세요.';
       }
-      if (warnEl) { warnEl.textContent = msg; warnEl.classList.remove('hidden'); }
+      if (warnEl) { var p = warnEl.querySelector('p'); if (p) p.textContent = msg; warnEl.classList.remove('hidden'); }
       return;
     }
     if (warnEl) warnEl.classList.add('hidden');
