@@ -177,22 +177,26 @@ var AdminUniver = (function () {
       var studentId = cell.dataset.studentid;
       var rowIndex  = cell.dataset.rowindex;
       cell.textContent = '저장 중...';
+      NaviComponent.showLoading('저장 중입니다...');
       AdminCore.apiGet('adminSaveUnivRank', {
         adminId:   AdminCore.state.adminId,
         studentId: studentId,
         rowIndex:  rowIndex,
         newRank:   newVal
       }).then(function (res) {
+        NaviComponent.hideLoading();
         if (res.success) {
           cell.textContent = newVal ? newVal + '순위' : '-';
           cell.dataset.current = newVal;
+          NaviComponent.showAlert('저장되었습니다.', null, { icon: '✅' });
         } else {
-          alert('저장 실패: ' + res.message);
           cell.textContent = currentVal ? currentVal + '순위' : '-';
+          NaviComponent.showAlert('저장 실패: ' + res.message, null, { icon: '⚠️' });
         }
       }).catch(function (err) {
-        alert('오류: ' + err.message);
+        NaviComponent.hideLoading();
         cell.textContent = currentVal ? currentVal + '순위' : '-';
+        NaviComponent.showAlert('오류: ' + err.message, null, { icon: '⚠️' });
       });
     }
 
