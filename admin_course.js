@@ -827,6 +827,14 @@ function downloadStudentTemplate() {
   var noticeInput = document.getElementById('notice-file-input');
   if (noticeInput) noticeInput.value = '';
 
+  // 개인공지제목 글상자 초기화
+  var noticeTitleInput = document.getElementById('notice-personal-title');
+  if (noticeTitleInput) noticeTitleInput.value = '';
+
+  // 경고메세지 초기화
+  var warnEl = document.getElementById('notice-upload-warning');
+  if (warnEl) warnEl.classList.add('hidden');
+
   // 현재 교과목 저장
   document.getElementById('course-notice-modal').dataset.course = courseName;
 
@@ -902,9 +910,27 @@ function downloadStudentTemplate() {
   }
 
   async function uploadNoticeFile() {
-    if (!_state.noticeUploadFile) return;
     var courseName = document.getElementById('course-notice-modal').dataset.course || '';
     if (!courseName) { NaviComponent.showAlert('교과목 정보가 없습니다.'); return; }
+
+    // 제목과 파일 동시 검증
+    var noticeTitleInput = document.getElementById('notice-personal-title');
+    var noticeTitle = noticeTitleInput ? noticeTitleInput.value.trim() : '';
+    var warnEl = document.getElementById('notice-upload-warning');
+
+    if (!noticeTitle || !_state.noticeUploadFile) {
+      var msg = '';
+      if (!noticeTitle && !_state.noticeUploadFile) {
+        msg = '개인공지제목을 입력하고 파일을 첨부해주세요.';
+      } else if (!noticeTitle) {
+        msg = '개인공지제목을 입력해주세요.';
+      } else {
+        msg = '공지 파일을 첨부해주세요.';
+      }
+      if (warnEl) { warnEl.textContent = msg; warnEl.classList.remove('hidden'); }
+      return;
+    }
+    if (warnEl) warnEl.classList.add('hidden');
 
     NaviComponent.showLoading('저장 중입니다...');
 
@@ -933,11 +959,12 @@ function downloadStudentTemplate() {
       }
 
       var res = await AdminCore.apiGet('courseUploadNotice', {
-        adminId:    AdminCore.state.adminId,
-        adminName:  AdminCore.state.adminName,
-        courseName: courseName,
-        headers:    JSON.stringify(headers),
-        rows:       JSON.stringify(rows)
+        adminId:     AdminCore.state.adminId,
+        adminName:   AdminCore.state.adminName,
+        courseName:  courseName,
+        headers:     JSON.stringify(headers),
+        rows:        JSON.stringify(rows),
+        noticeTitle: noticeTitle
       });
 
       NaviComponent.hideLoading();
