@@ -675,6 +675,7 @@ var ClassPage = (function () {
     if (!body) return;
 
     var notice       = data.notice        || '';
+    var extraTitle   = data.extraTitle    || '';
     var submitContent= data.submitContent || '';
     var files        = data.files         || [];
     var extraItems   = data.extraItems    || [];
@@ -689,9 +690,9 @@ var ClassPage = (function () {
         '</div>' +
       '</div>';
 
-    // ── 개인별 공지사항 버튼 (extraItems 있을 때만) ──
+    // ── 개인별 공지사항 버튼 (extraTitle 있을 때만) ──
     var extraBtnHtml = '';
-    if (extraItems.length > 0) {
+    if (extraTitle) {
       extraBtnHtml =
         '<div class="section-panel section-panel--personal">' +
           '<div class="section-label" style="color:#7c3aed;">🔔 개인별 공지사항</div>' +
@@ -1053,6 +1054,8 @@ var ClassPage = (function () {
     var key  = state.courses[idx].teacher + '_' + state.courses[idx].course;
     var data = state.cardCache[key];
     if (!data || !data.extraItems || data.extraItems.length === 0) return;
+
+    document.querySelector('#extra-modal .modal-header span').textContent = data.extraTitle || '개인별 공지사항';
 
     var body = document.getElementById('extra-modal-body');
     body.innerHTML = data.extraItems.map(function(item) {
