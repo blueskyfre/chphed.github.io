@@ -426,9 +426,9 @@ function downloadStudentTemplate() {
           + '<div class="border border-gray-200 rounded-xl bg-gray-50 px-3 py-2.5 mb-3">'
           + '<p class="text-xs font-bold text-gray-600 mb-2 flex items-center gap-1.5">'
           + '<svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>'
-          + '드라이브 폴더 파일 목록</p>'
+          + '학생에게 공지한 파일 목록</p>'
           + '<div id="all-notice-drive-files">'
-          + '<p class="text-xs text-gray-400 italic">드라이브 폴더 파일 목록을 불러오는 중...</p>'
+          + '<p class="text-xs text-gray-400 italic">학생에게 공지한 파일 목록을 불러오는 중...</p>'
           + '</div>'
           + '</div>'
 
@@ -436,7 +436,7 @@ function downloadStudentTemplate() {
           + '<div id="all-notice-file-section" class="border border-emerald-200 rounded-xl bg-emerald-50 px-3 py-2.5">'
           + '<p class="text-xs font-bold text-emerald-700 mb-2 flex items-center gap-1.5">'
           + '<svg class="w-3.5 h-3.5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
-          + '드라이브에 파일 업로드</p>'
+          + '학생에게 공지할 파일 업로드</p>'
           + '<div id="all-notice-drive-file-list-wrap" class="mb-2 hidden">'
           + '<p class="text-xs font-bold text-gray-400 mb-1">관리자 폴더 내 파일:</p>'
           + '<ul id="all-notice-drive-file-list" class="text-xs text-gray-600 space-y-1 pl-2"></ul>'
@@ -605,7 +605,7 @@ function downloadStudentTemplate() {
     var filesWrap = document.getElementById('all-notice-drive-files');
     if (!filesWrap) return;
     if (_state.driveFiles.length === 0) {
-      filesWrap.innerHTML = '<p class="text-xs text-gray-400 italic">드라이브 폴더에 파일이 없습니다.</p>';
+      filesWrap.innerHTML = '<p class="text-xs text-gray-400 italic">학생에게 공지한 파일이 없습니다.</p>';
     } else {
       var listHtml = '<ul class="text-xs text-gray-600 space-y-1">';
       _state.driveFiles.forEach(function(f) {
