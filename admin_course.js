@@ -571,20 +571,21 @@ function downloadStudentTemplate() {
   // ─── 전체공지 & 드라이브 파일 목록 로드 ─────────────────────
   async function _loadAllNoticeAndDriveFiles(courseName) {
     // 기존 전체공지 내용 로드
+    var textarea = document.getElementById('all-notice-textarea');
+    if (textarea) textarea.placeholder = '전체공지 내용을 불러오는 중...';
     try {
       var res = await AdminCore.apiGet('getAllNotice', {
         adminId:    AdminCore.state.adminId,
         adminName:  AdminCore.state.adminName,
         courseName: courseName
       });
-      var textarea = document.getElementById('all-notice-textarea');
-      if (textarea) textarea.placeholder = '전체공지 내용을 불러오는 중...';
-      if (textarea && res && res.success) textarea.placeholder = '수업 대상자 전체에게 보내는 공지사항';
-      if (textarea && res && res.success) {
-        textarea.value = res.data || '';
+      if (textarea && res && res.success && res.data) {
+        textarea.placeholder = '수업 대상자 전체에게 보내는 공지사항';
+        textarea.value = res.data;
+      } else if (textarea) {
+        textarea.placeholder = '입력된 전체공지 내용은 없습니다.';
       }
     } catch(e) {}
-
     // 드라이브 관리자 폴더 파일 목록 로드
     _refreshDriveFileList();
   }
