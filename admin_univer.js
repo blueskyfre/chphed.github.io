@@ -10,6 +10,7 @@ var AdminUniver = (function () {
   async function renderForStudent(student) {
     Admin.showContentSkeleton(10);
     AdminCore.state.isLoading = true;
+    NaviComponent.showLoading('불러오는 중입니다...');
     try {
       var res = await AdminCore.apiGet('adminGetUnivByStudent', {
         adminId:   AdminCore.state.adminId,
@@ -149,6 +150,7 @@ var AdminUniver = (function () {
     } catch (err) {
       Admin.showError(err.message);
     } finally {
+      NaviComponent.hideLoading();
       AdminCore.state.isLoading = false;
       if (AdminCore.state.pendingDownload) {
         AdminCore.state.pendingDownload = false;
