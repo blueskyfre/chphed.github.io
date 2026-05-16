@@ -615,7 +615,7 @@ function downloadStudentTemplate() {
         listHtml += '<li class="flex items-center gap-1.5 bg-white border border-gray-200 rounded-lg px-2 py-1.5">'
           + '<svg class="w-3 h-3 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
           + '<span class="flex-1 truncate text-gray-700">' + fileName + '</span>'
-          + '<a href="' + downloadUrl + '" target="_blank" rel="noopener" title="파일 저장"'
+          + '<a href="' + downloadUrl + '" title="파일 저장"'
           + ' class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors">'
           + '<svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>'
           + '저장</a>'
@@ -988,7 +988,7 @@ function downloadStudentTemplate() {
         listHtml += '<li class="flex items-center gap-1.5">'
           + '<svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z"/></svg>'
           + '<span class="text-sm text-gray-700 flex-1 truncate">' + AdminCore.escapeHtml(displayName) + '</span>'
-          + '<a href="' + downloadUrl + '" target="_blank" rel="noopener" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors">'
+          + '<a href="' + downloadUrl + '" class="shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-bold bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border border-indigo-200 transition-colors">'
           + '<svg width="11" height="11" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>저장</a>'
           + '</li>';
       });
