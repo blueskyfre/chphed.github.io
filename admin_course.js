@@ -405,6 +405,7 @@ function downloadStudentTemplate() {
           + '전체공지</p>'
           + '<div class="flex gap-2 items-start">'
           + '<textarea id="all-notice-textarea" rows="2"'
+          + '<p id="all-notice-loading" class="text-xs text-gray-400 italic">전체공지 내용을 불러오는 중...</p>'
           + ' placeholder="수업 대상자 전체에게 보내는 공지사항"'
           + ' class="flex-1 border border-indigo-200 rounded-lg px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all resize-none bg-white"></textarea>'
           + '<div class="flex flex-col gap-1.5 shrink-0">'
@@ -578,6 +579,8 @@ function downloadStudentTemplate() {
         courseName: courseName
       });
       var textarea = document.getElementById('all-notice-textarea');
+      var loadingEl = document.getElementById('all-notice-loading');
+      if (loadingEl) loadingEl.style.display = 'none';
       if (textarea && res && res.success) {
         textarea.value = res.data || '';
       }
