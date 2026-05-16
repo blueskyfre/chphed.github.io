@@ -749,7 +749,7 @@ function downloadStudentTemplate() {
       NaviComponent.hideLoading();
       if (res && res.success) {
         clearAllNoticeFile();
-        NaviComponent.showAlert('파일이 드라이브에 저장되었습니다.');
+        NaviComponent.showAlert('파일이 저장되었습니다.');
         await _refreshDriveFileList();
       } else {
         NaviComponent.showAlert('업로드 오류: ' + (res && res.message ? res.message : '알 수 없는 오류'));
@@ -762,7 +762,7 @@ function downloadStudentTemplate() {
 
   // ─── 드라이브 파일 삭제 ─────────────────────────────────────
   async function deleteDriveFile(fileId, fileName) {
-    NaviComponent.showConfirmDialog('「' + fileName + '」 파일을 드라이브에서 삭제하시겠습니까?', function() {
+    NaviComponent.showConfirmDialog('「' + fileName + '」 파일을 삭제하시겠습니까?', function() {
       _doDeleteDriveFile(fileId, fileName);
     });
   }
@@ -837,10 +837,12 @@ function downloadStudentTemplate() {
       // 안내 메시지
       + '<div class="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4">'
       + '<p class="text-xs text-amber-700 leading-relaxed">'
-      + '엑셀에 입력된 <strong>선택형 점수, 서술형 점수, 총점, 비고</strong>는 학생에게 보이는 표 제목입니다.'
-      + ' 제목을 바꾸고 싶으면 다른 내용으로 바꾸시면 됩니다.<br>'
-      + '예를 들어, 학생에게 체험학습 시간, 장소, 내용, 비고를 알리고 싶으면 선택형 점수, 서술형 점수, 총점, 비고 글자를'
-      + ' <strong>체험학습 시간, 장소, 내용, 비고</strong> 글자로 변경하고 엑셀 파일을 업로드하세요.'
+      + '<strong>성적 공지 등 개인별로 공지할 때 사용합니다.</strong><br>'
+      + '<strong>사용법</strong><br>'
+      + '1. 개인공지제목 입력<br>'
+      + '2. 학생개별공지.xlsx 다운로드<br>'
+      + '3. 엑셀 파일의 <strong>학번, 이름은 반드시 입력</strong>하고 선택형 점수, 서술형 점수, 총점, 비고는 임의로 수정 가능<br>'
+      + '4. 작성한 엑셀 파일을 업로드'
       + '</p>'
       + '</div>'
 
