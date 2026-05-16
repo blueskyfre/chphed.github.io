@@ -580,7 +580,6 @@ function downloadStudentTemplate() {
         courseName: courseName
       });
       if (textarea && res && res.success && res.data) {
-        textarea.placeholder = '수업 대상자 전체에게 보내는 공지사항';
         textarea.value = res.data;
       } else if (textarea) {
         textarea.placeholder = '입력된 전체공지 내용은 없습니다.';
