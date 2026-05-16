@@ -1296,7 +1296,7 @@ if (leftCopyFb) {
 // ─── 교과 삭제 ───────────────────────────────────────────────
   function confirmDeleteCourse(courseName) {
     NaviComponent.showConfirmDialog(
-      '「' + courseName + '」 교과를 삭제하시겠습니까?\n\nSH사용자 탭의 수강학생 표시 열과\nSH교과관리 탭의 해당 교과 데이터가 모두 삭제됩니다.',
+      '「' + courseName + '」 교과를 삭제하시겠습니까?\n\n수강학생 명단과\n교과 데이터 및 교과 관련 파일이 모두 삭제됩니다.',
       function() { deleteCourse(courseName); }
     );
   }
