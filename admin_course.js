@@ -1293,11 +1293,18 @@ function copyCardContent(cardKey) {
     if (rightLabel) rightLabel.textContent = courseName + ' — 교사 작성 내용';
     if (ta) {
       ta.value = currentText;
-      // 기존 Admin.updateModalBytes() 호출로 바이트 카운트 갱신
-      if (typeof Admin !== 'undefined' && typeof Admin.updateModalBytes === 'function') {
-        Admin.updateModalBytes();
-      }
+        ta.oninput = function() {
+        if (typeof Admin.updateModalBytes === 'function') Admin.updateModalBytes();
+        AdminCore.state.hasUnsavedEdit = (ta.value !== currentText);
+      };
+    
+      if (typeof Admin.updateModalBytes === 'function') Admin.updateModalBytes();
     }
+          // 기존 Admin.updateModalBytes() 호출로 바이트 카운트 갱신
+          if (typeof Admin !== 'undefined' && typeof Admin.updateModalBytes === 'function') {
+            Admin.updateModalBytes();
+          }
+        }
 
     // ── 저장 버튼 onclick 을 교과용으로 교체 ─────────────────
     // 기존 생기부 저장(adminSaveTeacherGibu) 대신 courseSaveTeacherNote 호출
