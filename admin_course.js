@@ -132,7 +132,7 @@ var AdminCourse = (function () {
   }
 
   // ─── 개설 교과목 목록 로드 (GS action: courseGetList) ────────
-  async function _loadCourses() {
+  var _loadCourses = async function() {
     renderSidebar();
     NaviComponent.showLoading('불러오는 중입니다...');
     try {
@@ -297,7 +297,7 @@ function downloadStudentTemplate() {
   
 
   // ─── 교과 저장 (GS + 스프레드시트 조작) ─────────────────────
-  async function saveCourse() {
+  var saveCourse = async function() {
     var nameInput = document.getElementById('course-name-input');
     var courseName = nameInput ? nameInput.value.trim() : '';
     if (!courseName) {
@@ -409,7 +409,7 @@ function downloadStudentTemplate() {
     _renderCourseDetail(courseName);
   }
 
-  async function _renderCourseDetail(courseName) {
+  var _renderCourseDetail = async function(courseName) {
     var ca = document.getElementById('content-area');
     var adminName = AdminCore.state.adminName;
 
@@ -614,7 +614,7 @@ function downloadStudentTemplate() {
   }
 
   // ─── 전체공지 & 드라이브 파일 목록 로드 ─────────────────────
-  async function _loadAllNoticeAndDriveFiles(courseName) {
+  var _loadAllNoticeAndDriveFiles = async function(courseName) {
     // 기존 전체공지 내용 로드
     var textarea = document.getElementById('all-notice-textarea');
     if (textarea) textarea.placeholder = '전체공지 내용을 불러오는 중...';
@@ -634,7 +634,7 @@ function downloadStudentTemplate() {
     _refreshDriveFileList();
   }
 
-  async function _refreshDriveFileList() {
+  var _refreshDriveFileList = async function() {
     var filesWrap = document.getElementById('all-notice-drive-files');
     if (!filesWrap) return;
     try {
@@ -679,7 +679,7 @@ function downloadStudentTemplate() {
   }
 
   // ─── 전체공지 저장 (시트 기록 → 파일 업로드 UI 표시) ─────────
-  async function saveAllNotice(courseName) {
+  var saveAllNotice = async function(courseName) {
     var textarea = document.getElementById('all-notice-textarea');
     var noticeText = textarea ? textarea.value.trim() : '';
     if (!noticeText) {
@@ -711,13 +711,13 @@ function downloadStudentTemplate() {
   }
 
   // ─── 전체공지 삭제 ───────────────────────────────────────────
-  async function deleteAllNotice(courseName) {
+  var deleteAllNotice = async function(courseName) {
     NaviComponent.showConfirmDialog('전체공지 내용을 삭제하시겠습니까?', function() {
       _doDeleteAllNotice(courseName);
     });
   }
 
-  async function _doDeleteAllNotice(courseName) {
+  var _doDeleteAllNotice = async function(courseName) {
     var textarea = document.getElementById('all-notice-textarea');
     NaviComponent.showLoading('삭제 중입니다...');
     try {
@@ -778,7 +778,7 @@ function downloadStudentTemplate() {
   }
 
   // ─── 드라이브에 파일 저장 (관리자이름 폴더) ─────────────────
-  async function uploadAllNoticeToDrive() {
+  var uploadAllNoticeToDrive = async function() {
     if (!_state.allNoticeUploadFile) return;
     NaviComponent.showLoading('저장 중입니다...');
 
@@ -809,13 +809,13 @@ function downloadStudentTemplate() {
   }
 
   // ─── 드라이브 파일 삭제 ─────────────────────────────────────
-  async function deleteDriveFile(fileId, fileName) {
+  var deleteDriveFile = async function(fileId, fileName) {
     NaviComponent.showConfirmDialog('「' + fileName + '」 파일을 삭제하시겠습니까?', function() {
       _doDeleteDriveFile(fileId, fileName);
     });
   }
 
-  async function _doDeleteDriveFile(fileId, fileName) {
+  var _doDeleteDriveFile = async function(fileId, fileName) {
     NaviComponent.showLoading('삭제 중입니다...');
     try {
       var res = await AdminCore.apiGet('deleteDriveAdminFile', {
@@ -1020,7 +1020,7 @@ function downloadStudentTemplate() {
     if (btnWrap) btnWrap.classList.remove('hidden');
   }
 
-  async function uploadNoticeFile() {
+  var uploadNoticeFile = async function() {
     var courseName = document.getElementById('course-notice-modal').dataset.course || '';
     if (!courseName) { NaviComponent.showAlert('교과목 정보가 없습니다.'); return; }
 
@@ -1094,7 +1094,7 @@ function downloadStudentTemplate() {
   }
 
 // ─── 학생 제출 파일 목록 로드 (구글드라이브 담당교사\교과\학생제출 폴더) ──
-  async function _loadStudentDriveFiles(studentId, studentName, courseName, cardKey) {
+  var _loadStudentDriveFiles = async function(studentId, studentName, courseName, cardKey) {
     var filesEl = document.getElementById('course-files-' + cardKey);
     var dlBtn   = document.getElementById('course-dl-btn-' + cardKey);
     if (!filesEl) return;
@@ -1143,7 +1143,7 @@ function downloadStudentTemplate() {
   }
 
   // ─── 학생 제출 파일 압축 다운로드 ────────────────────────────
-  async function downloadStudentFiles(studentId, studentName, courseName) {
+  var downloadStudentFiles = async function(studentId, studentName, courseName) {
     NaviComponent.showLoading('불러오는 중입니다...');
     try {
       var res = await AdminCore.apiGet('courseGetStudentFiles', {
@@ -1293,18 +1293,11 @@ function copyCardContent(cardKey) {
     if (rightLabel) rightLabel.textContent = courseName + ' — 교사 작성 내용';
     if (ta) {
       ta.value = currentText;
-        ta.oninput = function() {
-        if (typeof Admin.updateModalBytes === 'function') Admin.updateModalBytes();
-        AdminCore.state.hasUnsavedEdit = (ta.value !== currentText);
-      };
-    
-      if (typeof Admin.updateModalBytes === 'function') Admin.updateModalBytes();
+      // 기존 Admin.updateModalBytes() 호출로 바이트 카운트 갱신
+      if (typeof Admin !== 'undefined' && typeof Admin.updateModalBytes === 'function') {
+        Admin.updateModalBytes();
+      }
     }
-          // 기존 Admin.updateModalBytes() 호출로 바이트 카운트 갱신
-          if (typeof Admin !== 'undefined' && typeof Admin.updateModalBytes === 'function') {
-            Admin.updateModalBytes();
-          }
-        }
 
     // ── 저장 버튼 onclick 을 교과용으로 교체 ─────────────────
     // 기존 생기부 저장(adminSaveTeacherGibu) 대신 courseSaveTeacherNote 호출
@@ -1353,7 +1346,7 @@ if (leftCopyFb) {
   }
 
   // ─── 교과용 저장: gibu-write-modal textarea → courseSaveTeacherNote ──────────
-  async function _saveCourseFromGibuModal(cardKey, studentId, courseName) {
+  var _saveCourseFromGibuModal = async function(cardKey, studentId, courseName) {
     var ta      = document.getElementById('gibu-modal-textarea');
     var saveBtn = document.getElementById('gibu-modal-save-btn');
     if (!ta) return;
@@ -1403,7 +1396,7 @@ if (leftCopyFb) {
   }
 
   // ─── 교사 내용 저장 (11번째 열 = 편집내용 열) ────────────────
-  async function saveCourseTeacherNote(cardKey, studentId, courseName, newText) {
+  var saveCourseTeacherNote = async function(cardKey, studentId, courseName, newText) {
     NaviComponent.showLoading('저장 중입니다...');
     try {
       var res = await AdminCore.apiGet('courseSaveTeacherNote', {
@@ -1487,7 +1480,7 @@ if (leftCopyFb) {
     }, 50);
   }
 
-  async function deleteCourse(courseName) {
+  var deleteCourse = async function(courseName) {
     NaviComponent.showLoading('삭제 중입니다...');
     try {
       var res = await AdminCore.apiGet('courseDelete', {
@@ -1534,7 +1527,7 @@ if (leftCopyFb) {
   }
 
   // ─── 요약 보기 렌더링 ─────────────────────────────────────────
-  async function _renderSummaryView(courseName) {
+  var _renderSummaryView = async function(courseName) {
     var ca = document.getElementById('content-area');
     if (!ca) return;
 
@@ -1646,7 +1639,7 @@ if (leftCopyFb) {
     });
   }
 
-  async function _checkSummaryFileStatus(studentId, studentName, courseName, cardKey) {
+  var _checkSummaryFileStatus = async function(studentId, studentName, courseName, cardKey) {
     var el = document.getElementById('ac-sum-file-' + cardKey);
     if (!el) return;
     try {
@@ -1711,7 +1704,7 @@ if (leftCopyFb) {
     document.body.insertAdjacentHTML('beforeend', modalHtml);
   }
 
-  async function _doDownloadAllFiles(courseName) {
+  var _doDownloadAllFiles = async function(courseName) {
     NaviComponent.showLoading('파일을 압축하고 저장합니다.<br>잠시만 기다려주세요...');
     try {
       var res = await AdminCore.apiGet('courseZipAllStudentFiles', {
