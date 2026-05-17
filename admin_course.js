@@ -1322,25 +1322,22 @@ function copyCardContent(cardKey) {
     // 스크롤 위치 기억 (AdminRepoArea._modalState 와 동일 패턴)
     var main = document.querySelector('main.flex-1');
     var _scrollY = main ? main.scrollTop : window.scrollY;
-
-var leftCopyFb = document.getElementById('gibu-modal-left-copy-fb');
-if (leftCopyFb) {
-  var leftCopyBtn = leftCopyFb.previousElementSibling;
-  if (leftCopyBtn) {
-    leftCopyBtn.onclick = function() {
-      var text = submitText || '';
-      var fb = document.getElementById('gibu-modal-left-copy-fb');
-      function show() {
-        if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function(){ fb.textContent = ''; }, 2000); }
-      }
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(text).then(show, function(){ AdminCore.fallbackCopy(text); show(); });
-      } else { AdminCore.fallbackCopy(text); show(); }
-    };
+  
+  var leftCopyFb = document.getElementById('gibu-modal-left-copy-fb');
+  if (leftCopyFb) {
+    var leftCopyBtn = leftCopyFb.previousElementSibling;
+    if (leftCopyBtn) {
+      leftCopyBtn.onclick = function() {
+        var fb = document.getElementById('gibu-modal-left-copy-fb');
+        function show() {
+          if (fb) { fb.textContent = '복사 완료'; clearTimeout(fb._t); fb._t = setTimeout(function(){ fb.textContent = ''; }, 2000); }
+        }
+        AdminCourse.copyCardContent(cardKey);
+        show();
+      };
+    }
   }
-}
-
-   
+      
     modal.classList.remove('hidden');
     if (ta) ta.focus();
 
