@@ -1293,7 +1293,6 @@ function copyCardContent(cardKey) {
     if (rightLabel) rightLabel.textContent = courseName + ' — 교사 작성 내용';
     if (ta) {
       ta.value = currentText;
-      Admin.setSavedText(currentText);
       // 기존 Admin.updateModalBytes() 호출로 바이트 카운트 갱신
       if (typeof Admin !== 'undefined' && typeof Admin.updateModalBytes === 'function') {
         Admin.updateModalBytes();
@@ -1611,6 +1610,7 @@ if (leftCopyFb) {
           + '<span style="color:#6b7280;">✏️ 교사 작성 내용</span>'
           + (teacher
             ? '<span style="color:#059669;font-weight:700;background:#ecfdf5;border-radius:4px;padding:1px 7px;">있음</span>'
+            + '</div>'
             : '<span style="color:#9ca3af;background:#f3f4f6;border-radius:4px;padding:1px 7px;">없음</span>'
             + '</div>')
 
