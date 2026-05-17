@@ -9,6 +9,7 @@ var AdminCourse = (function () {
   var _state = {
     courses: [],            // 현재 관리자의 개설 교과목 목록
     selectedCourse: null,   // 현재 선택된 교과목 이름
+    currentView: 'all',     // 'all' | 'summary' — 현재 보기 모드
     pendingSaveFile: null,  // 업로드 대기 중인 학생명단 File 객체
     pendingSaveFileName: '',// 파일명 표시용
     noticeUploadFile: null, // 학생개별공지 업로드 File
@@ -38,14 +39,56 @@ var AdminCourse = (function () {
 
   var html = '';
 
-  html += '<div class="px-2 pt-3 pb-2">'
-        + '<button onclick="AdminCourse.showOpenCourseForm()"'
+  html += '<div class="px-2 pt-3 pb-1" style="position:relative;">'
+        // 교과개설 버튼
+        + '<button onclick="AdminCourse._toggleCourseMenu(event)"'
         + ' class="course-open-btn w-full flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl'
         + ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white font-bold text-sm'
         + ' shadow-md hover:from-indigo-700 hover:to-indigo-600 transition-all active:scale-95">'
         + '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
         + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"/>'
-        + '</svg>교과개설</button></div>';
+        + '</svg>교과개설'
+        + '<svg id="ac-menu-chevron" class="w-3.5 h-3.5 ml-auto transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+        + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>'
+        + '</svg>'
+        + '</button>'
+
+        // 하위 메뉴 드롭다운
+        + '<div id="ac-course-submenu" style="display:none;margin-top:4px;background:#fff;'
+        + 'border:1px solid #e0e7ff;border-radius:0.75rem;box-shadow:0 4px 16px rgba(99,102,241,0.12);overflow:hidden;">'
+
+        // ① 모두 보기
+        + '<button onclick="AdminCourse._onSubmenuAll()" id="ac-smenu-all"'
+        + ' style="width:100%;display:flex;align-items:center;gap:8px;padding:9px 14px;'
+        + 'background:none;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;'
+        + 'color:#4b5563;transition:background 0.15s;text-align:left;"'
+        + ' onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'none\'">'
+        + '<span id="ac-smenu-all-arrow" style="color:#6366f1;font-size:0.7rem;opacity:0;">▶</span>'
+        + '<span id="ac-smenu-all-label" style="border-bottom:none;padding-bottom:1px;">모두 보기</span>'
+        + '</button>'
+
+        // ② 요약 보기
+        + '<button onclick="AdminCourse._onSubmenuSummary()" id="ac-smenu-summary"'
+        + ' style="width:100%;display:flex;align-items:center;gap:8px;padding:9px 14px;'
+        + 'background:none;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;'
+        + 'color:#4b5563;transition:background 0.15s;text-align:left;border-top:1px solid #e0e7ff;"'
+        + ' onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'none\'">'
+        + '<span id="ac-smenu-summary-arrow" style="color:#6366f1;font-size:0.7rem;opacity:0;">▶</span>'
+        + '<span id="ac-smenu-summary-label" style="border-bottom:none;padding-bottom:1px;">요약 보기</span>'
+        + '</button>'
+
+        // ③ 학생 파일 전체 저장
+        + '<button onclick="AdminCourse._onSubmenuDownloadAll()" id="ac-smenu-download"'
+        + ' style="width:100%;display:flex;align-items:center;gap:8px;padding:9px 14px;'
+        + 'background:none;border:none;cursor:pointer;font-size:0.82rem;font-weight:600;'
+        + 'color:#4b5563;transition:background 0.15s;text-align:left;border-top:1px solid #e0e7ff;"'
+        + ' onmouseover="this.style.background=\'#f0f4ff\'" onmouseout="this.style.background=\'none\'">'
+        + '<span style="color:#6366f1;font-size:0.7rem;opacity:0;">▶</span>'
+        + '<span>학생 파일 전체 저장</span>'
+        + '</button>'
+
+        + '</div>'
+        + '</div>';
 
   if (_state.courses.length > 0) {
     html += '<div class="mx-3 my-1 border-t border-gray-100"></div>'
@@ -59,17 +102,17 @@ var AdminCourse = (function () {
           + '<button onclick="AdminCourse.selectCourse(\'' + escapedCourse + '\')"'
           + ' class="flex-1 text-left flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all'
           + (isActive
-              ? ' bg-gradient-to-r from-indigo-600 to-indigo-500 text-white shadow-md'
+              ? ' bg-sky-200 text-black shadow-md border border-sky-300'
               : ' text-gray-700 hover:bg-indigo-50 hover:text-indigo-700 border border-transparent hover:border-indigo-100') + '">'
-          + '<svg class="w-4 h-4 shrink-0 ' + (isActive ? 'text-indigo-200' : 'text-indigo-400') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+          + '<svg class="w-4 h-4 shrink-0 ' + (isActive ? 'text-sky-500' : 'text-indigo-400') + '" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
           + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>'
           + '</svg>'
           + '<span class="truncate">' + escapedCourse + '</span>'
           + '</button>'
           + '<button onclick="AdminCourse.confirmDeleteCourse(\'' + escapedCourse + '\')"'
           + ' title="교과 삭제"'
-          + ' class="shrink-0 w-6 h-6 flex items-center justify-center rounded-lg text-gray-300 hover:text-red-400 hover:bg-red-50 transition-all">'
-          + '<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>'
+          + ' class="shrink-0 flex items-center justify-center px-2 py-1 rounded-lg text-xs font-bold text-red-400 hover:text-white hover:bg-red-400 border border-red-200 hover:border-red-400 transition-all">'
+          + '삭제'
           + '</button>'
           + '</div>';
   });
@@ -358,7 +401,11 @@ function downloadStudentTemplate() {
   function selectCourse(courseName) {
     _state.selectedCourse = courseName;
     renderSidebar();
-    _renderCourseDetail(courseName);
+    if (_state.currentView === 'summary') {
+      _renderSummaryView(courseName);
+    } else {
+      _renderCourseDetail(courseName);
+    }
   }
 
   async function _renderCourseDetail(courseName) {
@@ -1385,10 +1432,49 @@ if (leftCopyFb) {
 
 // ─── 교과 삭제 ───────────────────────────────────────────────
   function confirmDeleteCourse(courseName) {
-    NaviComponent.showConfirmDialog(
-      '「' + courseName + '」 교과를 삭제하시겠습니까?\n\n수강학생 명단과\n교과 데이터 및 교과 관련 파일이 모두 삭제됩니다.',
-      function() { deleteCourse(courseName); }
-    );
+    var oldModal = document.getElementById('ac-delete-confirm-modal');
+    if (oldModal) oldModal.remove();
+
+    var escapedName = AdminCore.escapeHtml(courseName);
+    var modalHtml = '<div id="ac-delete-confirm-modal" style="'
+      + 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.45);'
+      + 'z-index:999999;align-items:center;justify-content:center;">'
+      + '<div style="background:#fff;border-radius:1rem;padding:2rem 1.75rem 1.5rem;'
+      + 'max-width:380px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.18);text-align:center;">'
+      + '<div style="font-size:2rem;margin-bottom:0.75rem;">🗑️</div>'
+      + '<div style="font-size:1rem;font-weight:700;color:#1f2937;margin-bottom:0.5rem;">교과 삭제</div>'
+      + '<div style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem;line-height:1.6;">'
+      + '「<strong>' + escapedName + '</strong>」 교과를 삭제하면<br>'
+      + '수강학생 명단, 교과 데이터 및 관련 파일이<br><strong>모두 삭제</strong>됩니다.<br><br>'
+      + '삭제하려면 아래에 <strong style="color:#dc2626;">삭제합니다</strong> 를 입력하세요.'
+      + '</div>'
+      + '<input id="ac-delete-confirm-input" type="text" placeholder="삭제합니다"'
+      + ' style="width:100%;border:1.5px solid #e5e7eb;border-radius:0.5rem;'
+      + 'padding:0.5rem 0.75rem;font-size:0.9rem;text-align:center;'
+      + 'box-sizing:border-box;margin-bottom:1rem;outline:none;transition:border-color 0.15s;"'
+      + ' oninput="(function(el){'
+      + 'var btn=document.getElementById(\'ac-delete-exec-btn\');'
+      + 'if(el.value===\'삭제합니다\'){btn.disabled=false;btn.style.opacity=\'1\';btn.style.cursor=\'pointer\';el.style.borderColor=\'#dc2626\';}'
+      + 'else{btn.disabled=true;btn.style.opacity=\'0.4\';btn.style.cursor=\'not-allowed\';el.style.borderColor=\'#e5e7eb\';}'
+      + '})(this)"/>'
+      + '<div style="display:flex;gap:0.75rem;justify-content:center;">'
+      + '<button onclick="document.getElementById(\'ac-delete-confirm-modal\').remove()"'
+      + ' style="flex:1;padding:0.6rem 0;border-radius:0.5rem;border:1px solid #e5e7eb;'
+      + 'background:#f9fafb;color:#6b7280;font-size:0.875rem;font-weight:600;cursor:pointer;">취소</button>'
+      + '<button id="ac-delete-exec-btn" disabled'
+      + ' style="flex:1;padding:0.6rem 0;border-radius:0.5rem;border:none;'
+      + 'background:#dc2626;color:#fff;font-size:0.875rem;font-weight:600;'
+      + 'cursor:not-allowed;opacity:0.4;transition:opacity 0.15s;"'
+      + ' onclick="document.getElementById(\'ac-delete-confirm-modal\').remove();AdminCourse.deleteCourse(\'' + escapedName + '\');">'
+      + '삭제</button>'
+      + '</div>'
+      + '</div></div>';
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    setTimeout(function() {
+      var inp = document.getElementById('ac-delete-confirm-input');
+      if (inp) inp.focus();
+    }, 50);
   }
 
   async function deleteCourse(courseName) {
@@ -1419,6 +1505,284 @@ if (leftCopyFb) {
     }
   }
   
+  // ─── 교과개설 버튼 하위 메뉴 토글 ──────────────────────────
+  function _toggleCourseMenu(e) {
+    e.stopPropagation();
+    var menu    = document.getElementById('ac-course-submenu');
+    var chevron = document.getElementById('ac-menu-chevron');
+    if (!menu) return;
+    var isOpen = menu.style.display !== 'none';
+    if (isOpen) {
+      menu.style.display = 'none';
+      if (chevron) chevron.style.transform = '';
+    } else {
+      menu.style.display = 'block';
+      if (chevron) chevron.style.transform = 'rotate(180deg)';
+      // 외부 클릭 시 닫기
+      setTimeout(function() {
+        document.addEventListener('click', _closeMenuOnOutside, { once: true });
+      }, 0);
+    }
+  }
+
+  function _closeMenuOnOutside() {
+    var menu    = document.getElementById('ac-course-submenu');
+    var chevron = document.getElementById('ac-menu-chevron');
+    if (menu) menu.style.display = 'none';
+    if (chevron) chevron.style.transform = '';
+  }
+
+  function _applySubmenuStyle(activeId) {
+    var ids = ['ac-smenu-all', 'ac-smenu-summary', 'ac-smenu-download'];
+    ids.forEach(function(id) {
+      var btn    = document.getElementById(id);
+      var arrow  = document.getElementById(id + '-arrow');
+      var label  = document.getElementById(id + '-label');
+      if (!btn) return;
+      if (id === activeId) {
+        btn.style.color = '#4338ca';
+        if (arrow) arrow.style.opacity = '1';
+        if (label) label.style.borderBottom = '1.5px solid #6366f1';
+      } else {
+        btn.style.color = '#4b5563';
+        if (arrow) arrow.style.opacity = '0';
+        if (label) label.style.borderBottom = 'none';
+      }
+    });
+  }
+
+  function _onSubmenuAll() {
+    _closeMenuOnOutside();
+    _state.currentView = 'all';
+    _applySubmenuStyle('ac-smenu-all');
+    if (_state.selectedCourse) {
+      _renderCourseDetail(_state.selectedCourse);
+    } else {
+      _showWelcome();
+    }
+  }
+
+  function _onSubmenuSummary() {
+    _closeMenuOnOutside();
+    _state.currentView = 'summary';
+    _applySubmenuStyle('ac-smenu-summary');
+    if (!_state.selectedCourse) {
+      NaviComponent.showAlert('교과목을 먼저 선택해주세요.', null, { icon: 'ℹ️' });
+      return;
+    }
+    _renderSummaryView(_state.selectedCourse);
+  }
+
+  // ─── 요약 보기 렌더링 ────────────────────────────────────────
+  async function _renderSummaryView(courseName) {
+    var ca = document.getElementById('content-area');
+    if (!ca) return;
+
+    // 스켈레톤 로딩
+    ca.innerHTML = '<div class="p-5"><div class="skeleton-box h-10 w-48 mb-4"></div>'
+      + '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">'
+      + '<div class="skeleton-box h-36"></div><div class="skeleton-box h-36"></div>'
+      + '<div class="skeleton-box h-36"></div><div class="skeleton-box h-36"></div>'
+      + '</div></div>';
+    NaviComponent.showLoading('불러오는 중입니다...');
+
+    var students = [];
+    try {
+      var res = await AdminCore.apiGet('courseGetStudents', {
+        adminId:    AdminCore.state.adminId,
+        courseName: courseName
+      });
+      if (res && res.success) students = res.data || [];
+    } catch(e) {}
+
+    NaviComponent.hideLoading();
+
+    var enrolled = students.filter(function(s) { return s && s.studentId; });
+
+    var html = '<div class="p-4 sm:p-5 max-w-4xl mx-auto">'
+      + '<div class="flex items-center gap-2 mb-4">'
+      + '<div class="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500 to-indigo-600 flex items-center justify-center shadow">'
+      + '<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">'
+      + '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>'
+      + '</svg></div>'
+      + '<h2 class="text-base font-bold text-gray-800">요약 보기 <span class="text-indigo-600 text-sm font-semibold">— ' + AdminCore.escapeHtml(courseName) + ' (' + enrolled.length + '명)</span></h2>'
+      + '</div>';
+
+    if (enrolled.length === 0) {
+      html += '<div class="text-center text-gray-400 text-sm py-16">수강 학생 데이터가 없습니다.</div>';
+    } else {
+      html += '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;">';
+      enrolled.forEach(function(s) {
+        var sid   = s.studentId || '';
+        var sname = s.name || '';
+        var submitContent = s.submitContent || '';
+        var teacherNote   = s.teacherNote  || '';
+        // 제출 파일 여부는 별도 로드 필요 → 초기엔 '확인 중'
+        var cardKey = 'c_' + encodeURIComponent(sid).replace(/%/g, '_');
+        var sidAttr     = AdminCore.escapeHtml(sid);
+        var snameAttr   = AdminCore.escapeHtml(sname);
+        var courseAttr  = AdminCore.escapeHtml(courseName);
+
+        html += '<div onclick="AdminCourse.openCourseWriteModal(\'' + cardKey + '\',\'' + sidAttr + '\',\'' + snameAttr + '\',\'' + courseAttr + '\')"'
+          + ' style="background:#fff;border:1.5px solid #e0e7ff;border-radius:0.9rem;'
+          + 'padding:14px 14px 12px;cursor:pointer;transition:box-shadow 0.18s,border-color 0.18s;'
+          + 'box-shadow:0 1px 6px rgba(99,102,241,0.07);"'
+          + ' onmouseover="this.style.boxShadow=\'0 4px 18px rgba(99,102,241,0.18)\';this.style.borderColor=\'#a5b4fc\';"'
+          + ' onmouseout="this.style.boxShadow=\'0 1px 6px rgba(99,102,241,0.07)\';this.style.borderColor=\'#e0e7ff\';">'
+
+          // 학번 + 이름
+          + '<div style="font-size:0.82rem;font-weight:700;color:#1f2937;margin-bottom:10px;'
+          + 'border-bottom:1px solid #e0e7ff;padding-bottom:8px;">'
+          + AdminCore.escapeHtml(sid) + ' ' + AdminCore.escapeHtml(sname)
+          + '</div>'
+
+          // 항목별 있음/없음
+          + '<div style="display:flex;flex-direction:column;gap:5px;font-size:0.78rem;">'
+
+          // 학생 제출 내용
+          + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+          + '<span style="color:#6b7280;">📄 학생 제출 내용</span>'
+          + (submitContent
+              ? '<span style="color:#059669;font-weight:700;background:#ecfdf5;border-radius:4px;padding:1px 7px;">있음</span>'
+              : '<span style="color:#9ca3af;background:#f3f4f6;border-radius:4px;padding:1px 7px;">없음</span>')
+          + '</div>'
+
+          // 학생 제출 파일 (비동기 로드)
+          + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+          + '<span style="color:#6b7280;">📁 학생 제출 파일</span>'
+          + '<span id="ac-sum-file-' + cardKey + '" style="color:#9ca3af;background:#f3f4f6;border-radius:4px;padding:1px 7px;">확인 중</span>'
+          + '</div>'
+
+          // 교사 작성 내용
+          + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+          + '<span style="color:#6b7280;">✏️ 교사 작성 내용</span>'
+          + (teacherNote
+              ? '<span style="color:#059669;font-weight:700;background:#ecfdf5;border-radius:4px;padding:1px 7px;">있음</span>'
+              : '<span style="color:#9ca3af;background:#f3f4f6;border-radius:4px;padding:1px 7px;">없음</span>')
+          + '</div>'
+
+          + '</div>'
+
+          // 클릭 안내
+          + '<div style="margin-top:10px;text-align:center;font-size:0.72rem;color:#a5b4fc;font-weight:600;">'
+          + '클릭하여 교사 내용 작성 →'
+          + '</div>'
+
+          + '</div>';
+
+        // hidden 더미 DOM: openCourseWriteModal이 course-submit-/course-teacher- 참조하므로 필요
+        html += '<div id="course-submit-' + cardKey + '" style="display:none;"'
+          + ' data-raw="' + AdminCore.escapeHtml(submitContent) + '"></div>'
+          + '<div id="course-teacher-' + cardKey + '" style="display:none;"'
+          + ' data-raw-edit="' + AdminCore.escapeHtml(teacherNote) + '"></div>';
+      });
+      html += '</div>';
+    }
+
+    html += '</div>';
+    ca.innerHTML = html;
+
+    // 각 카드 제출 파일 여부 비동기 확인
+    enrolled.forEach(function(s) {
+      var cardKey = 'c_' + encodeURIComponent(s.studentId || '').replace(/%/g, '_');
+      _checkSummaryFileStatus(s.studentId, s.name, courseName, cardKey);
+    });
+  }
+
+  async function _checkSummaryFileStatus(studentId, studentName, courseName, cardKey) {
+    var el = document.getElementById('ac-sum-file-' + cardKey);
+    if (!el) return;
+    try {
+      var res = await AdminCore.apiGet('courseGetStudentFiles', {
+        adminId:    AdminCore.state.adminId,
+        adminName:  AdminCore.state.adminName,
+        courseName: courseName,
+        studentId:  studentId,
+        studentName: studentName
+      });
+      var files = (res && res.success && res.files) ? res.files : [];
+      if (files.length > 0) {
+        el.textContent = '있음';
+        el.style.color = '#059669';
+        el.style.fontWeight = '700';
+        el.style.background = '#ecfdf5';
+      } else {
+        el.textContent = '없음';
+        el.style.color = '#9ca3af';
+        el.style.background = '#f3f4f6';
+      }
+    } catch(e) {
+      el.textContent = '오류';
+      el.style.color = '#ef4444';
+    }
+  }
+
+  // ─── 학생 파일 전체 저장 (전체 학생 ZIP 다운로드) ──────────
+  function _onSubmenuDownloadAll() {
+    _closeMenuOnOutside();
+    if (!_state.selectedCourse) {
+      NaviComponent.showAlert('교과목을 먼저 선택해주세요.', null, { icon: 'ℹ️' });
+      return;
+    }
+    _showDownloadAllModal(_state.selectedCourse);
+  }
+
+  function _showDownloadAllModal(courseName) {
+    var old = document.getElementById('ac-dl-all-modal');
+    if (old) old.remove();
+
+    var modalHtml = '<div id="ac-dl-all-modal" style="'
+      + 'display:flex;position:fixed;inset:0;background:rgba(0,0,0,0.45);'
+      + 'z-index:999999;align-items:center;justify-content:center;">'
+      + '<div style="background:#fff;border-radius:1rem;padding:2rem 1.75rem 1.5rem;'
+      + 'max-width:360px;width:90%;box-shadow:0 8px 40px rgba(0,0,0,0.18);text-align:center;">'
+      + '<div style="font-size:2rem;margin-bottom:0.75rem;">📦</div>'
+      + '<div style="font-size:1rem;font-weight:700;color:#1f2937;margin-bottom:0.5rem;">학생 파일 전체 저장</div>'
+      + '<div style="font-size:0.85rem;color:#6b7280;margin-bottom:1.5rem;line-height:1.6;">'
+      + '「<strong>' + AdminCore.escapeHtml(courseName) + '</strong>」의<br>'
+      + '모든 학생 제출 파일을 압축하여 저장합니다.<br>'
+      + '<span style="color:#6366f1;font-size:0.8rem;">파일 수에 따라 시간이 걸릴 수 있습니다.</span>'
+      + '</div>'
+      + '<div style="display:flex;gap:0.75rem;justify-content:center;">'
+      + '<button onclick="document.getElementById(\'ac-dl-all-modal\').remove()"'
+      + ' style="flex:1;padding:0.6rem 0;border-radius:0.5rem;border:1px solid #e5e7eb;'
+      + 'background:#f9fafb;color:#6b7280;font-size:0.875rem;font-weight:600;cursor:pointer;">취소</button>'
+      + '<button onclick="document.getElementById(\'ac-dl-all-modal\').remove();AdminCourse._doDownloadAllFiles(\'' + AdminCore.escapeHtml(courseName) + '\');"'
+      + ' style="flex:1;padding:0.6rem 0;border-radius:0.5rem;border:none;'
+      + 'background:#4f46e5;color:#fff;font-size:0.875rem;font-weight:600;cursor:pointer;">저장 시작</button>'
+      + '</div>'
+      + '</div></div>';
+
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+  }
+
+  async function _doDownloadAllFiles(courseName) {
+    NaviComponent.showLoading('파일을 압축하고 저장합니다.<br>잠시만 기다려주세요...');
+    try {
+      var res = await AdminCore.apiGet('courseZipAllStudentFiles', {
+        adminId:   AdminCore.state.adminId,
+        adminName: AdminCore.state.adminName,
+        courseName: courseName,
+        zipName:   courseName + '_학생제출파일'
+      });
+      NaviComponent.hideLoading();
+      if (res && res.success && res.url) {
+        var a = document.createElement('a');
+        a.href = res.url;
+        a.download = courseName + '_학생제출파일.zip';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        NaviComponent.showAlert('다운로드가 시작되었습니다.', null, { icon: '✅' });
+      } else {
+        NaviComponent.showAlert('오류: ' + (res && res.message ? res.message : '알 수 없는 오류'), null, { icon: '⚠️' });
+      }
+    } catch(e) {
+      NaviComponent.hideLoading();
+      NaviComponent.showAlert('오류: ' + e.message, null, { icon: '⚠️' });
+    }
+  }
+
   // ─── 공개 API ────────────────────────────────────────────────
   return {
     init:                init,
@@ -1426,6 +1790,12 @@ if (leftCopyFb) {
     confirmDeleteCourse: confirmDeleteCourse,
     deleteCourse:        deleteCourse,
     showOpenCourseForm:  showOpenCourseForm,
+    // 하위 메뉴
+    _toggleCourseMenu:   _toggleCourseMenu,
+    _onSubmenuAll:       _onSubmenuAll,
+    _onSubmenuSummary:   _onSubmenuSummary,
+    _onSubmenuDownloadAll: _onSubmenuDownloadAll,
+    _doDownloadAllFiles: _doDownloadAllFiles,
     downloadStudentTemplate: downloadStudentTemplate,
     handleFileSelect:    handleFileSelect,
     handleFileDrop:      handleFileDrop,
