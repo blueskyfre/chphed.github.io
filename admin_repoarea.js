@@ -244,8 +244,15 @@ var AdminRepoArea = (function () {
     if (ta) { ta.value = editedText; updateModalBytes(); }
 
     modal.classList.remove('hidden');
-    if (ta) ta.focus();
-  }
+    if (ta) {
+      ta.value = editedText;
+      updateModalBytes();
+      ta.oninput = function() {
+        updateModalBytes();
+        AdminCore.state.hasUnsavedEdit = (ta.value !== _modalState.savedText);
+      };
+      ta.focus();
+    }}
 
   function updateModalBytes() {
     var ta    = document.getElementById('gibu-modal-textarea');
