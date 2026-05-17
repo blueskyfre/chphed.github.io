@@ -447,7 +447,8 @@ var AdminRepoArea = (function () {
     updateModalBytes:     updateModalBytes,
     copyModalLeft:        copyModalLeft,
     copyModalRight:       copyModalRight,
-    saveGibuModal:        saveGibuModal
+    saveGibuModal:        saveGibuModal,
+    initModalSavedText:   function(text) { _modalState.savedText = text; }
   };
 
 })();
