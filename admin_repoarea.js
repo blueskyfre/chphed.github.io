@@ -255,10 +255,7 @@ var AdminRepoArea = (function () {
     var limit = _modalState.limit;
     label.textContent = bytes + '바이트 / ' + limit + '바이트';
     label.style.color = bytes > limit ? '#dc2626' : '#374151';
-    if (ta.value !== _modalState.savedText) {
-      AdminCore.state.hasUnsavedEdit = true;
-    }
-  }
+   }
 
   function copyModalLeft() {
     var text = _modalState.originalText || '';
