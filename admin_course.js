@@ -1611,7 +1611,6 @@ if (leftCopyFb) {
           + '<span style="color:#6b7280;">✏️ 교사 작성 내용</span>'
           + (teacher
             ? '<span style="color:#059669;font-weight:700;background:#ecfdf5;border-radius:4px;padding:1px 7px;">있음</span>'
-            + '</div>'
             : '<span style="color:#9ca3af;background:#f3f4f6;border-radius:4px;padding:1px 7px;">없음</span>'
             + '</div>')
 
