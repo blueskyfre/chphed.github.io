@@ -183,64 +183,111 @@ var AdminCourse = (function () {
     function _createOverlay() {
       if (document.getElementById('ac-drag-overlay')) return;
 
+      // 오버레이 배경: pointer-events:auto + cursor:no-drop + 🚫 배경 패턴
       var ov = document.createElement('div');
       ov.id = 'ac-drag-overlay';
       ov.style.cssText = [
         'position:fixed', 'inset:0', 'z-index:2147483647',
-        'background:rgba(79,70,229,0.13)',
+        'background:rgba(79,70,229,0.18)',
         'backdrop-filter:blur(2px)',
         'display:flex', 'align-items:center', 'justify-content:center',
-        'pointer-events:none'  // 배경 영역은 드롭 무시
+        'pointer-events:auto',   // 배경도 이벤트 받아야 cursor:no-drop 작동
+        'cursor:no-drop'
       ].join(';');
 
-      // 파란 점선 박스: pointer-events:auto 로 실제 드롭존 역할
+      // 🚫 배경 장식 (좌상, 우상, 좌하, 우하 고정 위치)
+      var noDropPositions = [
+        'top:6%;left:8%', 'top:6%;right:8%',
+        'bottom:6%;left:8%', 'bottom:6%;right:8%'
+      ];
+      var noDropHtml = '';
+      for (var i = 0; i < noDropPositions.length; i++) {
+        noDropHtml +=
+          '<div id="ac-nodrop-' + i + '" style="position:absolute;' + noDropPositions[i] + ';'
+          + 'font-size:4rem;opacity:0.22;pointer-events:none;user-select:none;">🚫</div>';
+      }
+      ov.innerHTML = noDropHtml;
+
+      // 파란 점선 박스: 실제 드롭존 (크기 4배, cursor:copy)
       var box = document.createElement('div');
       box.id = 'ac-drag-overlay-box';
       box.style.cssText = [
+        'position:relative',
         'pointer-events:auto',
         'background:#fff',
-        'border:2.5px dashed #6366f1',
-        'border-radius:1.25rem',
-        'padding:2.5rem 3.5rem',
+        'border:3px dashed #6366f1',
+        'border-radius:1.5rem',
+        'min-width:480px',
+        'min-height:320px',
+        'padding:5rem 8rem',
         'text-align:center',
-        'box-shadow:0 8px 40px rgba(99,102,241,0.18)',
+        'box-shadow:0 12px 60px rgba(99,102,241,0.22)',
         'cursor:copy',
-        'transition:border-color 0.15s, background 0.15s'
+        'transition:border-color 0.12s, background 0.12s, box-shadow 0.12s',
+        'display:flex', 'flex-direction:column', 'align-items:center', 'justify-content:center'
       ].join(';');
       box.innerHTML =
-          '<div style="font-size:2.5rem;margin-bottom:0.5rem;">📂</div>'
-        + '<div id="ac-drag-overlay-msg" style="font-size:1.05rem;font-weight:700;color:#4338ca;margin-bottom:0.25rem;">'
+          '<div id="ac-overlay-icon" style="font-size:4rem;margin-bottom:1rem;transition:transform 0.12s;">📂</div>'
+        + '<div style="font-size:1.3rem;font-weight:800;color:#4338ca;margin-bottom:0.4rem;letter-spacing:-0.01em;">'
         + '여기에 파일을 놓으세요</div>'
-        + '<div style="font-size:0.8rem;color:#6b7280;">이 영역에 파일을 드롭하면 업로드됩니다</div>';
+        + '<div style="font-size:0.9rem;color:#6b7280;">이 영역에 파일을 드롭하면 업로드됩니다</div>';
 
-      // 파란 점선 박스 dragenter: 강조
+      // 박스 dragenter: 강조 + 🚫 숨김
       box.addEventListener('dragenter', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        box.style.borderColor = '#4338ca';
-        box.style.background = '#eef2ff';
+        box.style.borderColor = '#3730a3';
+        box.style.borderStyle = 'solid';
+        box.style.background = '#c7d2fe';
+        box.style.boxShadow = '0 0 0 6px rgba(99,102,241,0.25), 0 12px 60px rgba(99,102,241,0.3)';
+        var icon = document.getElementById('ac-overlay-icon');
+        if (icon) { icon.textContent = '📥'; icon.style.transform = 'scale(1.25)'; }
+        for (var i = 0; i < 4; i++) {
+          var nd = document.getElementById('ac-nodrop-' + i);
+          if (nd) nd.style.opacity = '0';
+        }
       }, false);
 
-      // 파란 점선 박스 dragover: preventDefault 필수 (drop 허용)
+      // 박스 dragover: drop 허용 필수
       box.addEventListener('dragover', function(e) {
         e.preventDefault();
         e.stopPropagation();
       }, false);
 
-      // 파란 점선 박스 dragleave: 강조 해제
+      // 박스 dragleave: 강조 해제 + 🚫 복원
       box.addEventListener('dragleave', function(e) {
         e.stopPropagation();
         box.style.borderColor = '#6366f1';
+        box.style.borderStyle = 'dashed';
         box.style.background = '#fff';
+        box.style.boxShadow = '0 12px 60px rgba(99,102,241,0.22)';
+        var icon = document.getElementById('ac-overlay-icon');
+        if (icon) { icon.textContent = '📂'; icon.style.transform = 'scale(1)'; }
+        for (var i = 0; i < 4; i++) {
+          var nd = document.getElementById('ac-nodrop-' + i);
+          if (nd) nd.style.opacity = '0.22';
+        }
       }, false);
 
-      // 파란 점선 박스 drop: 활성 드롭존 핸들러 호출
+      // 박스 drop: 활성 드롭존 핸들러 호출
       box.addEventListener('drop', function(e) {
         e.preventDefault();
         e.stopPropagation();
         _removeOverlay();
         var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
         _dispatchFileDrop(file);
+      }, false);
+
+      // 오버레이 배경 dragover: drop 차단 유지 (브라우저 파일 열림 방지)
+      ov.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }, false);
+
+      // 오버레이 배경 drop: 파일 처리 없이 오버레이만 닫기
+      ov.addEventListener('drop', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
       }, false);
 
       ov.appendChild(box);
