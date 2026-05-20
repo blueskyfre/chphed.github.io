@@ -153,10 +153,101 @@ var AdminCourse = (function () {
   ul.innerHTML = html;
 }
 
+  // ─── 드래그앤드롭 가드: 브라우저 파일 열림 방지 + 전체 오버레이 ──
+  var _dragGuardInitialized = false;
+  function _initDragDropGuard() {
+    if (_dragGuardInitialized) return;
+    _dragGuardInitialized = true;
+
+    var _dragCounter = 0;
+
+    // 드롭존 ID 목록 (동적 생성되는 요소 포함)
+    var DROP_ZONE_IDS = [
+      'course-upload-zone',
+      'all-notice-upload-zone'
+    ];
+    // 학생개별공지 모달 드롭존은 고정 id가 없으므로 클래스로 판별
+    function _isDropZone(el) {
+      if (!el) return false;
+      for (var i = 0; i < DROP_ZONE_IDS.length; i++) {
+        if (el.id === DROP_ZONE_IDS[i]) return true;
+        if (el.closest && el.closest('#' + DROP_ZONE_IDS[i])) return true;
+      }
+      // 학생개별공지 모달 내 드롭존: course-notice-modal 안의 border-dashed 요소
+      if (el.closest && el.closest('#course-notice-modal')) {
+        var zone = el.closest('.border-dashed');
+        if (zone) return true;
+      }
+      return false;
+    }
+
+    // 오버레이 생성
+    function _createOverlay() {
+      if (document.getElementById('ac-drag-overlay')) return;
+      var ov = document.createElement('div');
+      ov.id = 'ac-drag-overlay';
+      ov.style.cssText = [
+        'position:fixed', 'inset:0', 'z-index:2147483647',
+        'background:rgba(79,70,229,0.13)',
+        'backdrop-filter:blur(2px)',
+        'display:flex', 'align-items:center', 'justify-content:center',
+        'pointer-events:none',
+        'transition:opacity 0.15s'
+      ].join(';');
+      ov.innerHTML =
+        '<div style="background:#fff;border:2.5px dashed #6366f1;border-radius:1.25rem;'
+        + 'padding:2.5rem 3.5rem;text-align:center;box-shadow:0 8px 40px rgba(99,102,241,0.18);">'
+        + '<div style="font-size:2.5rem;margin-bottom:0.5rem;">📂</div>'
+        + '<div style="font-size:1.05rem;font-weight:700;color:#4338ca;margin-bottom:0.25rem;">'
+        + '업로드 영역에 파일을 놓으세요</div>'
+        + '<div style="font-size:0.8rem;color:#6b7280;">드래그한 파일을 업로드 박스 위에서 놓아주세요</div>'
+        + '</div>';
+      document.body.appendChild(ov);
+    }
+
+    // 오버레이 제거
+    function _removeOverlay() {
+      var ov = document.getElementById('ac-drag-overlay');
+      if (ov) ov.remove();
+    }
+
+    // document 전체: 브라우저가 파일을 직접 여는 것 차단
+    document.addEventListener('dragover', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+
+    document.addEventListener('drop', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      _dragCounter = 0;
+      _removeOverlay();
+      // 드롭존 위에서 드롭된 경우는 각 드롭존의 ondrop 핸들러가 처리
+      // (이벤트 버블링으로 도달하므로 여기선 파일 처리하지 않음)
+    }, false);
+
+    // dragenter: 카운터 증가 + 오버레이 표시
+    document.addEventListener('dragenter', function(e) {
+      e.preventDefault();
+      _dragCounter++;
+      _createOverlay();
+    }, false);
+
+    // dragleave: 카운터 감소, 0이 되면 오버레이 제거 (자식 요소 이동 시 깜빡임 방지)
+    document.addEventListener('dragleave', function(e) {
+      _dragCounter--;
+      if (_dragCounter <= 0) {
+        _dragCounter = 0;
+        _removeOverlay();
+      }
+    }, false);
+  }
+
   // ─── 초기 진입: 교과관리 메뉴 활성화 ────────────────────────
   function init() {
     document.getElementById('sidebar-title').textContent = '교과관리';
     _state.selectedCourse = null;
+    _initDragDropGuard();
     _loadCourses();
   }
 
@@ -238,7 +329,9 @@ var AdminCourse = (function () {
       + '<div id="course-upload-zone"'
       + ' class="border-2 border-dashed border-indigo-200 rounded-xl p-6 text-center bg-indigo-50 hover:bg-indigo-100 transition-colors cursor-pointer"'
       + ' onclick="document.getElementById(\'course-file-input\').click()"'
-      + ' ondragover="event.preventDefault()" ondrop="AdminCourse.handleFileDrop(event)">'
+      + ' ondragover="event.preventDefault(); this.classList.add(\'border-indigo-400\',\'bg-indigo-100\')"'
+      + ' ondragleave="this.classList.remove(\'border-indigo-400\',\'bg-indigo-100\')"'
+      + ' ondrop="this.classList.remove(\'border-indigo-400\',\'bg-indigo-100\'); AdminCourse.handleFileDrop(event)">'
       + '<svg class="w-8 h-8 text-indigo-300 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
       + '<p class="text-sm text-indigo-500 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
       + '<p class="text-xs text-gray-400 mt-1">.xlsx 형식</p>'
@@ -531,7 +624,9 @@ function downloadStudentTemplate() {
           + '<div id="all-notice-upload-zone"'
           + ' class="border-2 border-dashed border-emerald-300 rounded-lg p-3 text-center bg-white hover:bg-emerald-50 transition-colors cursor-pointer mb-2"'
           + ' onclick="document.getElementById(\'all-notice-file-input\').click()"'
-          + ' ondragover="event.preventDefault()" ondrop="AdminCourse.handleAllNoticeFileDrop(event)">'
+          + ' ondragover="event.preventDefault(); this.classList.add(\'border-emerald-500\',\'bg-emerald-50\')"'
+          + ' ondragleave="this.classList.remove(\'border-emerald-500\',\'bg-emerald-50\')"'
+          + ' ondrop="this.classList.remove(\'border-emerald-500\',\'bg-emerald-50\'); AdminCourse.handleAllNoticeFileDrop(event)">'
           + '<svg class="w-5 h-5 text-emerald-300 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>'
           + '<p class="text-xs text-emerald-600 font-semibold">클릭하거나 파일을 드래그하여 업로드</p>'
           + '</div>'
