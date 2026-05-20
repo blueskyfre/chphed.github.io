@@ -188,7 +188,7 @@ var AdminCourse = (function () {
       // 교과목명 입력
       + '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">'
       + '<label class="block text-sm font-bold text-gray-700 mb-2">교과목명</label>'
-      + '<input id="course-name-input" type="text" placeholder="예: 국어, 수학, 영어..."'
+      + '<input id="course-name-input" type="text" placeholder="예: 언어와매체, 확률과통계, 물리학..."'
       + ' class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"/>'
       + '</div>'
 
