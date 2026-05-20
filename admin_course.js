@@ -32,6 +32,35 @@ var AdminCourse = (function () {
     return letter;
   }
 
+  // ─── 교과명 정규화 (중복 비교용: 공백 제거 + 소문자 변환) ────
+  function _normalize(str) {
+    return str.replace(/\s/g, '').toLowerCase();
+  }
+
+  // ─── 교과명 중복 체크 (정규화 비교, 충돌 교과명 반환) ────────
+  function _findDuplicateCourse(inputName) {
+    var normalizedInput = _normalize(inputName);
+    for (var i = 0; i < _state.courses.length; i++) {
+      if (_normalize(_state.courses[i]) === normalizedInput) {
+        return _state.courses[i]; // 충돌한 기존 교과명(원본) 반환
+      }
+    }
+    return null;
+  }
+
+  // ─── 교과명 입력 onblur 핸들러 ───────────────────────────────
+  function _onCourseNameBlur() {
+    var nameInput = document.getElementById('course-name-input');
+    var inputVal = nameInput ? nameInput.value.trim() : '';
+    if (!inputVal) return;
+    var conflict = _findDuplicateCourse(inputVal);
+    if (conflict) {
+      NaviComponent.showAlert(
+        '동일한 교과명으로 이미 교과가 개설되었습니다. (기존 교과명: ' + conflict + ') 다른 교과명으로 교과를 개설하세요.'
+      );
+    }
+  }
+
   // ─── 사이드바 렌더링 ─────────────────────────────────────────
   function renderSidebar() {
   var ul = document.getElementById('student-list');
@@ -189,6 +218,7 @@ var AdminCourse = (function () {
       + '<div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-4">'
       + '<label class="block text-sm font-bold text-gray-700 mb-2">교과목명</label>'
       + '<input id="course-name-input" type="text" placeholder="예: 언어와매체, 확률과통계, 물리학..."'
+      + ' onblur="AdminCourse._onCourseNameBlur()"'
       + ' class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all"/>'
       + '</div>'
 
@@ -308,6 +338,15 @@ function downloadStudentTemplate() {
     }
     if (!_state.pendingSaveFile) {
       NaviComponent.showAlert('수강학생 명단 파일을 업로드해주세요.');
+      return;
+    }
+
+    // 중복 교과명 체크 (정규화 비교)
+    var conflict = _findDuplicateCourse(courseName);
+    if (conflict) {
+      NaviComponent.showAlert(
+        '동일한 교과명으로 이미 교과가 개설되었습니다. (기존 교과명: ' + conflict + ') 다른 교과명으로 교과를 개설하세요.'
+      );
       return;
     }
 
@@ -1738,6 +1777,7 @@ function copyCardContent(cardKey) {
     confirmDeleteCourse: confirmDeleteCourse,
     deleteCourse:        deleteCourse,
     showOpenCourseForm:  showOpenCourseForm,
+    _onCourseNameBlur:   _onCourseNameBlur,
     // 하위 메뉴 핸들러
     _onSubmenuAll:          _onSubmenuAll,
     _onSubmenuSummary:      _onSubmenuSummary,
