@@ -183,7 +183,7 @@ var AdminCourse = (function () {
     function _createOverlay() {
       if (document.getElementById('ac-drag-overlay')) return;
 
-      // 오버레이 배경: pointer-events:auto + cursor:no-drop + 🚫 배경 패턴
+      // 오버레이 배경: cursor:no-drop → 브라우저가 커서 아래 🚫 자동 표시
       var ov = document.createElement('div');
       ov.id = 'ac-drag-overlay';
       ov.style.cssText = [
@@ -191,24 +191,11 @@ var AdminCourse = (function () {
         'background:rgba(79,70,229,0.18)',
         'backdrop-filter:blur(2px)',
         'display:flex', 'align-items:center', 'justify-content:center',
-        'pointer-events:auto',   // 배경도 이벤트 받아야 cursor:no-drop 작동
+        'pointer-events:auto',
         'cursor:no-drop'
       ].join(';');
 
-      // 🚫 배경 장식 (좌상, 우상, 좌하, 우하 고정 위치)
-      var noDropPositions = [
-        'top:6%;left:8%', 'top:6%;right:8%',
-        'bottom:6%;left:8%', 'bottom:6%;right:8%'
-      ];
-      var noDropHtml = '';
-      for (var i = 0; i < noDropPositions.length; i++) {
-        noDropHtml +=
-          '<div id="ac-nodrop-' + i + '" style="position:absolute;' + noDropPositions[i] + ';'
-          + 'font-size:4rem;opacity:0.22;pointer-events:none;user-select:none;">🚫</div>';
-      }
-      ov.innerHTML = noDropHtml;
-
-      // 파란 점선 박스: 실제 드롭존 (크기 4배, cursor:copy)
+      // 파란 점선 박스: cursor:copy → 브라우저가 커서 아래 +복사 자동 표시
       var box = document.createElement('div');
       box.id = 'ac-drag-overlay-box';
       box.style.cssText = [
@@ -232,7 +219,7 @@ var AdminCourse = (function () {
         + '여기에 파일을 놓으세요</div>'
         + '<div style="font-size:0.9rem;color:#6b7280;">이 영역에 파일을 드롭하면 업로드됩니다</div>';
 
-      // 박스 dragenter: 강조 + 🚫 숨김
+      // 박스 dragenter: 강조 (커서는 이미 cursor:copy 유지)
       box.addEventListener('dragenter', function(e) {
         e.preventDefault();
         e.stopPropagation();
@@ -242,19 +229,16 @@ var AdminCourse = (function () {
         box.style.boxShadow = '0 0 0 6px rgba(99,102,241,0.25), 0 12px 60px rgba(99,102,241,0.3)';
         var icon = document.getElementById('ac-overlay-icon');
         if (icon) { icon.textContent = '📥'; icon.style.transform = 'scale(1.25)'; }
-        for (var i = 0; i < 4; i++) {
-          var nd = document.getElementById('ac-nodrop-' + i);
-          if (nd) nd.style.opacity = '0';
-        }
       }, false);
 
-      // 박스 dragover: drop 허용 필수
+      // 박스 dragover: preventDefault 필수 (drop 허용) + dropEffect:copy 명시
       box.addEventListener('dragover', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        e.dataTransfer.dropEffect = 'copy'; // +복사 커서 강제 유지
       }, false);
 
-      // 박스 dragleave: 강조 해제 + 🚫 복원
+      // 박스 dragleave: 강조 해제
       box.addEventListener('dragleave', function(e) {
         e.stopPropagation();
         box.style.borderColor = '#6366f1';
@@ -263,10 +247,6 @@ var AdminCourse = (function () {
         box.style.boxShadow = '0 12px 60px rgba(99,102,241,0.22)';
         var icon = document.getElementById('ac-overlay-icon');
         if (icon) { icon.textContent = '📂'; icon.style.transform = 'scale(1)'; }
-        for (var i = 0; i < 4; i++) {
-          var nd = document.getElementById('ac-nodrop-' + i);
-          if (nd) nd.style.opacity = '0.22';
-        }
       }, false);
 
       // 박스 drop: 활성 드롭존 핸들러 호출
@@ -278,13 +258,14 @@ var AdminCourse = (function () {
         _dispatchFileDrop(file);
       }, false);
 
-      // 오버레이 배경 dragover: drop 차단 유지 (브라우저 파일 열림 방지)
+      // 오버레이 배경 dragover: none 으로 명시 → 브라우저 🚫 커서 유지
       ov.addEventListener('dragover', function(e) {
         e.preventDefault();
         e.stopPropagation();
+        e.dataTransfer.dropEffect = 'none'; // 🚫 커서 강제 유지
       }, false);
 
-      // 오버레이 배경 drop: 파일 처리 없이 오버레이만 닫기
+      // 오버레이 배경 drop: 파일 처리 없이 차단
       ov.addEventListener('drop', function(e) {
         e.preventDefault();
         e.stopPropagation();
