@@ -159,8 +159,6 @@ var AdminCourse = (function () {
     if (_dragGuardInitialized) return;
     _dragGuardInitialized = true;
 
-    var _dragCounter = 0;
-
     // 활성 드롭존 감지 및 파일 처리 (우선순위: 모달 > course > allNotice)
     function _dispatchFileDrop(file) {
       if (!file) return;
@@ -240,7 +238,6 @@ var AdminCourse = (function () {
       box.addEventListener('drop', function(e) {
         e.preventDefault();
         e.stopPropagation();
-        _dragCounter = 0;
         _removeOverlay();
         var file = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
         _dispatchFileDrop(file);
@@ -265,22 +262,19 @@ var AdminCourse = (function () {
     document.addEventListener('drop', function(e) {
       e.preventDefault();
       e.stopPropagation();
-      _dragCounter = 0;
       _removeOverlay();
     }, false);
 
-    // dragenter: 카운터 증가 + 오버레이 표시
+    // dragenter: 오버레이 표시 (_createOverlay 내부에서 중복 생성 방지)
     document.addEventListener('dragenter', function(e) {
       e.preventDefault();
-      _dragCounter++;
       _createOverlay();
     }, false);
 
-    // dragleave: 카운터 감소, 0이 되면 오버레이 제거 (자식 요소 이동 시 깜빡임 방지)
+    // dragleave: relatedTarget === null 이면 브라우저 완전 이탈 → 오버레이 제거
+    // relatedTarget 이 있으면 내부 요소 간 이동이므로 무시 (깜빡임 방지 핵심)
     document.addEventListener('dragleave', function(e) {
-      _dragCounter--;
-      if (_dragCounter <= 0) {
-        _dragCounter = 0;
+      if (e.relatedTarget === null) {
         _removeOverlay();
       }
     }, false);
